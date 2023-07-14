@@ -3,6 +3,7 @@ use std::{env, process::exit};
 mod utils;
 
 use utils::get_str_num;
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if &args.len() != &2 {
