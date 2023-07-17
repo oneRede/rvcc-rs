@@ -1,7 +1,7 @@
-use std::{env, num::ParseIntError, process::exit, slice, str::Chars};
+use std::{env, process::exit, slice};
 mod utils;
 
-use utils::{get_num_from_chars, get_str_num};
+use utils::get_num_from_chars;
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq)]
