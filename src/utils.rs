@@ -1,4 +1,4 @@
-use std::{env::consts, mem, process::exit, num::ParseIntError, f32::consts::E};
+use std::{process::exit, num::ParseIntError};
 
 #[allow(dead_code)]
 pub fn get_str_num(s: &str) -> (isize, &str) {
@@ -94,19 +94,4 @@ fn test_str_p() {
 fn test_p_u8() {
     let s = "";
     println!("{:?}", &s.as_ptr())
-}
-
-#[test]
-fn test_p_str() {
-    let s = "1234567890".to_string();
-    let p: *const String = Box::leak(Box::new(s));
-    println!("{:?}", p);
-    println!("{}", mem::size_of::<*const String>());
-    println!("{:?}", unsafe { p.add(2) });
-    println!("{:?}", unsafe { (p as *mut u8).add(1) });
-    println!("{}", mem::size_of::<*const u8>());
-    println!("{}", mem::size_of::<Box<u8>>());
-    println!("{}", mem::size_of::<Vec<String>>());
-    println!("{}", mem::size_of::<Vec<u8>>());
-    println!("char: {}", mem::size_of::<char>());
 }
