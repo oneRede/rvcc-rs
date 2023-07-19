@@ -59,6 +59,16 @@ pub fn is_digit(s: &str) -> bool {
     false
 }
 
+#[allow(dead_code)]
+fn error_at(loc: *const char, chars: &[char], input: &str, msg: &str) {
+    eprintln!("{:?}", input);
+    let distance = (unsafe { loc.offset_from(chars.as_ptr()) }).abs() - 1;
+    eprintln!("{}", distance);
+    eprint!("{:?}", " ".repeat(distance as usize));
+    eprint!("{}", "^");
+    eprintln!("{}", msg);
+}
+
 #[test]
 fn test_get_str_num() {
     let s = "12335+67890";
@@ -94,4 +104,15 @@ fn test_str_p() {
 fn test_p_u8() {
     let s = "";
     println!("{:?}", &s.as_ptr())
+}
+
+#[test]
+fn test_error_at() {
+    let input = "12345678";
+    let chars = &['1','2', '3','4', '5','6', '7','8'];
+    let loc = &chars[4..];
+
+    // let p_chars = chars.as_ptr();
+    let p_loc = loc.as_ptr();
+    error_at(p_loc, chars, input, " error character")
 }

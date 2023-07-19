@@ -1,7 +1,9 @@
 use std::{env, process::exit, slice};
 mod utils;
-
 use utils::get_num_from_chars;
+
+static mut CURRENT_INPUT: Option<&[char]> = None;
+static mut CURRENT_STR: Option<&str> = None;
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq)]
@@ -54,7 +56,7 @@ fn equal(token: &Token, s: &[char]) -> bool {
 #[allow(dead_code)]
 fn skip<'a>(token: &Token, s: &[char]) -> Option<*mut Token> {
     if !equal(&token, s) {
-        println!("expect '{:?}'", s)
+        error_token(token,&format!("expect {:?}", s));
     }
     return token.next;
 }
@@ -62,7 +64,7 @@ fn skip<'a>(token: &Token, s: &[char]) -> Option<*mut Token> {
 #[allow(dead_code)]
 fn get_num(token: &Token) -> i32 {
     if token.kind != TokenKind::Num {
-        println!("expect a num")
+        error_token(token,"expect a num");
     }
     token.val
 }
@@ -75,9 +77,10 @@ fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
     loop {
         if chars.len() == 0 {
             unsafe {
-                cur.as_mut().unwrap().next = Some(Box::leak(Box::new(Token::new(TokenKind::Eof, chars, 0))))
+                cur.as_mut().unwrap().next =
+                    Some(Box::leak(Box::new(Token::new(TokenKind::Eof, chars, 0))))
             };
-            return unsafe { head.as_mut().unwrap().next }
+            return unsafe { head.as_mut().unwrap().next };
         }
 
         let c: char = chars[0];
@@ -112,8 +115,33 @@ fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
             chars = &chars[1..];
             continue;
         }
-        println!("invalid token: {}", chars[0]);
+        error_at(chars.as_ptr(), &format!("invalid token: {}", chars[0]))
     }
+}
+
+#[allow(dead_code)]
+fn v_error_at(loc: *const char, msg: &str) {
+    let input = unsafe { CURRENT_STR.unwrap() };
+    let chars = unsafe { CURRENT_INPUT.unwrap() };
+    eprintln!("{:?}", input);
+    let distance = (unsafe { loc.offset_from(chars.as_ptr()) }).abs() - 1;
+    eprintln!("{}", distance);
+    eprint!("{:?}", " ".repeat(distance as usize));
+    eprint!("{}", "^");
+    eprintln!("{}", msg);
+}
+
+#[allow(dead_code)]
+fn error_at(loc: *const char, msg: &str) {
+    v_error_at(loc, msg);
+    exit(1);
+}
+
+#[allow(dead_code)]
+fn error_token(token: &Token, msg: &str) {
+    let loc = token.loc.unwrap().as_ptr();
+    v_error_at(loc, msg);
+    exit(1);
 }
 
 fn main() {
@@ -122,8 +150,14 @@ fn main() {
         println!("{}: invalid number of arguments\n", &args.get(0).unwrap());
         exit(1)
     }
-    let chars: Vec<char> = args[1].chars().collect();
+
+    let input: &str = Box::leak(Box::new(String::from(&args[1])));
+    let chars: Vec<char> = input.chars().collect();
     let chars: &[char] = Box::leak(Box::new(chars));
+
+    unsafe { CURRENT_STR = Some(input) };
+    unsafe { CURRENT_INPUT = Some(chars) };
+
     let mut token = tokenize(chars);
 
     println!("  .globl main");
