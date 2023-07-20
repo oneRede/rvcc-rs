@@ -4,6 +4,7 @@ use utils::get_num_from_chars;
 
 static mut CURRENT_INPUT: Option<&[char]> = None;
 static mut CURRENT_STR: Option<&str> = None;
+static mut DEPTH: usize = 0;
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, PartialEq)]
@@ -56,7 +57,7 @@ fn equal(token: &Token, s: &[char]) -> bool {
 #[allow(dead_code)]
 fn skip<'a>(token: &Token, s: &[char]) -> Option<*mut Token> {
     if !equal(&token, s) {
-        error_token(token,&format!("expect {:?}", s));
+        error_token(token, &format!("expect {:?}", s));
     }
     return token.next;
 }
@@ -64,7 +65,7 @@ fn skip<'a>(token: &Token, s: &[char]) -> Option<*mut Token> {
 #[allow(dead_code)]
 fn get_num(token: &Token) -> i32 {
     if token.kind != TokenKind::Num {
-        error_token(token,"expect a num");
+        error_token(token, "expect a num");
     }
     token.val
 }
@@ -106,7 +107,13 @@ fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
             continue;
         }
 
-        if chars[0] == '+' || chars[0] == '-' {
+        if chars[0] == '+'
+            || chars[0] == '-'
+            || chars[0] == '*'
+            || chars[0] == '/'
+            || chars[0] == '('
+            || chars[0] == ')'
+        {
             unsafe {
                 cur.as_mut().unwrap().next =
                     Some(Box::leak(Box::new(Token::new(TokenKind::Punct, chars, 1))))
@@ -144,6 +151,172 @@ fn error_token(token: &Token, msg: &str) {
     exit(1);
 }
 
+#[allow(dead_code)]
+fn expr(mut _rest: *mut Token, token: *mut Token) -> *mut Node {
+    let mut node = mul(token, token);
+
+    loop {
+        if equal(unsafe { token.as_ref().unwrap() }, &['+']) {
+            node = Box::leak(Box::new(Node::new_binary(
+                NodeKind::Add,
+                node,
+                mul(token, unsafe { token.as_ref().unwrap().next.unwrap() }),
+            )));
+            continue;
+        }
+        if equal(unsafe { token.as_ref().unwrap() }, &['-']) {
+            node = Box::leak(Box::new(Node::new_binary(
+                NodeKind::Sub,
+                node,
+                mul(token, unsafe { token.as_ref().unwrap().next.unwrap() }),
+            )));
+            continue;
+        }
+        _rest = token;
+        return node;
+    }
+}
+
+#[allow(dead_code)]
+fn mul(mut _rest: *mut Token, token: *mut Token) -> *mut Node {
+    let mut node = primary(token, token).unwrap();
+
+    loop {
+        if equal(unsafe { token.as_ref().unwrap() }, &['*']) {
+            node = Box::leak(Box::new(Node::new_binary(
+                NodeKind::Mul,
+                node,
+                primary(token, unsafe { token.as_ref().unwrap().next.unwrap() }).unwrap(),
+            )));
+            continue;
+        }
+        if equal(unsafe { token.as_ref().unwrap() }, &['/']) {
+            node = Box::leak(Box::new(Node::new_binary(
+                NodeKind::Div,
+                node,
+                primary(token, unsafe { token.as_ref().unwrap().next.unwrap() }).unwrap(),
+            )));
+            continue;
+        }
+        _rest = token;
+        return node;
+    }
+}
+
+#[allow(dead_code)]
+fn primary(mut _rest: *mut Token, token: *mut Token) -> Option<*mut Node> {
+    if equal(unsafe { token.as_ref().unwrap() }, &['(']) {
+        let node = expr(token, unsafe { token.as_ref().unwrap().next }.unwrap());
+        _rest = skip(unsafe { token.as_ref().unwrap() }, &[')']).unwrap();
+        return Some(node);
+    }
+
+    if (unsafe { token.as_ref().unwrap().kind } == TokenKind::Num) {
+        let node = Node::new_num(unsafe { token.as_ref().unwrap().val } as i64);
+        _rest = unsafe { token.as_ref().unwrap().next }.unwrap();
+        return Some(Box::leak(Box::new(node)));
+    }
+
+    error_token(unsafe { token.as_ref().unwrap() }, "expected an expression");
+    None
+}
+
+#[allow(dead_code)]
+fn push() {
+    println!("  addi sp, sp, -8");
+    println!("  sd a0, 0(sp)");
+    unsafe { DEPTH += 1 };
+}
+
+#[allow(dead_code)]
+fn pop(reg: &str) {
+    println!("  ld {}, 0(sp)", reg);
+    println!("  addi sp, sp, 8");
+    unsafe { DEPTH -= 1 };
+}
+
+#[allow(dead_code)]
+fn gen_expr(node: *mut Node) {
+    if unsafe { node.as_ref().unwrap().kind } == NodeKind::Num {
+        println!("  li a0, {:?}", unsafe { node.as_ref().unwrap() });
+        return;
+    }
+
+    gen_expr(unsafe { node.as_ref().unwrap().rhs }.unwrap());
+    push();
+    gen_expr(unsafe { node.as_ref().unwrap().lhs }.unwrap());
+    pop("a1");
+
+    match unsafe { node.as_ref().unwrap().kind } {
+        NodeKind::Add => {
+            println!("  add a0, a0, a1");
+            return;
+        }
+        NodeKind::Sub => {
+            println!("  sub a0, a0, a1");
+            return;
+        }
+        NodeKind::Mul => {
+            println!("  mul a0, a0, a1");
+            return;
+        },
+        NodeKind::Div => {
+            println!("  div a0, a0, a1");
+            return;
+        },
+        _ => {return;}
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Debug, Clone, Copy, PartialEq)]
+enum NodeKind {
+    Add,
+    Sub,
+    Mul,
+    Div,
+    Num,
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug)]
+struct Node {
+    kind: NodeKind,
+    lhs: Option<*mut Node>,
+    rhs: Option<*mut Node>,
+    val: i64,
+}
+
+#[allow(dead_code)]
+impl Node {
+    fn new(kind: NodeKind) -> Self {
+        Self {
+            kind: kind,
+            lhs: None,
+            rhs: None,
+            val: 0,
+        }
+    }
+
+    fn new_binary(kind: NodeKind, lhs: *mut Node, rhs: *mut Node) -> Self {
+        Self {
+            kind: kind,
+            lhs: Some(lhs),
+            rhs: Some(rhs),
+            val: 0,
+        }
+    }
+
+    fn new_num(val: i64) -> Self {
+        Self {
+            kind: NodeKind::Num,
+            lhs: None,
+            rhs: None,
+            val: val,
+        }
+    }
+}
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     if &args.len() != &2 {
@@ -158,37 +331,18 @@ fn main() {
     unsafe { CURRENT_STR = Some(input) };
     unsafe { CURRENT_INPUT = Some(chars) };
 
-    let mut token = tokenize(chars);
+    let token = tokenize(chars).unwrap();
+    let node = expr(token, token);
+
+    if unsafe { token.as_ref().unwrap().kind } != TokenKind::Eof {
+        error_token(unsafe { token.as_ref().unwrap() }, "extra token");
+    }
 
     println!("  .globl main");
     println!("main:");
-    println!(
-        "  li a0, {}",
-        get_num(unsafe { token.unwrap().as_ref().unwrap() })
-    );
-    token = unsafe { token.unwrap().as_ref().unwrap().next };
-    loop {
-        if unsafe { token.unwrap().as_ref().unwrap().kind } == TokenKind::Eof {
-            break;
-        }
-        if equal(unsafe { token.unwrap().as_ref().unwrap() }, &['+']) {
-            token = unsafe { token.unwrap().as_ref().unwrap().next };
-            println!(
-                "  addi a0, a0, {}",
-                get_num(unsafe { token.unwrap().as_ref().unwrap() })
-            );
-            token = unsafe { token.unwrap().as_ref().unwrap().next };
-            continue;
-        }
-
-        token = skip(unsafe { token.unwrap().as_ref().unwrap() }, &['-']);
-        println!(
-            "  addi a0, a0, -{}",
-            get_num(unsafe { token.unwrap().as_ref().unwrap() })
-        );
-        token = unsafe { token.unwrap().as_ref().unwrap().next };
-    }
-
+    gen_expr(node);
     println!("  ret");
-    exit(0)
+    assert!(unsafe{DEPTH==0});
+    return;
+
 }

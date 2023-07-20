@@ -1,4 +1,4 @@
-use std::{process::exit, num::ParseIntError};
+use std::{num::ParseIntError, process::exit};
 
 #[allow(dead_code)]
 pub fn get_str_num(s: &str) -> (isize, &str) {
@@ -39,8 +39,8 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
     }
     let rs: Result<i32, ParseIntError> = num_string.parse();
     match rs {
-        Ok(num) => {return Ok((num, &s[i..]))},
-        Err(e) => {return Err(e)}
+        Ok(num) => return Ok((num, &s[i..])),
+        Err(e) => return Err(e),
     }
 }
 
@@ -109,10 +109,25 @@ fn test_p_u8() {
 #[test]
 fn test_error_at() {
     let input = "12345678";
-    let chars = &['1','2', '3','4', '5','6', '7','8'];
+    let chars = &['1', '2', '3', '4', '5', '6', '7', '8'];
     let loc = &chars[4..];
 
     // let p_chars = chars.as_ptr();
     let p_loc = loc.as_ptr();
     error_at(p_loc, chars, input, " error character")
+}
+
+#[test]
+fn test_p_p() {
+    let s1 = "12345".to_string();
+    let s2 = "67890".to_string();
+
+    let p1: *mut String = Box::leak(Box::new(s1));
+    let p2: *mut String = Box::leak(Box::new(s2));
+    let p_p1: *mut *mut String = Box::leak(Box::new(p1));
+    let mut p_p2: *mut *mut String = Box::leak(Box::new(p2));
+    println!("{:?}", p_p1);
+    println!("{:?}", p_p2);
+    p_p2 = p_p1;
+    println!("{:?}", unsafe{p_p2.as_ref().unwrap().as_ref().unwrap()});
 }
