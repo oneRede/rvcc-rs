@@ -8,7 +8,7 @@ pub fn get_str_num(s: &str) -> (isize, &str) {
             '0'..='9' => {
                 i += 1;
             }
-            '-' | '+' => {
+            '-' | '+' | '/' | '*' | ' '=> {
                 break;
             }
             _ => {}
@@ -28,11 +28,11 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
                 i += 1;
                 num_string += c.to_string().as_ref();
             }
-            '-' | '+' => {
+            '-' | '+' | '/' | '*' | ' ' | '(' | ')'=> {
                 break;
             }
             _ => {
-                println!("unexcept character: {}", c);
+                println!("# unexcept character: {}", c);
                 exit(1)
             }
         }

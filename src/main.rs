@@ -136,7 +136,7 @@ fn v_error_at(loc: *const char, msg: &str) {
     eprintln!("{:?}", input);
     let distance = (unsafe { loc.offset_from(chars.as_ptr()) }).abs() - 1;
     eprintln!("{}", distance);
-    // eprint!("{:?}", " ".repeat(distance as usize));
+    eprint!("{:?}", " ".repeat(distance as usize));
     eprint!("{}", "^");
     eprintln!("{}", msg);
 }
@@ -160,23 +160,23 @@ fn expr(mut _rest: *mut *mut Token, mut token: *mut Token) -> *mut Node {
 
     loop {
         if equal(unsafe { token.as_ref().unwrap() }, &['+']) {
-            node = &mut Node::new_binary(
+            node = Box::leak(Box::new( Node::new_binary(
                 NodeKind::Add,
                 node,
                 mul(&mut token as *mut *mut Token, unsafe {
                     token.as_ref().unwrap().next.unwrap()
                 }),
-            ) as *mut Node;
+            ) ));
             continue;
         }
         if equal(unsafe { token.as_ref().unwrap() }, &['-']) {
-            node = &mut Node::new_binary(
+            node = Box::leak(Box::new(Node::new_binary(
                 NodeKind::Sub,
                 node,
                 mul(&mut token as *mut *mut Token, unsafe {
                     token.as_ref().unwrap().next.unwrap()
                 }),
-            ) as *mut Node;
+            ) ));
             continue;
         }
         unsafe { *_rest = token};
@@ -228,9 +228,9 @@ fn primary(mut _rest: *mut *mut Token, mut token: *mut Token) -> Option<*mut Nod
     }
 
     if (unsafe { token.as_ref().unwrap().kind } == TokenKind::Num) {
-        let node = Node::new_num(unsafe { token.as_ref().unwrap().val } as i64);
+        let node = Box::leak(Box::new(Node::new_num(unsafe { token.as_ref().unwrap().val } as i64)));
         unsafe { *_rest = token.as_ref().unwrap().next.unwrap()};
-        return Some(Box::leak(Box::new(node)));
+        return Some(node);
     }
 
     error_token(unsafe { token.as_ref().unwrap() }, "expected an expression");
@@ -254,7 +254,7 @@ fn pop(reg: &str) {
 #[allow(dead_code)]
 fn gen_expr(node: *mut Node) {
     if unsafe { node.as_ref().unwrap().kind } == NodeKind::Num {
-        println!("  li a0, {:?}", unsafe { node.as_ref().unwrap() });
+        println!("  li a0, {:?}", unsafe { node.as_ref().unwrap().val });
         return;
     }
 
@@ -352,7 +352,6 @@ fn main() {
     let mut token = tokenize(chars).unwrap();
     let node = expr(&mut token as *mut *mut Token, token);
 
-    println!("token val: {:?}", unsafe{token.as_ref().unwrap().val});
     if unsafe { token.as_ref().unwrap().kind } != TokenKind::Eof {
         error_token(unsafe { token.as_ref().unwrap() }, "extra token");
     }
