@@ -122,12 +122,12 @@ fn test_p_p() {
     let s1 = "12345".to_string();
     let s2 = "67890".to_string();
 
-    let p1: *mut String = Box::leak(Box::new(s1));
-    let p2: *mut String = Box::leak(Box::new(s2));
-    let p_p1: *mut *mut String = Box::leak(Box::new(p1));
-    let mut p_p2: *mut *mut String = Box::leak(Box::new(p2));
-    println!("{:?}", p_p1);
-    println!("{:?}", p_p2);
-    p_p2 = p_p1;
-    println!("{:?}", unsafe{p_p2.as_ref().unwrap().as_ref().unwrap()});
+    let mut  p1: *mut String = Box::leak(Box::new(s1));
+    let mut p2: *mut String = Box::leak(Box::new(s2));
+    
+    let mut p1_s: *mut *mut String = &mut p1;
+    unsafe { *p1_s.as_mut().unwrap() = p2 };
+    println!("{:?}", p1);
+    println!("{:?}", p2);
+    
 }
