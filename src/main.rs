@@ -47,6 +47,9 @@ impl Token {
 
 #[allow(dead_code)]
 fn equal(token: &Token, s: &[char]) -> bool {
+    if token.loc.unwrap().len() == 0{
+        return false
+    }
     if s.starts_with(unsafe { slice::from_raw_parts(token.loc.unwrap().as_ptr(), token.len) }) {
         return true;
     } else {
