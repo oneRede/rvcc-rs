@@ -1,4 +1,4 @@
-use crate::{parse::Node, parse::NodeKind};
+use crate::rvcc::{Node, NodeKind};
 
 pub static mut DEPTH: usize = 0;
 
@@ -79,11 +79,28 @@ pub fn gen_expr(node: *mut Node) {
 }
 
 #[allow(dead_code)]
+fn gen_stmt(node: *mut Node){
+    if unsafe { node.as_ref().unwrap().kind } == NodeKind::ExprStmt{
+        gen_expr(unsafe { node.as_ref().unwrap().lhs.unwrap() });
+        return;
+    }
+    println!("invalid statement");
+}
+
+
+#[allow(dead_code)]
 pub fn codegen(node: *mut Node){
     println!("  .globl main");
     println!("main:");
-    gen_expr(node);
+    loop{
+        
+        gen_stmt(node);
+        assert!(unsafe { DEPTH == 0 });
+        if unsafe { node.as_ref().unwrap().next.is_none() }{
+            break;
+        }
+    }
     println!("  ret");
-    assert!(unsafe { DEPTH == 0 });
+    
 }
 

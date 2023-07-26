@@ -1,22 +1,6 @@
 use std::{num::ParseIntError, process::exit};
 
-#[allow(dead_code)]
-pub fn get_str_num(s: &str) -> (isize, &str) {
-    let mut i: usize = 0;
-    for c in s.chars() {
-        match c {
-            '0'..='9' => {
-                i += 1;
-            }
-            '-' | '+' | '/' | '*' | ' '=> {
-                break;
-            }
-            _ => {}
-        }
-    }
-
-    return ((&s[..i]).parse().unwrap(), &s[i..]);
-}
+use crate::tokenize::{CURRENT_INPUT, CURRENT_STR};
 
 #[allow(dead_code)]
 pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
@@ -28,7 +12,7 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
                 i += 1;
                 num_string += c.to_string().as_ref();
             }
-            '-' | '+' | '/' | '*' | ' ' | '(' | ')' | '=' | '<' | '>' | '!'=> {
+            '-' | '+' | '/' | '*' | ' ' | '(' | ')' | '=' | '<' | '>' | '!' | ';' => {
                 break;
             }
             _ => {
@@ -45,22 +29,46 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
 }
 
 #[allow(dead_code)]
-pub fn is_digit(s: &str) -> bool {
-    for c in s[..1].chars() {
-        match c {
-            '0'..='9' => {
-                return true;
-            }
-            _ => {
-                return false;
-            }
-        }
+pub fn read_punct(ptr: &[char]) -> usize {
+    if starts_with(ptr, &['=', '='])
+        || starts_with(ptr, &['!', '='])
+        || starts_with(ptr, &['<', '='])
+        || starts_with(ptr, &['>', '='])
+    {
+        return 2;
     }
-    false
+    if ptr[0] == '+'
+        || ptr[0] == '-'
+        || ptr[0] == '*'
+        || ptr[0] == '/'
+        || ptr[0] == '('
+        || ptr[0] == ')'
+        || ptr[0] == '>'
+        || ptr[0] == '<'
+        || ptr[0] == '='
+        || ptr[0] == '!'
+        || ptr[0] == ';'
+    {
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 #[allow(dead_code)]
-fn error_at(loc: *const char, chars: &[char], input: &str, msg: &str) {
+fn starts_with(s_str: &[char], sub_str: &[char]) -> bool {
+    for i in 0..sub_str.len() {
+        if s_str[i] != sub_str[i] {
+            return false;
+        }
+    }
+    true
+}
+
+#[allow(dead_code)]
+pub fn v_error_at(loc: *const char, msg: &str) {
+    let input = unsafe { CURRENT_STR.unwrap() };
+    let chars = unsafe { CURRENT_INPUT.unwrap() };
     eprintln!("{:?}", input);
     let distance = (unsafe { loc.offset_from(chars.as_ptr()) }).abs() - 1;
     eprintln!("{}", distance);
@@ -69,50 +77,8 @@ fn error_at(loc: *const char, chars: &[char], input: &str, msg: &str) {
     eprintln!("{}", msg);
 }
 
-#[test]
-fn test_get_str_num() {
-    let s = "12335+67890";
-    let (a, b) = get_str_num(s);
-    println!("{}", a);
-    println!("{}", b);
-}
-
-#[test]
-fn test_is_digit() {
-    let mut s = "12335+67890".to_string();
-    let a = is_digit(s.as_mut());
-    println!("{}", a);
-    println!("{}", s);
-}
-
-#[test]
-fn test_eof() {
-    let s = "1234567890";
-    println!("{:?}", s.as_bytes())
-}
-
-#[test]
-fn test_str_p() {
-    let s = "1234567890";
-    let mut p = s.as_ptr();
-    p = unsafe { p.add(2) };
-    let s2 = std::str::from_utf8(unsafe { std::slice::from_raw_parts(p, 8) });
-    println!("{}", s2.unwrap())
-}
-
-#[test]
-fn test_p_u8() {
-    let s = "";
-    println!("{:?}", &s.as_ptr())
-}
-
-#[test]
-fn test_error_at() {
-    let input = "12345678";
-    let chars = &['1', '2', '3', '4', '5', '6', '7', '8'];
-    let loc = &chars[4..];
-
-    // let p_chars = chars.as_ptr();
-    let p_loc = loc.as_ptr();
-    error_at(p_loc, chars, input, " error character")
+#[allow(dead_code)]
+pub fn error_at(loc: *const char, msg: &str) {
+    v_error_at(loc, msg);
+    exit(1);
 }
