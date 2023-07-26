@@ -116,18 +116,3 @@ fn test_error_at() {
     let p_loc = loc.as_ptr();
     error_at(p_loc, chars, input, " error character")
 }
-
-#[test]
-fn test_p_p() {
-    let s1 = "12345".to_string();
-    let s2 = "67890".to_string();
-
-    let mut  p1: *mut String = Box::leak(Box::new(s1));
-    let mut p2: *mut String = Box::leak(Box::new(s2));
-    
-    let mut p1_s: *mut *mut String = &mut p1;
-    unsafe { *p1_s.as_mut().unwrap() = p2 };
-    println!("{:?}", p1);
-    println!("{:?}", p2);
-    
-}
