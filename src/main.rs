@@ -109,19 +109,17 @@ fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
             continue;
         }
 
-        if chars[0] == '+'
-            || chars[0] == '-'
-            || chars[0] == '*'
-            || chars[0] == '/'
-            || chars[0] == '('
-            || chars[0] == ')'
-        {
+        let len_punct = read_punct(chars);
+        if len_punct > 0 {
             unsafe {
-                cur.as_mut().unwrap().next =
-                    Some(Box::leak(Box::new(Token::new(TokenKind::Punct, chars, 1))))
+                cur.as_mut().unwrap().next = Some(Box::leak(Box::new(Token::new(
+                    TokenKind::Punct,
+                    chars,
+                    len_punct,
+                ))))
             };
             cur = unsafe { cur.as_mut().unwrap().next.unwrap() };
-            chars = &chars[1..];
+            chars = &chars[len_punct..];
             continue;
         }
         error_at(chars.as_ptr(), &format!("invalid token: {}", chars[0]));
@@ -154,7 +152,122 @@ fn error_token(token: &Token, msg: &str) {
 }
 
 #[allow(dead_code)]
-fn expr(mut _rest: *mut *mut Token, mut token: *mut Token) -> *mut Node {
+fn read_punct(ptr: &[char]) -> usize {
+    if starts_with(ptr, &['=', '='])
+        || starts_with(ptr, &['!', '='])
+        || starts_with(ptr, &['<', '='])
+        || starts_with(ptr, &['>', '='])
+    {
+        return 2;
+    }
+    if ptr[0] == '+'
+        || ptr[0] == '-'
+        || ptr[0] == '*'
+        || ptr[0] == '/'
+        || ptr[0] == '('
+        || ptr[0] == ')'
+        || ptr[0] == '>'
+        || ptr[0] == '<'
+        || ptr[0] == '='
+        || ptr[0] == '!'
+    {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+#[allow(dead_code)]
+fn starts_with(s_str: &[char], sub_str: &[char]) -> bool {
+    for i in 0..sub_str.len() {
+        if s_str[i] != sub_str[i] {
+            return false;
+        }
+    }
+
+    true
+}
+
+#[allow(dead_code)]
+fn expr(mut _rest: *mut *mut Token, token: *mut Token) -> *mut Node {
+    return equality(_rest, token);
+}
+
+#[allow(dead_code)]
+fn equality(mut _rest: *mut *mut Token, mut token: *mut Token) -> *mut Node {
+    let mut node: *mut Node = relational(&mut token, token);
+
+    loop {
+        if equal(unsafe { token.as_ref().unwrap() }, &['=', '=']) {
+            node = Box::leak(Box::new(Node::new_binary(
+                NodeKind::EQ,
+                node,
+                relational(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
+            )));
+            continue;
+        }
+        if equal(unsafe { token.as_ref().unwrap() }, &['!', '=']) {
+            node = Box::leak(Box::new(Node::new_binary(
+                NodeKind::NE,
+                node,
+                relational(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
+            )));
+            continue;
+        }
+
+        unsafe { *_rest = token };
+        return node;
+    }
+}
+
+#[allow(dead_code)]
+fn relational(mut _rest: *mut *mut Token, mut token: *mut Token) -> *mut Node {
+    let mut node = add(&mut token, token);
+
+    loop {
+        if equal(unsafe { token.as_ref().unwrap() }, &['<']) {
+            node = Box::leak(Box::new(Node::new_binary(
+                NodeKind::LT,
+                node,
+                add(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
+            )));
+            continue;
+        }
+
+        if equal(unsafe { token.as_ref().unwrap() }, &['<', '=']) {
+            node = Box::leak(Box::new(Node::new_binary(
+                NodeKind::LE,
+                node,
+                add(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
+            )));
+            continue;
+        }
+
+        if equal(unsafe { token.as_ref().unwrap() }, &['>']) {
+            node = Box::leak(Box::new(Node::new_binary(
+                NodeKind::LT,
+                add(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
+                node,
+            )));
+            continue;
+        }
+
+        if equal(unsafe { token.as_ref().unwrap() }, &['>', '=']) {
+            node = Box::leak(Box::new(Node::new_binary(
+                NodeKind::LE,
+                add(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
+                node,
+            )));
+            continue;
+        }
+
+        unsafe { *_rest = token };
+        return node;
+    }
+}
+
+#[allow(dead_code)]
+fn add(mut _rest: *mut *mut Token, mut token: *mut Token) -> *mut Node {
     let mut node = mul(&mut token as *mut *mut Token, token);
 
     loop {
@@ -301,6 +414,25 @@ fn gen_expr(node: *mut Node) {
             println!("  div a0, a0, a1");
             return;
         }
+        NodeKind::EQ => {
+            println!("  xor a0, a0, a1");
+            println!("  seqz a0, a0");
+            return;
+        }
+        NodeKind::NE => {
+            println!("  xor a0, a0, a1");
+            println!("  snez a0, a0");
+            return;
+        }
+        NodeKind::LT => {
+            println!("  slt a0, a0, a1");
+            return;
+        }
+        NodeKind::LE => {
+            println!("  slt a0, a1, a0");
+            println!("  xori a0, a0, 1");
+            return;
+        }
         _ => {
             return;
         }
@@ -316,6 +448,10 @@ enum NodeKind {
     Div,
     Num,
     NEG,
+    EQ,
+    NE,
+    LT,
+    LE,
 }
 
 #[allow(dead_code)]

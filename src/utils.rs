@@ -28,7 +28,7 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
                 i += 1;
                 num_string += c.to_string().as_ref();
             }
-            '-' | '+' | '/' | '*' | ' ' | '(' | ')'=> {
+            '-' | '+' | '/' | '*' | ' ' | '(' | ')' | '=' | '<' | '>' | '!'=> {
                 break;
             }
             _ => {
