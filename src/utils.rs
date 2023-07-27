@@ -15,6 +15,9 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
             '-' | '+' | '/' | '*' | ' ' | '(' | ')' | '=' | '<' | '>' | '!' | ';' => {
                 break;
             }
+            'a'..='z' =>{
+                break;
+            }
             _ => {
                 println!("# unexcept character: {}", c);
                 exit(1)
@@ -81,4 +84,11 @@ pub fn v_error_at(loc: *const char, msg: &str) {
 pub fn error_at(loc: *const char, msg: &str) {
     v_error_at(loc, msg);
     exit(1);
+}
+
+#[test]
+fn test_char() {
+    let chars = ['1', '2', '3', '4'];
+    let ss: String = chars.iter().collect();
+    println!("{:?}", ss);
 }

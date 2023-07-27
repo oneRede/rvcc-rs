@@ -10,10 +10,10 @@ pub static mut CURRENT_STR: Option<&str> = None;
 
 #[allow(dead_code)]
 pub fn equal(token: &Token, s: &[char]) -> bool {
-    if token.loc.unwrap().len() == 0 {
+    if token.len != s.len() {
         return false;
     }
-    if s.starts_with(unsafe { slice::from_raw_parts(token.loc.unwrap().as_ptr(), token.len) }) {
+    if unsafe { slice::from_raw_parts(token.loc.unwrap().as_ptr(), token.len) }.starts_with(s) {
         return true;
     } else {
         return false;
@@ -79,6 +79,38 @@ pub fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
             continue;
         }
 
+        if is_ident_v1(chars[0]) {
+            let mut len_ident = 1;
+            
+            loop {
+                if is_ident_v2(chars[len_ident]){
+                    len_ident += 1;
+                } else{
+                    break;
+                }
+            }
+            unsafe {
+                cur.as_mut().unwrap().next =
+                    Some(Box::leak(Box::new(Token::new(TokenKind::IDENT, chars, len_ident))));
+            }
+            cur = unsafe { cur.as_ref().unwrap().next.unwrap() };
+            chars = &chars[len_ident..];
+            continue;
+        }
+
+        match chars[0] {
+            'a'..='z' => {
+                unsafe {
+                    cur.as_mut().unwrap().next =
+                        Some(Box::leak(Box::new(Token::new(TokenKind::IDENT, chars, 1))));
+                }
+                cur = unsafe { cur.as_ref().unwrap().next.unwrap() };
+                chars = &chars[1..];
+                continue;
+            }
+            _ => {}
+        }
+
         let len_punct = read_punct(chars);
         if len_punct > 0 {
             unsafe {
@@ -93,5 +125,21 @@ pub fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
             continue;
         }
         error_at(chars.as_ptr(), &format!("invalid token: {}", chars[0]));
+    }
+}
+
+#[allow(dead_code)]
+pub fn is_ident_v1(c: char) -> bool {
+    match c {
+        'a'..='z' | 'A'..='Z' | '_' => {return true;},
+        _ => return false,
+    }
+}
+
+#[allow(dead_code)]
+pub fn is_ident_v2(c: char) -> bool {
+    match c {
+        'a'..='z' | 'A'..='Z' | '_' | '0'..='9'=> return true,
+        _ => return false,
     }
 }
