@@ -27,6 +27,7 @@ fn main() {
 
     let token = tokenize(chars).unwrap();
     let prog = parse(token);
+    println!("{}", unsafe{prog.as_ref().unwrap().body.as_ref().unwrap().to_string()});
 
     codegen(prog);
     return;
