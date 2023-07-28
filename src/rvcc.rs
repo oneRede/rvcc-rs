@@ -205,21 +205,21 @@ impl Node {
         if self.next.is_none(){
             s_next = "None".to_string();
         } else {
-            s_next = unsafe { self.next.unwrap().as_ref().unwrap().format() };
+            s_next = unsafe { self.next.unwrap().as_ref().unwrap().to_string() };
         }
 
         let mut s_lhs = "".to_string();
         if self.lhs.is_none(){
             s_lhs = "None".to_string();
         } else {
-            s_lhs = unsafe { self.lhs.unwrap().as_ref().unwrap().format() };
+            s_lhs = unsafe { self.lhs.unwrap().as_ref().unwrap().to_string() };
         }
 
         let mut s_rhs = "".to_string();
         if self.rhs.is_none(){
             s_rhs = "None".to_string();
         } else {
-            s_rhs = unsafe { self.rhs.unwrap().as_ref().unwrap().format() };
+            s_rhs = unsafe { self.rhs.unwrap().as_ref().unwrap().to_string() };
         }
 
         let mut s_var = "".to_string();
