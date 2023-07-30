@@ -1,4 +1,4 @@
-use crate::rvcc::{Node, NodeKind, Function};
+use crate::rvcc::{Function, Node, NodeKind, get_node_kind, get_node_val, get_node_lhs, get_node_rhs, get_node_next, get_obj_next};
 
 pub static mut DEPTH: usize = 0;
 
@@ -17,14 +17,14 @@ pub fn pop(reg: &str) {
 }
 
 #[allow(dead_code)]
-pub fn align_to(n: i64, align: i64) -> i64{
-    return (n + align -1) / align * align
+pub fn align_to(n: i64, align: i64) -> i64 {
+    return (n + align - 1) / align * align;
 }
 
 #[allow(dead_code)]
 pub fn gen_addr(node: *mut Node) {
-    if unsafe { node.as_ref().unwrap().kind } == NodeKind::VAR {
-        let offset= unsafe { node.as_ref().unwrap().var.unwrap().as_ref().unwrap().offset };
+    if get_node_kind(node) == NodeKind::VAR {
+        let offset = unsafe { node.as_ref().unwrap().var.unwrap().as_ref().unwrap().offset };
         println!("  addi a0, fp, {}", offset);
         return;
     }
@@ -33,13 +33,13 @@ pub fn gen_addr(node: *mut Node) {
 
 #[allow(dead_code)]
 pub fn gen_expr(node: *mut Node) {
-    match unsafe { node.as_ref().unwrap().kind } {
+    match get_node_kind(node) {
         NodeKind::Num => {
-            println!("  li a0, {:?}", unsafe { node.as_ref().unwrap().val });
+            println!("  li a0, {:?}", get_node_val(node));
             return;
         }
         NodeKind::NEG => {
-            gen_expr(unsafe { node.as_ref().unwrap().lhs }.unwrap());
+            gen_expr(get_node_lhs(node));
             println!("  neg a0, a0");
             return;
         }
@@ -49,9 +49,9 @@ pub fn gen_expr(node: *mut Node) {
             return;
         }
         NodeKind::ASSIGN => {
-            gen_addr(unsafe { node.as_ref().unwrap().lhs.unwrap() });
+            gen_addr(get_node_lhs(node));
             push();
-            gen_expr(unsafe { node.as_ref().unwrap().rhs.unwrap() });
+            gen_expr(get_node_rhs(node));
             pop("a1");
             println!("  sd a0, 0(a1)");
             return;
@@ -59,12 +59,12 @@ pub fn gen_expr(node: *mut Node) {
         _ => {}
     }
 
-    gen_expr(unsafe { node.as_ref().unwrap().rhs }.unwrap());
+    gen_expr(get_node_rhs(node));
     push();
-    gen_expr(unsafe { node.as_ref().unwrap().lhs }.unwrap());
+    gen_expr(get_node_lhs(node));
     pop("a1");
 
-    match unsafe { node.as_ref().unwrap().kind } {
+    match get_node_kind(node) {
         NodeKind::Add => {
             println!("  add a0, a0, a1");
             return;
@@ -108,8 +108,8 @@ pub fn gen_expr(node: *mut Node) {
 
 #[allow(dead_code)]
 fn gen_stmt(node: *mut Node) {
-    if unsafe { node.as_ref().unwrap().kind } == NodeKind::ExprStmt {
-        gen_expr(unsafe { node.as_ref().unwrap().lhs.unwrap() });
+    if get_node_kind(node) == NodeKind::ExprStmt {
+        gen_expr(get_node_lhs(node));
         return;
     }
     println!("invalid statement");
@@ -119,16 +119,16 @@ fn gen_stmt(node: *mut Node) {
 pub fn assign_l_var_offsets(prog: *mut Function) {
     let mut offset = 0;
     let mut var = unsafe { prog.as_ref().unwrap().locals };
-    loop{
-        if var.is_none(){
+    loop {
+        if var.is_none() {
             break;
         }
         offset += 8;
         unsafe { var.unwrap().as_mut().unwrap().offset = -offset };
-        if unsafe { var.unwrap().as_ref().unwrap().next.is_none() } {
+        if get_obj_next(var.unwrap()).is_none() {
             break;
         }
-        var = unsafe{var.unwrap().as_ref().unwrap().next}
+        var = get_obj_next(var.unwrap());
     }
 
     unsafe { prog.as_mut().unwrap().stack_size = align_to(offset, 16) };
@@ -143,16 +143,18 @@ pub fn codegen(prog: *mut Function) {
     println!("  addi sp, sp, -8");
     println!("  sd fp, 0(sp)");
     println!("  mv fp, sp");
-    println!("  addi sp, sp, -{}", unsafe{prog.as_ref().unwrap().stack_size});
+    println!("  addi sp, sp, -{}", unsafe {
+        prog.as_ref().unwrap().stack_size
+    });
 
     let mut node = unsafe { prog.as_ref().unwrap().body };
     loop {
         gen_stmt(node);
         assert!(unsafe { DEPTH == 0 });
-        if unsafe { node.as_ref().unwrap().next.is_none() } {
+        if get_node_next(node).is_none() {
             break;
         }
-        node = unsafe { node.as_ref().unwrap().next.unwrap() };
+        node = get_node_next(node).unwrap();
     }
 
     println!("  mv sp, fp");

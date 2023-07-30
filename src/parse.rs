@@ -1,5 +1,8 @@
 use crate::{
-    rvcc::{Function, Node, NodeKind, Obj, TokenKind, TokenWrap},
+    rvcc::{
+        get_node_next, get_obj_name, get_obj_next, Function, Node, NodeKind, Obj, TokenKind,
+        TokenWrap,
+    },
     tokenize::{equal, error_token, skip},
 };
 
@@ -241,12 +244,10 @@ pub fn parse(mut token: TokenWrap) -> *mut Function {
             cur.as_mut().unwrap().next = n;
         }
         token.set(t.ptr);
-        cur = unsafe { cur.as_ref().unwrap().next.unwrap() };
+        cur = get_node_next(cur).unwrap();
     }
 
-    let prog = Function::new(unsafe { head.as_ref().unwrap().next.unwrap() }, unsafe {
-        LOCALS
-    });
+    let prog = Function::new(get_node_next(head).unwrap(), unsafe { LOCALS });
     return Box::leak(Box::new(prog));
 }
 
@@ -257,16 +258,14 @@ pub fn find_var(token: TokenWrap) -> Option<*mut Obj> {
     }
     let mut var = unsafe { LOCALS.unwrap() };
     loop {
-        let name: Vec<char> = unsafe { var.as_ref().unwrap().name.chars().into_iter().collect() };
-        if unsafe { var.as_ref().unwrap().name.len() == token.get_len() }
-            && equal(token.get_ref(), &name)
-        {
+        let name: Vec<char> = get_obj_name(var).chars().into_iter().collect();
+        if get_obj_name(var).len() == token.get_len() && equal(token.get_ref(), &name) {
             return Some(var);
         }
-        if unsafe { var.as_ref().unwrap().next.is_none() } {
+        if get_obj_next(var).is_none() {
             break;
         }
-        var = unsafe { var.as_ref().unwrap().next.unwrap() }
+        var = get_obj_next(var).unwrap();
     }
     None
 }

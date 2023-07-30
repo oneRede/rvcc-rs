@@ -389,6 +389,42 @@ impl Function {
     }
 }
 
+
+#[allow(dead_code)]
+pub fn get_node_kind(node: *mut Node) -> NodeKind {
+    unsafe { node.as_ref().unwrap().kind }
+}
+
+#[allow(dead_code)]
+pub fn get_node_val(node: *mut Node) -> i64 {
+    unsafe { node.as_ref().unwrap().val }
+}
+
+#[allow(dead_code)]
+pub fn get_node_lhs(node: *mut Node) -> *mut Node {
+    unsafe { node.as_ref().unwrap().lhs.unwrap() }
+}
+
+#[allow(dead_code)]
+pub fn get_node_rhs(node: *mut Node) -> *mut Node {
+    unsafe { node.as_ref().unwrap().rhs.unwrap() }
+}
+
+#[allow(dead_code)]
+pub fn get_node_next(node: *mut Node) -> Option<*mut Node> {
+    unsafe { node.as_ref().unwrap().next }
+}
+
+#[allow(dead_code)]
+pub fn get_obj_next(obj: *mut Obj) -> Option<*mut Obj> {
+    unsafe { obj.as_ref().unwrap().next }
+}
+
+#[allow(dead_code)]
+pub fn get_obj_name(obj: *mut Obj) -> &'static str {
+    unsafe { obj.as_ref().unwrap().name }
+}
+
 #[test]
 fn test_token_display() {
     let mut t1 = Token::new(TokenKind::Num, &['1'], 1);
