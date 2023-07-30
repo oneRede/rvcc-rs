@@ -1,187 +1,197 @@
 use crate::{
-    rvcc::{Node, NodeKind, Obj, Token, TokenKind, Function},
+    rvcc::{Function, Node, NodeKind, Obj, Token, TokenKind},
     tokenize::{equal, error_token, skip},
 };
 
 pub static mut LOCALS: Option<*mut Obj> = None;
 
 #[allow(dead_code)]
-pub fn expr(mut _rest: *mut *mut Token, token: *mut Token) -> *mut Node {
-    return assign(_rest, token);
+pub fn expr(token: *mut Token) -> (Option<*mut Node>, *mut Token) {
+    return assign(token);
 }
 
 #[allow(dead_code)]
-pub fn assign(mut _rest: *mut *mut Token, mut token: *mut Token) -> *mut Node {
-    let mut node = equality(&mut token, token);
-
+pub fn assign(token: *mut Token) -> (Option<*mut Node>, *mut Token) {
+    let (mut node, mut token) = equality(token);
     if equal(unsafe { token.as_ref().unwrap() }, &['=']) {
-        node = Box::leak(Box::new(Node::new_binary(
+        let (n, t) = assign(unsafe { token.as_ref().unwrap().next.unwrap() });
+        node = Some(Box::leak(Box::new(Node::new_binary(
             NodeKind::ASSIGN,
-            node,
-            assign(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
-        )));
+            node.unwrap(),
+            n.unwrap(),
+        ))));
+        token = t;
     }
 
-    unsafe { *_rest = token };
-    return node;
+    return (node, token);
 }
 
 #[allow(dead_code)]
-fn equality(mut _rest: *mut *mut Token, mut token: *mut Token) -> *mut Node {
-    let mut node: *mut Node = relational(&mut token, token);
+fn equality(token: *mut Token) -> (Option<*mut Node>, *mut Token) {
+    let (mut node, mut token) = relational(token);
 
     loop {
         if equal(unsafe { token.as_ref().unwrap() }, &['=', '=']) {
-            node = Box::leak(Box::new(Node::new_binary(
+            let (n, t) = relational(unsafe { token.as_ref().unwrap().next.unwrap() });
+            node = Some(Box::leak(Box::new(Node::new_binary(
                 NodeKind::EQ,
-                node,
-                relational(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
-            )));
+                node.unwrap(),
+                n.unwrap(),
+            ))));
+            token = t;
             continue;
         }
         if equal(unsafe { token.as_ref().unwrap() }, &['!', '=']) {
-            node = Box::leak(Box::new(Node::new_binary(
+            let (n, t) = relational(unsafe { token.as_ref().unwrap().next.unwrap() });
+            node = Some(Box::leak(Box::new(Node::new_binary(
                 NodeKind::NE,
-                node,
-                relational(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
-            )));
+                node.unwrap(),
+                n.unwrap(),
+            ))));
+            token = t;
             continue;
         }
 
-        unsafe { *_rest = token };
-        return node;
+        return (node, token);
     }
 }
 
 #[allow(dead_code)]
-fn relational(mut _rest: *mut *mut Token, mut token: *mut Token) -> *mut Node {
-    let mut node = add(&mut token, token);
+fn relational(token: *mut Token) -> (Option<*mut Node>, *mut Token) {
+    let (mut node, mut token) = add(token);
 
     loop {
         if equal(unsafe { token.as_ref().unwrap() }, &['<']) {
-            node = Box::leak(Box::new(Node::new_binary(
+            let (n, t) = add(unsafe { token.as_ref().unwrap().next.unwrap() });
+            node = Some(Box::leak(Box::new(Node::new_binary(
                 NodeKind::LT,
-                node,
-                add(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
-            )));
+                node.unwrap(),
+                n.unwrap(),
+            ))));
+            token = t;
             continue;
         }
 
         if equal(unsafe { token.as_ref().unwrap() }, &['<', '=']) {
-            node = Box::leak(Box::new(Node::new_binary(
+            let (n, t) = add(unsafe { token.as_ref().unwrap().next.unwrap() });
+            node = Some(Box::leak(Box::new(Node::new_binary(
                 NodeKind::LE,
-                node,
-                add(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
-            )));
+                node.unwrap(),
+                n.unwrap(),
+            ))));
+            token = t;
             continue;
         }
 
         if equal(unsafe { token.as_ref().unwrap() }, &['>']) {
-            node = Box::leak(Box::new(Node::new_binary(
+            let (n, t) = add(unsafe { token.as_ref().unwrap().next.unwrap() });
+            node = Some(Box::leak(Box::new(Node::new_binary(
                 NodeKind::LT,
-                add(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
-                node,
-            )));
+                n.unwrap(),
+                node.unwrap(),
+            ))));
+            token = t;
             continue;
         }
 
         if equal(unsafe { token.as_ref().unwrap() }, &['>', '=']) {
-            node = Box::leak(Box::new(Node::new_binary(
+            let (n, t) = add(unsafe { token.as_ref().unwrap().next.unwrap() });
+            node = Some(Box::leak(Box::new(Node::new_binary(
                 NodeKind::LE,
-                add(&mut token, unsafe { token.as_ref().unwrap().next.unwrap() }),
-                node,
-            )));
+                n.unwrap(),
+                node.unwrap(),
+            ))));
+            token = t;
             continue;
         }
 
-        unsafe { *_rest = token };
-        return node;
+        return (node, token);
     }
 }
 
 #[allow(dead_code)]
-fn add(mut _rest: *mut *mut Token, mut token: *mut Token) -> *mut Node {
-    let mut node = mul(&mut token as *mut *mut Token, token);
+fn add(token: *mut Token) -> (Option<*mut Node>, *mut Token) {
+    let (mut node, mut token) = mul(token);
 
     loop {
         if equal(unsafe { token.as_ref().unwrap() }, &['+']) {
-            node = Box::leak(Box::new(Node::new_binary(
+            let (n, t) = mul(unsafe { token.as_ref().unwrap().next.unwrap() });
+            node = Some(Box::leak(Box::new(Node::new_binary(
                 NodeKind::Add,
-                node,
-                mul(&mut token as *mut *mut Token, unsafe {
-                    token.as_ref().unwrap().next.unwrap()
-                }),
-            )));
+                node.unwrap(),
+                n.unwrap(),
+            ))));
+            token = t;
             continue;
         }
         if equal(unsafe { token.as_ref().unwrap() }, &['-']) {
-            node = Box::leak(Box::new(Node::new_binary(
+            let (n, t) = mul(unsafe { token.as_ref().unwrap().next.unwrap() });
+            node = Some(Box::leak(Box::new(Node::new_binary(
                 NodeKind::Sub,
-                node,
-                mul(&mut token as *mut *mut Token, unsafe {
-                    token.as_ref().unwrap().next.unwrap()
-                }),
-            )));
+                node.unwrap(),
+                n.unwrap(),
+            ))));
+            token = t;
             continue;
         }
-        unsafe { *_rest = token };
-        return node;
+        return (node, token);
     }
 }
 
 #[allow(dead_code)]
-fn mul(mut _rest: *mut *mut Token, mut token: *mut Token) -> *mut Node {
-    let mut node = unary(&mut token as *mut *mut Token, token);
+fn mul(token: *mut Token) -> (Option<*mut Node>, *mut Token) {
+    let (mut node, mut token) = unary(token);
 
     loop {
         if equal(unsafe { token.as_ref().unwrap() }, &['*']) {
-            node = Box::leak(Box::new(Node::new_binary(
+            let (n, t) = unary(unsafe { token.as_ref().unwrap().next.unwrap() });
+            node = Some(Box::leak(Box::new(Node::new_binary(
                 NodeKind::Mul,
-                node,
-                unary(&mut token as *mut *mut Token, unsafe {
-                    token.as_ref().unwrap().next.unwrap()
-                }),
-            )));
+                node.unwrap(),
+                n.unwrap(),
+            ))));
+            token = t;
             continue;
         }
         if equal(unsafe { token.as_ref().unwrap() }, &['/']) {
-            node = Box::leak(Box::new(Node::new_binary(
+            let (n, t) = unary(unsafe { token.as_ref().unwrap().next.unwrap() });
+            node = Some(Box::leak(Box::new(Node::new_binary(
                 NodeKind::Div,
-                node,
-                unary(&mut token as *mut *mut Token, unsafe {
-                    token.as_ref().unwrap().next.unwrap()
-                }),
-            )));
+                node.unwrap(),
+                n.unwrap(),
+            ))));
+            token = t;
             continue;
         }
-        unsafe { *_rest = token };
-        return node;
+        return (node, token);
     }
 }
 
 #[allow(dead_code)]
-fn unary(mut _rest: *mut *mut Token, token: *mut Token) -> *mut Node {
+fn unary(token: *mut Token) -> (Option<*mut Node>, *mut Token) {
     if equal(unsafe { token.as_ref().unwrap() }, &['+']) {
-        return unary(_rest, unsafe { token.as_ref().unwrap().next.unwrap() });
+        return unary(unsafe { token.as_ref().unwrap().next.unwrap() });
     }
     if equal(unsafe { token.as_ref().unwrap() }, &['-']) {
-        return Box::leak(Box::new(Node::new_unary(
-            NodeKind::NEG,
-            unary(_rest, unsafe { token.as_ref().unwrap().next.unwrap() }),
-        )));
+        let (n, t) = unary(unsafe { token.as_ref().unwrap().next.unwrap() });
+        return (
+            Some(Box::leak(Box::new(Node::new_unary(
+                NodeKind::NEG,
+                n.unwrap(),
+            )))),
+            t,
+        );
     }
-    primary(_rest, token).unwrap()
+
+    primary(token)
 }
 
 #[allow(dead_code)]
-fn primary(mut _rest: *mut *mut Token, mut token: *mut Token) -> Option<*mut Node> {
+fn primary(mut token: *mut Token) -> (Option<*mut Node>, *mut Token) {
     if equal(unsafe { token.as_ref().unwrap() }, &['(']) {
-        let node = expr(
-            &mut token as *mut *mut Token,
-            unsafe { token.as_ref().unwrap().next }.unwrap(),
-        );
-        unsafe { *_rest = token.as_ref().unwrap().next.unwrap() };
-        return Some(node);
+        let (n, t) = expr(unsafe { token.as_ref().unwrap().next.unwrap() });
+        token = t;
+        return (n, unsafe { token.as_ref().unwrap().next.unwrap() });
     }
 
     if (unsafe { token.as_ref().unwrap().kind } == TokenKind::IDENT) {
@@ -194,35 +204,31 @@ fn primary(mut _rest: *mut *mut Token, mut token: *mut Token) -> Option<*mut Nod
             var = Some(Obj::new(Box::leak(Box::new(name))));
         }
         let node = Box::leak(Box::new(Node::new_var_node(var)));
-        unsafe { *_rest = token.as_ref().unwrap().next.unwrap() };
-        return Some(node);
+        return (Some(node), unsafe { token.as_ref().unwrap().next.unwrap() });
     }
 
     if (unsafe { token.as_ref().unwrap().kind } == TokenKind::Num) {
         let node = Box::leak(Box::new(Node::new_num(
             unsafe { token.as_ref().unwrap().val } as i64,
         )));
-        unsafe { *_rest = token.as_ref().unwrap().next.unwrap() };
-        return Some(node);
+        return (Some(node), unsafe { token.as_ref().unwrap().next.unwrap() });
     }
 
     error_token(unsafe { token.as_ref().unwrap() }, "expected an expression");
-    None
+    (None, token)
 }
 
 #[allow(dead_code)]
-fn stmt(mut _rest: *mut *mut Token, token: *mut Token) -> *mut Node {
-    expr_stmt(_rest, token)
+fn stmt(token: *mut Token) -> (Option<*mut Node>, *mut Token) {
+    expr_stmt(token)
 }
 
 #[allow(dead_code)]
-fn expr_stmt(mut _rest: *mut *mut Token, mut token: *mut Token) -> *mut Node {
-    let node = Box::leak(Box::new(Node::new_unary(
-        NodeKind::ExprStmt,
-        expr(&mut token, token),
-    )));
-    unsafe { *_rest = skip(token.as_ref().unwrap(), &[';']).unwrap() };
-    return node;
+fn expr_stmt(mut token: *mut Token) -> (Option<*mut Node>, *mut Token) {
+    let (n, t) = expr(token);
+    let node = Box::leak(Box::new(Node::new_unary(NodeKind::ExprStmt, n.unwrap())));
+    token = skip(unsafe { t.as_ref().unwrap() }, &[';']).unwrap();
+    return (Some(node), token);
 }
 
 #[allow(dead_code)]
@@ -234,22 +240,27 @@ pub fn parse(mut token: *mut Token) -> *mut Function {
         if unsafe { token.as_ref().unwrap().kind } == TokenKind::Eof {
             break;
         }
-        unsafe { cur.as_mut().unwrap().next = Some(stmt(&mut token, token)) };
+        let (n, t) = stmt(token);
+        unsafe {
+            cur.as_mut().unwrap().next = n;
+        }
+        token = t;
         cur = unsafe { cur.as_ref().unwrap().next.unwrap() };
     }
 
-    let prog = Function::new(unsafe { head.as_ref().unwrap().next.unwrap() }, unsafe { LOCALS });
-    return Box::leak(Box::new(prog))
+    let prog = Function::new(unsafe { head.as_ref().unwrap().next.unwrap() }, unsafe {
+        LOCALS
+    });
+    return Box::leak(Box::new(prog));
 }
 
 #[allow(dead_code)]
 pub fn find_var(token: *mut Token) -> Option<*mut Obj> {
-    if unsafe { LOCALS.is_none() }{
+    if unsafe { LOCALS.is_none() } {
         return None;
     }
-    let mut var = unsafe { LOCALS.unwrap()};
+    let mut var = unsafe { LOCALS.unwrap() };
     loop {
-        
         let name: Vec<char> = unsafe { var.as_ref().unwrap().name.chars().into_iter().collect() };
         if unsafe { var.as_ref().unwrap().name.len() == token.as_ref().unwrap().len }
             && equal(unsafe { token.as_ref().unwrap() }, &name)

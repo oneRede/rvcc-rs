@@ -85,10 +85,3 @@ pub fn error_at(loc: *const char, msg: &str) {
     v_error_at(loc, msg);
     exit(1);
 }
-
-#[test]
-fn test_char() {
-    let chars = ['1', '2', '3', '4'];
-    let ss: String = chars.iter().collect();
-    println!("{:?}", ss);
-}

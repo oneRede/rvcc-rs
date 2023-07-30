@@ -7,9 +7,8 @@ mod tokenize;
 mod utils;
 
 use codegen::codegen;
-use parse::parse;
-
 use tokenize::{tokenize, CURRENT_INPUT, CURRENT_STR};
+use crate::parse::parse;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -27,7 +26,6 @@ fn main() {
 
     let token = tokenize(chars).unwrap();
     let prog = parse(token);
-    println!("{}", unsafe{prog.as_ref().unwrap().body.as_ref().unwrap().to_string()});
 
     codegen(prog);
     return;

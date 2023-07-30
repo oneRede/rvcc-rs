@@ -1,7 +1,7 @@
 use std::{process::exit, slice};
 
 use crate::{
-    rvcc::{Token, TokenKind},
+    rvcc::{Token, TokenKind, TokenWrap},
     utils::{error_at, get_num_from_chars, read_punct, v_error_at},
 };
 
@@ -45,16 +45,13 @@ pub fn get_num(token: &Token) -> i32 {
 
 #[allow(dead_code)]
 pub fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
-    let head: *mut Token = &mut Token::empty() as *mut Token;
-    let mut cur = head;
+    let head: TokenWrap = TokenWrap::empty();
+    let mut cur = head.clone();
 
     loop {
         if chars.len() == 0 {
-            unsafe {
-                cur.as_mut().unwrap().next =
-                    Some(Box::leak(Box::new(Token::new(TokenKind::Eof, chars, 0))))
-            };
-            return unsafe { head.as_ref().unwrap().next };
+            cur.set_next(Box::leak(Box::new(Token::new(TokenKind::Eof, chars, 0))));
+            return unsafe { head.ptr.as_ref().unwrap().next };
         }
 
         let c: char = chars[0];
@@ -65,46 +62,43 @@ pub fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
 
         let num_rs = get_num_from_chars(chars);
         if let Ok((num, cs)) = num_rs {
-            unsafe {
-                cur.as_mut().unwrap().next = Some(Box::leak(Box::new(Token::new(
-                    TokenKind::Num,
-                    chars,
-                    num.to_string().len(),
-                ))));
-            }
+            cur.set_next(Box::leak(Box::new(Token::new(
+                TokenKind::Num,
+                chars,
+                num.to_string().len(),
+            ))));
+
             chars = cs;
-            cur = unsafe { cur.as_ref().unwrap().next.unwrap() };
-            unsafe { cur.as_mut().unwrap().val = num };
-            unsafe { cur.as_mut().unwrap().len = num.to_string().len() };
+            cur.set(cur.get_next());
+            cur.set_val(num);
+            cur.set_len(num.to_string().len());
             continue;
         }
 
         if is_ident_v1(chars[0]) {
             let mut len_ident = 1;
-            
+
             loop {
-                if is_ident_v2(chars[len_ident]){
+                if is_ident_v2(chars[len_ident]) {
                     len_ident += 1;
-                } else{
+                } else {
                     break;
                 }
             }
-            unsafe {
-                cur.as_mut().unwrap().next =
-                    Some(Box::leak(Box::new(Token::new(TokenKind::IDENT, chars, len_ident))));
-            }
-            cur = unsafe { cur.as_ref().unwrap().next.unwrap() };
+            cur.set_next(Box::leak(Box::new(Token::new(
+                TokenKind::IDENT,
+                chars,
+                len_ident,
+            ))));
+            cur.set(cur.get_next());
             chars = &chars[len_ident..];
             continue;
         }
 
         match chars[0] {
             'a'..='z' => {
-                unsafe {
-                    cur.as_mut().unwrap().next =
-                        Some(Box::leak(Box::new(Token::new(TokenKind::IDENT, chars, 1))));
-                }
-                cur = unsafe { cur.as_ref().unwrap().next.unwrap() };
+                cur.set_next(Box::leak(Box::new(Token::new(TokenKind::IDENT, chars, 1))));
+                cur.set(cur.get_next());
                 chars = &chars[1..];
                 continue;
             }
@@ -113,14 +107,12 @@ pub fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
 
         let len_punct = read_punct(chars);
         if len_punct > 0 {
-            unsafe {
-                cur.as_mut().unwrap().next = Some(Box::leak(Box::new(Token::new(
-                    TokenKind::Punct,
-                    chars,
-                    len_punct,
-                ))))
-            };
-            cur = unsafe { cur.as_mut().unwrap().next.unwrap() };
+            cur.set_next(Box::leak(Box::new(Token::new(
+                TokenKind::Punct,
+                chars,
+                len_punct,
+            ))));
+            cur.set(cur.get_next());
             chars = &chars[len_punct..];
             continue;
         }
@@ -131,7 +123,9 @@ pub fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
 #[allow(dead_code)]
 pub fn is_ident_v1(c: char) -> bool {
     match c {
-        'a'..='z' | 'A'..='Z' | '_' => {return true;},
+        'a'..='z' | 'A'..='Z' | '_' => {
+            return true;
+        }
         _ => return false,
     }
 }
@@ -139,7 +133,7 @@ pub fn is_ident_v1(c: char) -> bool {
 #[allow(dead_code)]
 pub fn is_ident_v2(c: char) -> bool {
     match c {
-        'a'..='z' | 'A'..='Z' | '_' | '0'..='9'=> return true,
+        'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => return true,
         _ => return false,
     }
 }

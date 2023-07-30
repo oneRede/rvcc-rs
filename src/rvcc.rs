@@ -97,6 +97,51 @@ impl ToString for Token {
     }
 }
 
+
+#[allow(dead_code)]
+#[derive(Clone, Copy)]
+pub struct TokenWrap {
+    pub ptr: *mut Token,
+}
+
+#[allow(dead_code)]
+impl TokenWrap {
+    pub fn new(ptr: *mut Token) -> Self {
+        Self { ptr: ptr }
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            ptr: Box::leak(Box::new(Token::empty())),
+        }
+    }
+
+    pub fn clone(&self) -> Self {
+        Self { ptr: self.ptr }
+    }
+
+    pub fn set(&mut self, ptr: *mut Token) {
+        self.ptr = ptr;
+    }
+
+    pub fn set_next(self, next: *mut Token) {
+        unsafe { self.ptr.as_mut().unwrap().next = Some(next) };
+    }
+
+    pub fn set_val(self, val: i32) {
+        unsafe { self.ptr.as_mut().unwrap().val = val };
+    }
+
+    pub fn set_len(self, len: usize) {
+        unsafe { self.ptr.as_mut().unwrap().len = len };
+    }
+
+    pub fn get_next(&self) -> *mut Token {
+        unsafe { self.ptr.as_ref().unwrap().next.unwrap() }
+    }
+}
+
+
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub enum NodeKind {
@@ -115,7 +160,7 @@ pub enum NodeKind {
     VAR,
 }
 
-impl ToString for NodeKind{
+impl ToString for NodeKind {
     fn to_string(&self) -> String {
         match self {
             NodeKind::Add => "Add".to_string(),
@@ -145,8 +190,6 @@ pub struct Node {
     pub val: i64,
     pub var: Option<*mut Obj>,
 }
-
-
 
 #[allow(dead_code)]
 impl Node {
@@ -201,58 +244,58 @@ impl Node {
     }
 
     fn format(&self) -> String {
-        let mut s_next = "".to_string();
-        if self.next.is_none(){
-            s_next = "None".to_string();
+        let mut _s_next = "".to_string();
+        if self.next.is_none() {
+            _s_next = "None".to_string();
         } else {
-            s_next = unsafe { self.next.unwrap().as_ref().unwrap().to_string() };
+            _s_next = unsafe { self.next.unwrap().as_ref().unwrap().to_string() };
         }
 
-        let mut s_lhs = "".to_string();
-        if self.lhs.is_none(){
-            s_lhs = "None".to_string();
+        let mut _s_lhs = "".to_string();
+        if self.lhs.is_none() {
+            _s_lhs = "None".to_string();
         } else {
-            s_lhs = unsafe { self.lhs.unwrap().as_ref().unwrap().to_string() };
+            _s_lhs = unsafe { self.lhs.unwrap().as_ref().unwrap().to_string() };
         }
 
-        let mut s_rhs = "".to_string();
-        if self.rhs.is_none(){
-            s_rhs = "None".to_string();
+        let mut _s_rhs = "".to_string();
+        if self.rhs.is_none() {
+            _s_rhs = "None".to_string();
         } else {
-            s_rhs = unsafe { self.rhs.unwrap().as_ref().unwrap().to_string() };
+            _s_rhs = unsafe { self.rhs.unwrap().as_ref().unwrap().to_string() };
         }
 
-        let mut s_var = "".to_string();
-        if self.var.is_none(){
-            s_var = "None".to_string();
+        let mut _s_var = "".to_string();
+        if self.var.is_none() {
+            _s_var = "None".to_string();
         } else {
-            s_var = unsafe { self.var.unwrap().as_ref().unwrap().to_string() };
+            _s_var = unsafe { self.var.unwrap().as_ref().unwrap().to_string() };
         }
 
         let _s = "{".to_string()
-                + "\"kind\":\""
-                + &self.kind.to_string()
-                + "\","
-                + "\"next\":\""
-                + &s_next
-                + "\","
-                + "\"lhs\":\""
-                + &s_lhs
-                + "\","
-                + "\"rhs\":\""
-                + &s_rhs
-                + "\","
-                + "\"val\":\""
-                + &self.val.to_string()
-                + "\","
-                + "\"var\":"
-                + &s_var
-                + "}";
+            + "\"kind\":\""
+            + &self.kind.to_string()
+            + "\","
+            + "\"next\":\""
+            + &_s_next
+            + "\","
+            + "\"lhs\":\""
+            + &_s_lhs
+            + "\","
+            + "\"rhs\":\""
+            + &_s_rhs
+            + "\","
+            + "\"val\":\""
+            + &self.val.to_string()
+            + "\","
+            + "\"var\":"
+            + &_s_var
+            + "}";
         _s
     }
 }
 
-impl ToString for Node{
+impl ToString for Node {
     fn to_string(&self) -> String {
         self.format()
     }
