@@ -97,7 +97,6 @@ impl ToString for Token {
     }
 }
 
-
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub struct TokenWrap {
@@ -120,8 +119,9 @@ impl TokenWrap {
         Self { ptr: self.ptr }
     }
 
-    pub fn set(&mut self, ptr: *mut Token) {
+    pub fn set(&mut self, ptr: *mut Token) -> Self {
         self.ptr = ptr;
+        *self
     }
 
     pub fn set_next(self, next: *mut Token) {
@@ -139,8 +139,27 @@ impl TokenWrap {
     pub fn get_next(&self) -> *mut Token {
         unsafe { self.ptr.as_ref().unwrap().next.unwrap() }
     }
-}
 
+    pub fn get_kind(&self) -> TokenKind {
+        unsafe { self.ptr.as_ref().unwrap().kind }
+    }
+
+    pub fn get_len(&self) -> usize {
+        unsafe { self.ptr.as_ref().unwrap().len }
+    }
+
+    pub fn get_val(&self) -> i32 {
+        unsafe { self.ptr.as_ref().unwrap().val }
+    }
+
+    pub fn get_loc(&self) -> Option<&[char]> {
+        unsafe { self.ptr.as_ref().unwrap().loc }
+    }
+
+    pub fn get_ref(&self) -> &Token {
+        unsafe { self.ptr.as_ref().unwrap() }
+    }
+}
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]

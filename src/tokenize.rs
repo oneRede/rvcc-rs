@@ -44,14 +44,15 @@ pub fn get_num(token: &Token) -> i32 {
 }
 
 #[allow(dead_code)]
-pub fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
-    let head: TokenWrap = TokenWrap::empty();
+pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
+    let mut head: TokenWrap = TokenWrap::empty();
     let mut cur = head.clone();
 
     loop {
         if chars.len() == 0 {
             cur.set_next(Box::leak(Box::new(Token::new(TokenKind::Eof, chars, 0))));
-            return unsafe { head.ptr.as_ref().unwrap().next };
+            head.set(head.get_next());
+            return head
         }
 
         let c: char = chars[0];
@@ -85,6 +86,7 @@ pub fn tokenize(mut chars: &'static [char]) -> Option<*mut Token> {
                     break;
                 }
             }
+            
             cur.set_next(Box::leak(Box::new(Token::new(
                 TokenKind::IDENT,
                 chars,
