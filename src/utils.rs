@@ -74,7 +74,6 @@ pub fn v_error_at(loc: *const char, msg: &str) {
     let chars = unsafe { CURRENT_INPUT.unwrap() };
     eprintln!("{:?}", input);
     let distance = (unsafe { loc.offset_from(chars.as_ptr()) }).abs() - 1;
-    eprintln!("{}", distance);
     eprint!("{:?}", " ".repeat(distance as usize));
     eprint!("{}", "^");
     eprintln!("{}", msg);

@@ -108,9 +108,17 @@ pub fn gen_expr(node: *mut Node) {
 
 #[allow(dead_code)]
 fn gen_stmt(node: *mut Node) {
-    if get_node_kind(node) == NodeKind::ExprStmt {
-        gen_expr(get_node_lhs(node));
-        return;
+    match get_node_kind(node) {
+        NodeKind::RETURN => {
+            gen_expr(get_node_lhs(node));
+            println!("  j .L.return");
+            return;
+        },
+        NodeKind::ExprStmt => {
+            gen_expr(get_node_lhs(node));
+            return;
+        }
+        _ => {}
     }
     println!("invalid statement");
 }
@@ -156,7 +164,7 @@ pub fn codegen(prog: *mut Function) {
         }
         node = get_node_next(node).unwrap();
     }
-
+    println!(".L.return:");
     println!("  mv sp, fp");
     println!("  ld fp, 0(sp)");
     println!("  addi sp, sp, 8");
