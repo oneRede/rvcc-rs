@@ -6,7 +6,9 @@ pub enum TokenKind {
     IDENT,
     Punct,
     Num,
-    Eof,
+    EOF,
+    KEYWORD,
+    
 }
 
 impl ToString for TokenKind {
@@ -15,7 +17,8 @@ impl ToString for TokenKind {
             TokenKind::Punct => "Punct".to_string(),
             TokenKind::IDENT => "IDENT".to_string(),
             TokenKind::Num => "Num".to_string(),
-            TokenKind::Eof => "EOF".to_string(),
+            TokenKind::EOF => "EOF".to_string(),
+            TokenKind::KEYWORD => "KEYWORD".to_string(),
         }
     }
 }
@@ -43,7 +46,7 @@ impl Token {
     }
     pub fn empty() -> Self {
         Self {
-            kind: TokenKind::Eof,
+            kind: TokenKind::EOF,
             next: None,
             val: 0,
             loc: None,
@@ -89,6 +92,28 @@ impl Token {
         }
         _s
     }
+}
+
+impl Iterator for TokenWrap{
+    type Item = *mut Token;
+    
+    fn next(&mut self) -> Option<Self::Item> {
+        let rs = self.ptr;
+        if unsafe { self.ptr.as_ref().unwrap().kind } == TokenKind::EOF {
+            return None
+        }
+        if !unsafe { self.ptr.as_ref().unwrap().next.is_none() } {
+            self.ptr = unsafe { self.ptr.as_ref().unwrap().next.unwrap() };
+            return Some(rs)
+        } else {
+            return Some(rs)
+        }
+    }
+}
+
+#[allow(dead_code)]
+struct TokenIter{
+    token: Option<*mut Token>
 }
 
 impl ToString for Token {
@@ -177,6 +202,7 @@ pub enum NodeKind {
     ExprStmt,
     ASSIGN,
     VAR,
+    RETURN,
 }
 
 impl ToString for NodeKind {
@@ -195,6 +221,7 @@ impl ToString for NodeKind {
             NodeKind::ExprStmt => "ExprStmt".to_string(),
             NodeKind::ASSIGN => "ASSIGN".to_string(),
             NodeKind::VAR => "VAR".to_string(),
+            NodeKind::RETURN => "RETURN".to_string(),
         }
     }
 }

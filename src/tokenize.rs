@@ -50,7 +50,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
 
     loop {
         if chars.len() == 0 {
-            cur.set_next(Box::leak(Box::new(Token::new(TokenKind::Eof, chars, 0))));
+            cur.set_next(Box::leak(Box::new(Token::new(TokenKind::EOF, chars, 0))));
             head.set(head.get_next());
             return head
         }
@@ -137,5 +137,14 @@ pub fn is_ident_v2(c: char) -> bool {
     match c {
         'a'..='z' | 'A'..='Z' | '_' | '0'..='9' => return true,
         _ => return false,
+    }
+}
+
+#[allow(dead_code)]
+pub fn convert_keyword(token:TokenWrap) {
+    for tk in token {
+        if equal(unsafe { tk.as_ref().unwrap() }, &['r', 'e', 't', 'u', 'r', 'n']) {
+            unsafe { tk.as_mut().unwrap().kind = TokenKind::KEYWORD }
+        }
     }
 }
