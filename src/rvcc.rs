@@ -97,15 +97,12 @@ impl Iterator for TokenWrap {
     type Item = *mut Token;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let rs = self.ptr;
-        if unsafe { self.ptr.as_ref().unwrap().kind } == TokenKind::EOF {
-            return None;
-        }
-        if !unsafe { self.ptr.as_ref().unwrap().next.is_none() } {
-            self.ptr = unsafe { self.ptr.as_ref().unwrap().next.unwrap() };
-            return Some(rs);
+        let now = self.ptr;
+        if !now.is_none(){
+            self.ptr = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
+            return now
         } else {
-            return Some(rs);
+            return None
         }
     }
 }
@@ -119,18 +116,18 @@ impl ToString for Token {
 #[allow(dead_code)]
 #[derive(Clone, Copy)]
 pub struct TokenWrap {
-    pub ptr: *mut Token,
+    pub ptr: Option<*mut Token>,
 }
 
 #[allow(dead_code)]
 impl TokenWrap {
     pub fn new(ptr: *mut Token) -> Self {
-        Self { ptr: ptr }
+        Self { ptr: Some(ptr) }
     }
 
     pub fn empty() -> Self {
         Self {
-            ptr: Box::leak(Box::new(Token::empty())),
+            ptr: Some(Box::leak(Box::new(Token::empty()))),
         }
     }
 
@@ -139,44 +136,44 @@ impl TokenWrap {
     }
 
     pub fn set(&mut self, ptr: *mut Token) -> Self {
-        self.ptr = ptr;
+        self.ptr = Some(ptr);
         *self
     }
 
     pub fn set_next(self, next: *mut Token) {
-        unsafe { self.ptr.as_mut().unwrap().next = Some(next) };
+        unsafe { self.ptr.unwrap().as_mut().unwrap().next = Some(next) };
     }
 
     pub fn set_val(self, val: i32) {
-        unsafe { self.ptr.as_mut().unwrap().val = val };
+        unsafe { self.ptr.unwrap().as_mut().unwrap().val = val };
     }
 
     pub fn set_len(self, len: usize) {
-        unsafe { self.ptr.as_mut().unwrap().len = len };
+        unsafe { self.ptr.unwrap().as_mut().unwrap().len = len };
     }
 
     pub fn get_next(&self) -> *mut Token {
-        unsafe { self.ptr.as_ref().unwrap().next.unwrap() }
+        unsafe { self.ptr.unwrap().as_ref().unwrap().next.unwrap() }
     }
 
     pub fn get_kind(&self) -> TokenKind {
-        unsafe { self.ptr.as_ref().unwrap().kind }
+        unsafe { self.ptr.unwrap().as_ref().unwrap().kind }
     }
 
     pub fn get_len(&self) -> usize {
-        unsafe { self.ptr.as_ref().unwrap().len }
+        unsafe { self.ptr.unwrap().as_ref().unwrap().len }
     }
 
     pub fn get_val(&self) -> i32 {
-        unsafe { self.ptr.as_ref().unwrap().val }
+        unsafe { self.ptr.unwrap().as_ref().unwrap().val }
     }
 
     pub fn get_loc(&self) -> Option<&[char]> {
-        unsafe { self.ptr.as_ref().unwrap().loc }
+        unsafe { self.ptr.unwrap().as_ref().unwrap().loc }
     }
 
     pub fn get_ref(&self) -> &Token {
-        unsafe { self.ptr.as_ref().unwrap() }
+        unsafe { self.ptr.unwrap().as_ref().unwrap() }
     }
 }
 
@@ -342,6 +339,26 @@ impl ToString for Node {
 }
 
 #[allow(dead_code)]
+pub struct NodeIter{
+    pub ptr: Option<*mut Node>,
+}
+
+impl Iterator for NodeIter{
+    type Item = *mut Node;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let now = self.ptr;
+        if !now.is_none(){
+            self.ptr = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
+            return now
+        } else {
+            return None
+        }
+    }
+}
+
+
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub struct Obj {
     pub next: Option<*mut Obj>,
@@ -389,6 +406,33 @@ impl ToString for Obj {
                 + "}";
         }
         _s
+    }
+}
+
+#[allow(dead_code)]
+pub struct ObjIter{
+    pub ptr: Option<*mut Obj>,
+}
+
+#[allow(dead_code)]
+impl ObjIter {
+    pub fn new(ptr: Option<*mut Obj>) -> Self{
+        Self { ptr: ptr }
+    }
+}
+
+#[allow(dead_code)]
+impl Iterator for ObjIter{
+    type Item = *mut Obj;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let now = self.ptr;
+        if !now.is_none(){
+            self.ptr = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
+            return now
+        } else {
+            return None
+        }
     }
 }
 

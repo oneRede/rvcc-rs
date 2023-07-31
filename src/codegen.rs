@@ -1,4 +1,4 @@
-use crate::rvcc::{Function, Node, NodeKind, get_node_kind, get_node_val, get_node_lhs, get_node_rhs, get_node_next, get_obj_next};
+use crate::rvcc::{Function, Node, NodeKind, get_node_kind, get_node_val, get_node_lhs, get_node_rhs, get_node_next, ObjIter};
 
 pub static mut DEPTH: usize = 0;
 
@@ -126,17 +126,11 @@ fn gen_stmt(node: *mut Node) {
 #[allow(dead_code)]
 pub fn assign_l_var_offsets(prog: *mut Function) {
     let mut offset = 0;
-    let mut var = unsafe { prog.as_ref().unwrap().locals };
-    loop {
-        if var.is_none() {
-            break;
-        }
+    let var = ObjIter::new(unsafe { prog.as_ref().unwrap().locals });
+
+    for obj in var {
         offset += 8;
-        unsafe { var.unwrap().as_mut().unwrap().offset = -offset };
-        if get_obj_next(var.unwrap()).is_none() {
-            break;
-        }
-        var = get_obj_next(var.unwrap());
+        unsafe { obj.as_mut().unwrap().offset = -offset };
     }
 
     unsafe { prog.as_mut().unwrap().stack_size = align_to(offset, 16) };

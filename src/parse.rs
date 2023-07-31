@@ -214,7 +214,7 @@ pub fn parse(mut token: TokenWrap) -> *mut Function {
         unsafe {
             cur.as_mut().unwrap().next = n;
         }
-        token.set(t.ptr);
+        token.set(t.ptr.unwrap());
         cur = get_node_next(cur).unwrap();
     }
 
