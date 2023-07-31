@@ -1,4 +1,7 @@
-use crate::rvcc::{Function, Node, NodeKind, get_node_kind, get_node_val, get_node_lhs, get_node_rhs, get_node_next, ObjIter};
+use crate::rvcc::{
+    get_node_kind, get_node_lhs, get_node_next, get_node_rhs, get_node_val, Function, Node,
+    NodeKind, ObjIter,
+};
 
 pub static mut DEPTH: usize = 0;
 
@@ -113,7 +116,7 @@ fn gen_stmt(node: *mut Node) {
             gen_expr(get_node_lhs(node));
             println!("  j .L.return");
             return;
-        },
+        }
         NodeKind::ExprStmt => {
             gen_expr(get_node_lhs(node));
             return;
