@@ -8,7 +8,6 @@ pub enum TokenKind {
     Num,
     EOF,
     KEYWORD,
-    
 }
 
 impl ToString for TokenKind {
@@ -94,26 +93,21 @@ impl Token {
     }
 }
 
-impl Iterator for TokenWrap{
+impl Iterator for TokenWrap {
     type Item = *mut Token;
-    
+
     fn next(&mut self) -> Option<Self::Item> {
         let rs = self.ptr;
         if unsafe { self.ptr.as_ref().unwrap().kind } == TokenKind::EOF {
-            return None
+            return None;
         }
         if !unsafe { self.ptr.as_ref().unwrap().next.is_none() } {
             self.ptr = unsafe { self.ptr.as_ref().unwrap().next.unwrap() };
-            return Some(rs)
+            return Some(rs);
         } else {
-            return Some(rs)
+            return Some(rs);
         }
     }
-}
-
-#[allow(dead_code)]
-struct TokenIter{
-    token: Option<*mut Token>
 }
 
 impl ToString for Token {
@@ -415,7 +409,6 @@ impl Function {
         }
     }
 }
-
 
 #[allow(dead_code)]
 pub fn get_node_kind(node: *mut Node) -> NodeKind {

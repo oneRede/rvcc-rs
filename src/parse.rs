@@ -182,7 +182,13 @@ fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 }
 
 #[allow(dead_code)]
-fn stmt(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
+fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
+    if equal(token.get_ref(), &[';']) {
+        let (n, t) = expr(token);
+        let node = create_unary_node(NodeKind::RETURN, n.unwrap());
+        token.set(skip(t.get_ref(), &[';']).unwrap());
+        return (Some(node), token);
+    }
     expr_stmt(token)
 }
 
