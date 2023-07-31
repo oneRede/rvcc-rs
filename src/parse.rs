@@ -3,7 +3,7 @@ use crate::{
         get_node_next, get_obj_name, get_obj_next, Function, Node, NodeKind, Obj, TokenKind,
         TokenWrap,
     },
-    tokenize::{equal, error_token, skip},
+    tokenize::{equal, error_token, skip, str_to_chars},
 };
 
 pub static mut LOCALS: Option<*mut Obj> = None;
@@ -183,8 +183,9 @@ fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
 #[allow(dead_code)]
 fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
-    if equal(token.get_ref(), &[';']) {
-        let (n, t) = expr(token);
+    if equal(token.get_ref(), str_to_chars("return")) {
+        let (n, t) = expr(token.set(token.get_next()));
+        
         let node = create_unary_node(NodeKind::RETURN, n.unwrap());
         token.set(skip(t.get_ref(), &[';']).unwrap());
         return (Some(node), token);

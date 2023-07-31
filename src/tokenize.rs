@@ -21,10 +21,11 @@ pub fn equal(token: &Token, s: &[char]) -> bool {
 }
 
 #[allow(dead_code)]
-pub fn str_to_chars(s: &str) -> &[char]{
-    Box::leak(Box::new(s.chars().map(|c| -> char {c}).collect::<Vec<char>>()))
+pub fn str_to_chars(s: &str) -> &[char] {
+    Box::leak(Box::new(
+        s.chars().map(|c| -> char { c }).collect::<Vec<char>>(),
+    ))
 }
-
 
 #[allow(dead_code)]
 pub fn error_token(token: &Token, msg: &str) {
@@ -57,9 +58,10 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
     loop {
         if chars.len() == 0 {
             cur.set_next(Box::leak(Box::new(Token::new(TokenKind::EOF, chars, 0))));
-            convert_keyword(head);
+            
             head.set(head.get_next());
-            return head
+            convert_keyword(head);
+            return head;
         }
 
         let c: char = chars[0];
@@ -93,7 +95,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
                     break;
                 }
             }
-            
+
             cur.set_next(Box::leak(Box::new(Token::new(
                 TokenKind::IDENT,
                 chars,
@@ -126,7 +128,6 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
             continue;
         }
 
-
         error_at(chars.as_ptr(), &format!("invalid token: {}", chars[0]));
     }
 }
@@ -150,7 +151,7 @@ pub fn is_ident_v2(c: char) -> bool {
 }
 
 #[allow(dead_code)]
-pub fn convert_keyword(token:TokenWrap) {
+pub fn convert_keyword(token: TokenWrap) {
     for tk in token {
         if equal(unsafe { tk.as_ref().unwrap() }, str_to_chars("return")) {
             unsafe { tk.as_mut().unwrap().kind = TokenKind::KEYWORD }
