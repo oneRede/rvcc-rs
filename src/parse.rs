@@ -182,10 +182,31 @@ fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 }
 
 #[allow(dead_code)]
+pub fn compound_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
+    let head: *mut Node = &mut Node::new(NodeKind::Num) as *mut Node;
+    let mut cur = head;
+
+    for tk in token{
+        if equal(unsafe { tk.as_ref().unwrap() }, &['}']) {
+            let (n, t) = stmt(token.set(tk));
+            unsafe {
+                cur.as_mut().unwrap().next = n;
+            }
+            token.set(t.ptr.unwrap());
+            cur = get_node_next(cur).unwrap();
+        }
+    }
+
+    let node: *mut Node = Box::leak(Box::new(Node::new(NodeKind::BLOCK)));
+    unsafe { node.as_mut().unwrap().body = head.as_ref().unwrap().next };
+    return (Some(node), token);
+}
+
+#[allow(dead_code)]
 fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), str_to_chars("return")) {
         let (n, t) = expr(token.set(token.get_next()));
-        
+
         let node = create_unary_node(NodeKind::RETURN, n.unwrap());
         token.set(skip(t.get_ref(), &[';']).unwrap());
         return (Some(node), token);
@@ -203,24 +224,15 @@ fn expr_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn parse(mut token: TokenWrap) -> *mut Function {
-    let head: *mut Node = &mut Node::new(NodeKind::Num) as *mut Node;
-    let mut cur = head;
 
-    loop {
-        if token.get_kind() == TokenKind::EOF {
-            break;
-        }
-        let (n, t) = stmt(token);
-        unsafe {
-            cur.as_mut().unwrap().next = n;
-        }
-        token.set(t.ptr.unwrap());
-        cur = get_node_next(cur).unwrap();
-    }
+    token.set(skip(token.get_ref(), &['{']).unwrap());
 
-    let prog = Function::new(get_node_next(head).unwrap(), unsafe { LOCALS });
+    let mut prog = Function::empty();
+    let (n, _t) = compound_stmt(token);
+    prog.body = n;
     return Box::leak(Box::new(prog));
 }
+
 
 #[allow(dead_code)]
 pub fn find_var(token: TokenWrap) -> Option<*mut Obj> {

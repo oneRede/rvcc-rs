@@ -110,8 +110,18 @@ pub fn gen_expr(node: *mut Node) {
 }
 
 #[allow(dead_code)]
-fn gen_stmt(node: *mut Node) {
+fn gen_stmt(mut node: *mut Node) {
     match get_node_kind(node) {
+        NodeKind::BLOCK => {
+            loop {
+                gen_stmt(node);
+                if get_node_next(node).is_none() {
+                    break;
+                }
+                node = get_node_next(node).unwrap();
+            }
+        }
+
         NodeKind::RETURN => {
             gen_expr(get_node_lhs(node));
             println!("  j .L.return");
@@ -152,15 +162,10 @@ pub fn codegen(prog: *mut Function) {
         prog.as_ref().unwrap().stack_size
     });
 
-    let mut node = unsafe { prog.as_ref().unwrap().body };
-    loop {
-        gen_stmt(node);
-        assert!(unsafe { DEPTH == 0 });
-        if get_node_next(node).is_none() {
-            break;
-        }
-        node = get_node_next(node).unwrap();
-    }
+    let node = unsafe { prog.as_ref().unwrap().body }.unwrap();
+    gen_stmt(node);
+    assert!(unsafe { DEPTH == 0 });
+
     println!(".L.return:");
     println!("  mv sp, fp");
     println!("  ld fp, 0(sp)");

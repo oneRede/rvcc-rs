@@ -98,11 +98,11 @@ impl Iterator for TokenWrap {
 
     fn next(&mut self) -> Option<Self::Item> {
         let now = self.ptr;
-        if !now.is_none(){
+        if !now.is_none() {
             self.ptr = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
-            return now
+            return now;
         } else {
-            return None
+            return None;
         }
     }
 }
@@ -194,6 +194,7 @@ pub enum NodeKind {
     ASSIGN,
     VAR,
     RETURN,
+    BLOCK,
 }
 
 impl ToString for NodeKind {
@@ -213,6 +214,7 @@ impl ToString for NodeKind {
             NodeKind::ASSIGN => "ASSIGN".to_string(),
             NodeKind::VAR => "VAR".to_string(),
             NodeKind::RETURN => "RETURN".to_string(),
+            NodeKind::BLOCK => "BLOCK".to_string(),
         }
     }
 }
@@ -224,6 +226,7 @@ pub struct Node {
     pub next: Option<*mut Node>,
     pub lhs: Option<*mut Node>,
     pub rhs: Option<*mut Node>,
+    pub body: Option<*mut Node>,
     pub val: i64,
     pub var: Option<*mut Obj>,
 }
@@ -236,6 +239,7 @@ impl Node {
             next: None,
             lhs: None,
             rhs: None,
+            body: None,
             val: 0,
             var: None,
         }
@@ -247,6 +251,7 @@ impl Node {
             next: None,
             lhs: Some(lhs),
             rhs: Some(rhs),
+            body: None,
             val: 0,
             var: None,
         }
@@ -258,6 +263,7 @@ impl Node {
             next: None,
             lhs: None,
             rhs: None,
+            body: None,
             val: val,
             var: None,
         }
@@ -275,6 +281,7 @@ impl Node {
             next: None,
             lhs: None,
             rhs: None,
+            body: None,
             val: 0,
             var: var,
         }
@@ -339,24 +346,23 @@ impl ToString for Node {
 }
 
 #[allow(dead_code)]
-pub struct NodeIter{
+pub struct NodeIter {
     pub ptr: Option<*mut Node>,
 }
 
-impl Iterator for NodeIter{
+impl Iterator for NodeIter {
     type Item = *mut Node;
 
     fn next(&mut self) -> Option<Self::Item> {
         let now = self.ptr;
-        if !now.is_none(){
+        if !now.is_none() {
             self.ptr = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
-            return now
+            return now;
         } else {
-            return None
+            return None;
         }
     }
 }
-
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
@@ -410,28 +416,28 @@ impl ToString for Obj {
 }
 
 #[allow(dead_code)]
-pub struct ObjIter{
+pub struct ObjIter {
     pub ptr: Option<*mut Obj>,
 }
 
 #[allow(dead_code)]
 impl ObjIter {
-    pub fn new(ptr: Option<*mut Obj>) -> Self{
+    pub fn new(ptr: Option<*mut Obj>) -> Self {
         Self { ptr: ptr }
     }
 }
 
 #[allow(dead_code)]
-impl Iterator for ObjIter{
+impl Iterator for ObjIter {
     type Item = *mut Obj;
 
     fn next(&mut self) -> Option<Self::Item> {
         let now = self.ptr;
-        if !now.is_none(){
+        if !now.is_none() {
             self.ptr = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
-            return now
+            return now;
         } else {
-            return None
+            return None;
         }
     }
 }
@@ -439,16 +445,25 @@ impl Iterator for ObjIter{
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub struct Function {
-    pub body: *mut Node,
+    pub body: Option<*mut Node>,
     pub locals: Option<*mut Obj>,
     pub stack_size: i64,
 }
 
+#[allow(dead_code)]
 impl Function {
     pub fn new(body: *mut Node, locals: Option<*mut Obj>) -> Self {
         Self {
-            body: body,
+            body: Some(body),
             locals: locals,
+            stack_size: 0,
+        }
+    }
+
+    pub fn empty() -> Self {
+        Self {
+            body: None,
+            locals: None,
             stack_size: 0,
         }
     }
