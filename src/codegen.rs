@@ -113,12 +113,13 @@ pub fn gen_expr(node: *mut Node) {
 fn gen_stmt(mut node: *mut Node) {
     match get_node_kind(node) {
         NodeKind::BLOCK => {
+            node = unsafe { node.as_ref().unwrap().body.unwrap() };
             loop {
                 gen_stmt(node);
                 if get_node_next(node).is_none() {
-                    break;
+                    return;
                 }
-                node = get_node_next(node).unwrap();
+                node = get_node_next(node).unwrap();   
             }
         }
 
@@ -162,7 +163,8 @@ pub fn codegen(prog: *mut Function) {
         prog.as_ref().unwrap().stack_size
     });
 
-    let node = unsafe { prog.as_ref().unwrap().body }.unwrap();
+    let node = unsafe { prog.as_ref().unwrap().body.unwrap() };
+    
     gen_stmt(node);
     assert!(unsafe { DEPTH == 0 });
 

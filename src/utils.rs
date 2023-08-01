@@ -18,6 +18,9 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
             'a'..='z' =>{
                 break;
             }
+            '{' | '}' => {
+                break;
+            }
             _ => {
                 println!("# unexcept character: {}", c);
                 exit(1)
@@ -51,6 +54,8 @@ pub fn read_punct(ptr: &[char]) -> usize {
         || ptr[0] == '='
         || ptr[0] == '!'
         || ptr[0] == ';'
+        || ptr[0] == '{'
+        || ptr[0] == '}'
     {
         return 1;
     } else {

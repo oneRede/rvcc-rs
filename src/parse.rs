@@ -186,20 +186,21 @@ pub fn compound_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     let head: *mut Node = &mut Node::new(NodeKind::Num) as *mut Node;
     let mut cur = head;
 
-    for tk in token{
-        if equal(unsafe { tk.as_ref().unwrap() }, &['}']) {
-            let (n, t) = stmt(token.set(tk));
-            unsafe {
-                cur.as_mut().unwrap().next = n;
-            }
-            token.set(t.ptr.unwrap());
-            cur = get_node_next(cur).unwrap();
+    loop {
+        if equal(token.get_ref(), &['}']) {
+            break;
         }
+        let (n, t) = stmt(token);
+        token.set(t.ptr.unwrap());
+        unsafe {
+            cur.as_mut().unwrap().next = n;
+        }
+        cur = get_node_next(cur).unwrap();
     }
 
     let node: *mut Node = Box::leak(Box::new(Node::new(NodeKind::BLOCK)));
     unsafe { node.as_mut().unwrap().body = head.as_ref().unwrap().next };
-    return (Some(node), token);
+    return (Some(node), token.set(token.get_next()));
 }
 
 #[allow(dead_code)]
@@ -210,6 +211,10 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
         let node = create_unary_node(NodeKind::RETURN, n.unwrap());
         token.set(skip(t.get_ref(), &[';']).unwrap());
         return (Some(node), token);
+    }
+
+    if equal(token.get_ref(), &['{']) {
+        return compound_stmt(token.set(token.get_next()));
     }
     expr_stmt(token)
 }
@@ -224,15 +229,14 @@ fn expr_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn parse(mut token: TokenWrap) -> *mut Function {
-
     token.set(skip(token.get_ref(), &['{']).unwrap());
 
     let mut prog = Function::empty();
     let (n, _t) = compound_stmt(token);
     prog.body = n;
+    prog.locals = unsafe { LOCALS };
     return Box::leak(Box::new(prog));
 }
-
 
 #[allow(dead_code)]
 pub fn find_var(token: TokenWrap) -> Option<*mut Obj> {
