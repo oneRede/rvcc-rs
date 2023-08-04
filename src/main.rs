@@ -25,7 +25,6 @@ fn main() {
     unsafe { CURRENT_INPUT = Some(chars) };
 
     let token = tokenize(chars);
-    println!("# {:?}", token.get_ref().to_string());
     let prog = parse(token);
     
     codegen(prog);

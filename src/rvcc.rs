@@ -295,6 +295,13 @@ impl Node {
             _s_next = unsafe { self.next.unwrap().as_ref().unwrap().to_string() };
         }
 
+        let mut _s_body = "".to_string();
+        if self.next.is_none() {
+            _s_body = "None".to_string();
+        } else {
+            _s_body = unsafe { self.body.unwrap().as_ref().unwrap().to_string() };
+        }
+
         let mut _s_lhs = "".to_string();
         if self.lhs.is_none() {
             _s_lhs = "None".to_string();
@@ -322,6 +329,8 @@ impl Node {
             + "\","
             + "\"next\":\""
             + &_s_next
+            + "\"body\":\""
+            + &_s_body
             + "\","
             + "\"lhs\":\""
             + &_s_lhs
