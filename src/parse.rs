@@ -221,6 +221,11 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
 #[allow(dead_code)]
 fn expr_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
+    if equal(token.get_ref(), &[';']) {
+        token.set(token.get_next());
+        return (Some(Box::leak(Box::new(Node::new(NodeKind::BLOCK)))), token);
+    }
+
     let (n, t) = expr(token);
     let node = create_unary_node(NodeKind::ExprStmt, n.unwrap());
     token.set(skip(t.get_ref(), &[';']).unwrap());

@@ -113,6 +113,9 @@ pub fn gen_expr(node: *mut Node) {
 fn gen_stmt(mut node: *mut Node) {
     match get_node_kind(node) {
         NodeKind::BLOCK => {
+            if unsafe { node.as_ref().unwrap().body.is_none() }{
+                return;
+            }
             node = unsafe { node.as_ref().unwrap().body.unwrap() };
             loop {
                 gen_stmt(node);

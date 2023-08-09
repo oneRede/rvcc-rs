@@ -30,6 +30,8 @@ assert() {
     exit 1
   fi
 }
+
+
 # assert 期待值 输入值
 # [1] 返回指定数值
 assert 0 '{ return 0; }'
@@ -95,5 +97,9 @@ assert 3 '{ 1; 2; return 3; }'
 # [13] 支持{...}
 assert 3 '{ {1; {2;} return 3;} }'
 
+# [14] 支持空语句
+assert 5 '{ ;;; return 5; }'
+
 # 如果运行正常未提前退出，程序将显示OK
 echo OK
+

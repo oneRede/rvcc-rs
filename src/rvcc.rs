@@ -292,28 +292,28 @@ impl Node {
         if self.next.is_none() {
             _s_next = "None".to_string();
         } else {
-            _s_next = unsafe { self.next.unwrap().as_ref().unwrap().to_string() };
+            _s_next = unsafe { self.next.unwrap().as_ref().unwrap().format() };
         }
 
         let mut _s_body = "".to_string();
-        if self.next.is_none() {
+        if self.body.is_none() {
             _s_body = "None".to_string();
         } else {
-            _s_body = unsafe { self.body.unwrap().as_ref().unwrap().to_string() };
+            _s_body = unsafe { self.body.unwrap().as_ref().unwrap().format() };
         }
 
         let mut _s_lhs = "".to_string();
         if self.lhs.is_none() {
             _s_lhs = "None".to_string();
         } else {
-            _s_lhs = unsafe { self.lhs.unwrap().as_ref().unwrap().to_string() };
+            _s_lhs = unsafe { self.lhs.unwrap().as_ref().unwrap().format() };
         }
 
         let mut _s_rhs = "".to_string();
         if self.rhs.is_none() {
             _s_rhs = "None".to_string();
         } else {
-            _s_rhs = unsafe { self.rhs.unwrap().as_ref().unwrap().to_string() };
+            _s_rhs = unsafe { self.rhs.unwrap().as_ref().unwrap().format() };
         }
 
         let mut _s_var = "".to_string();
@@ -324,23 +324,24 @@ impl Node {
         }
 
         let _s = "{".to_string()
-            + "\"kind\":\""
+            + "\"kind\":"
             + &self.kind.to_string()
-            + "\","
-            + "\"next\":\""
+            + ","
+            + "\"next\":"
             + &_s_next
-            + "\"body\":\""
+            + ","
+            + "\"body\":"
             + &_s_body
-            + "\","
-            + "\"lhs\":\""
+            + ","
+            + "\"lhs\":"
             + &_s_lhs
-            + "\","
-            + "\"rhs\":\""
+            + ","
+            + "\"rhs\":"
             + &_s_rhs
-            + "\","
-            + "\"val\":\""
+            + ","
+            + "\"val\":"
             + &self.val.to_string()
-            + "\","
+            + ","
             + "\"var\":"
             + &_s_var
             + "}";
