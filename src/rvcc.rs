@@ -533,7 +533,7 @@ impl Function {
 
 #[allow(dead_code)]
 pub fn get_token_ref(token: *mut Token) -> &'static Token {
-    unsafe { token.as_ref().unwrap()}
+    unsafe { token.as_ref().unwrap() }
 }
 
 #[allow(dead_code)]

@@ -6,9 +6,9 @@ mod rvcc;
 mod tokenize;
 mod utils;
 
+use crate::parse::parse;
 use codegen::codegen;
 use tokenize::{tokenize, CURRENT_INPUT, CURRENT_STR};
-use crate::parse::parse;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -26,7 +26,7 @@ fn main() {
 
     let token = tokenize(chars);
     let prog = parse(token);
-    
+
     codegen(prog);
     return;
 }

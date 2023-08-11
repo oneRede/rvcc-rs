@@ -1,7 +1,7 @@
 use crate::{
     rvcc::{
-        get_node_next, get_obj_name, get_obj_next, Function, Node, NodeKind, Obj, TokenKind,
-        TokenWrap, set_node_next, set_node_body, set_node_cond, set_node_then, set_node_els,
+        get_node_next, get_obj_name, get_obj_next, set_node_body, set_node_cond, set_node_els,
+        set_node_next, set_node_then, Function, Node, NodeKind, Obj, TokenKind, TokenWrap,
     },
     tokenize::{equal, error_token, skip, str_to_chars},
 };
@@ -21,6 +21,11 @@ pub fn create_binary_node(kind: NodeKind, lhs: *mut Node, rhs: *mut Node) -> *mu
 #[allow(dead_code)]
 pub fn create_unary_node(kind: NodeKind, expr: *mut Node) -> *mut Node {
     Box::leak(Box::new(Node::new_unary(kind, expr)))
+}
+
+#[allow(dead_code)]
+pub fn create_node(kind: NodeKind) -> *mut Node {
+    Box::leak(Box::new(Node::new(kind)))
 }
 
 #[allow(dead_code)]
@@ -183,7 +188,7 @@ fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn compound_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
-    let head: *mut Node = &mut Node::new(NodeKind::Num) as *mut Node;
+    let head: *mut Node = create_node(NodeKind::Num);
     let mut cur = head;
 
     loop {
@@ -196,7 +201,7 @@ pub fn compound_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
         cur = get_node_next(cur).unwrap();
     }
 
-    let node: *mut Node = Box::leak(Box::new(Node::new(NodeKind::BLOCK)));
+    let node: *mut Node = create_node(NodeKind::BLOCK);
     set_node_body(node, get_node_next(head));
     return (Some(node), token.set(token.get_next()));
 }
@@ -212,7 +217,7 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     }
 
     if equal(token.get_ref(), str_to_chars("if")) {
-        let node: *mut Node = Box::leak(Box::new(Node::new(NodeKind::IF)));
+        let node: *mut Node = create_node(NodeKind::IF);
 
         token.set(token.get_next());
         token.set(skip(token.get_ref(), &['(']).unwrap());
@@ -225,14 +230,13 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
         token = t;
         set_node_then(node, n);
 
-        if equal(token.get_ref(), str_to_chars("else")){
+        if equal(token.get_ref(), str_to_chars("else")) {
             token.set(token.get_next());
             let (n, t) = stmt(token);
             set_node_els(node, n);
             token = t;
         }
-
-        return (Some(node), token)
+        return (Some(node), token);
     }
 
     if equal(token.get_ref(), &['{']) {
@@ -245,7 +249,7 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 fn expr_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), &[';']) {
         token.set(token.get_next());
-        return (Some(Box::leak(Box::new(Node::new(NodeKind::BLOCK)))), token);
+        return (Some(create_node(NodeKind::BLOCK)), token);
     }
 
     let (n, t) = expr(token);

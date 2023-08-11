@@ -15,7 +15,7 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
             '-' | '+' | '/' | '*' | ' ' | '(' | ')' | '=' | '<' | '>' | '!' | ';' => {
                 break;
             }
-            'a'..='z' =>{
+            'a'..='z' => {
                 break;
             }
             '{' | '}' => {
