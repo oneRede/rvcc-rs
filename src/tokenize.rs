@@ -1,7 +1,7 @@
 use std::{process::exit, slice, str};
 
 use crate::{
-    rvcc::{Token, TokenKind, TokenWrap},
+    rvcc::{get_token_ref, Token, TokenKind, TokenWrap},
     utils::{error_at, get_num_from_chars, read_punct, v_error_at},
 };
 
@@ -58,7 +58,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
     loop {
         if chars.len() == 0 {
             cur.set_next(Box::leak(Box::new(Token::new(TokenKind::EOF, chars, 0))));
-            
+
             head.set(head.get_next());
             convert_keyword(head);
             return head;
@@ -153,8 +153,20 @@ pub fn is_ident_v2(c: char) -> bool {
 #[allow(dead_code)]
 pub fn convert_keyword(token: TokenWrap) {
     for tk in token {
-        if equal(unsafe { tk.as_ref().unwrap() }, str_to_chars("return")) {
+        if is_keyword(get_token_ref(tk)) {
             unsafe { tk.as_mut().unwrap().kind = TokenKind::KEYWORD }
         }
     }
+}
+
+#[allow(dead_code)]
+fn is_keyword(token: &Token) -> bool {
+    let keywords = ["return", "if", "else"];
+
+    for kw in keywords {
+        if equal(token, str_to_chars(kw)) {
+            return true;
+        }
+    }
+    false
 }

@@ -1,7 +1,7 @@
 use crate::{
     rvcc::{
         get_node_next, get_obj_name, get_obj_next, Function, Node, NodeKind, Obj, TokenKind,
-        TokenWrap, set_node_next, set_node_body,
+        TokenWrap, set_node_next, set_node_body, set_node_cond, set_node_then, set_node_els,
     },
     tokenize::{equal, error_token, skip, str_to_chars},
 };
@@ -209,6 +209,30 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
         let node = create_unary_node(NodeKind::RETURN, n.unwrap());
         token.set(skip(t.get_ref(), &[';']).unwrap());
         return (Some(node), token);
+    }
+
+    if equal(token.get_ref(), str_to_chars("if")) {
+        let node: *mut Node = Box::leak(Box::new(Node::new(NodeKind::IF)));
+
+        token.set(token.get_next());
+        token.set(skip(token.get_ref(), &['(']).unwrap());
+
+        let (n, t) = expr(token);
+        set_node_cond(node, n);
+
+        token.set(skip(t.get_ref(), &[')']).unwrap());
+        let (n, t) = stmt(token);
+        token = t;
+        set_node_then(node, n);
+
+        if equal(token.get_ref(), str_to_chars("else")){
+            token.set(token.get_next());
+            let (n, t) = stmt(token);
+            set_node_els(node, n);
+            token = t;
+        }
+
+        return (Some(node), token)
     }
 
     if equal(token.get_ref(), &['{']) {

@@ -195,6 +195,7 @@ pub enum NodeKind {
     VAR,
     RETURN,
     BLOCK,
+    IF,
 }
 
 impl ToString for NodeKind {
@@ -215,6 +216,7 @@ impl ToString for NodeKind {
             NodeKind::VAR => "VAR".to_string(),
             NodeKind::RETURN => "RETURN".to_string(),
             NodeKind::BLOCK => "BLOCK".to_string(),
+            NodeKind::IF => "IF".to_string(),
         }
     }
 }
@@ -223,10 +225,18 @@ impl ToString for NodeKind {
 #[derive(Clone, Copy, Debug)]
 pub struct Node {
     pub kind: NodeKind,
+
     pub next: Option<*mut Node>,
+
     pub lhs: Option<*mut Node>,
     pub rhs: Option<*mut Node>,
+
     pub body: Option<*mut Node>,
+
+    pub cond: Option<*mut Node>,
+    pub then: Option<*mut Node>,
+    pub els: Option<*mut Node>,
+
     pub val: i64,
     pub var: Option<*mut Obj>,
 }
@@ -240,6 +250,9 @@ impl Node {
             lhs: None,
             rhs: None,
             body: None,
+            cond: None,
+            then: None,
+            els: None,
             val: 0,
             var: None,
         }
@@ -252,6 +265,9 @@ impl Node {
             lhs: Some(lhs),
             rhs: Some(rhs),
             body: None,
+            cond: None,
+            then: None,
+            els: None,
             val: 0,
             var: None,
         }
@@ -264,6 +280,9 @@ impl Node {
             lhs: None,
             rhs: None,
             body: None,
+            cond: None,
+            then: None,
+            els: None,
             val: val,
             var: None,
         }
@@ -282,6 +301,9 @@ impl Node {
             lhs: None,
             rhs: None,
             body: None,
+            cond: None,
+            then: None,
+            els: None,
             val: 0,
             var: var,
         }
@@ -316,6 +338,27 @@ impl Node {
             _s_rhs = unsafe { self.rhs.unwrap().as_ref().unwrap().format() };
         }
 
+        let mut _s_cond = "".to_string();
+        if self.cond.is_none() {
+            _s_cond = "None".to_string();
+        } else {
+            _s_cond = unsafe { self.cond.unwrap().as_ref().unwrap().format() };
+        }
+
+        let mut _s_then = "".to_string();
+        if self.then.is_none() {
+            _s_then = "None".to_string();
+        } else {
+            _s_then = unsafe { self.then.unwrap().as_ref().unwrap().format() };
+        }
+
+        let mut _s_els = "".to_string();
+        if self.els.is_none() {
+            _s_els = "None".to_string();
+        } else {
+            _s_els = unsafe { self.els.unwrap().as_ref().unwrap().format() };
+        }
+
         let mut _s_var = "".to_string();
         if self.var.is_none() {
             _s_var = "None".to_string();
@@ -338,6 +381,15 @@ impl Node {
             + ","
             + "\"rhs\":"
             + &_s_rhs
+            + ","
+            + "\"body\":"
+            + &_s_cond
+            + ","
+            + "\"body\":"
+            + &_s_then
+            + ","
+            + "\"body\":"
+            + &_s_els
             + ","
             + "\"val\":"
             + &self.val.to_string()
@@ -480,6 +532,11 @@ impl Function {
 }
 
 #[allow(dead_code)]
+pub fn get_token_ref(token: *mut Token) -> &'static Token {
+    unsafe { token.as_ref().unwrap()}
+}
+
+#[allow(dead_code)]
 pub fn get_node_kind(node: *mut Node) -> NodeKind {
     unsafe { node.as_ref().unwrap().kind }
 }
@@ -522,6 +579,36 @@ pub fn get_node_body(node: *mut Node) -> Option<*mut Node> {
 #[allow(dead_code)]
 pub fn set_node_body(node: *mut Node, body: Option<*mut Node>) {
     unsafe { node.as_mut().unwrap().body = body }
+}
+
+#[allow(dead_code)]
+pub fn get_node_cond(node: *mut Node) -> Option<*mut Node> {
+    unsafe { node.as_ref().unwrap().cond }
+}
+
+#[allow(dead_code)]
+pub fn set_node_cond(node: *mut Node, cond: Option<*mut Node>) {
+    unsafe { node.as_mut().unwrap().cond = cond }
+}
+
+#[allow(dead_code)]
+pub fn get_node_then(node: *mut Node) -> Option<*mut Node> {
+    unsafe { node.as_ref().unwrap().then }
+}
+
+#[allow(dead_code)]
+pub fn set_node_then(node: *mut Node, then: Option<*mut Node>) {
+    unsafe { node.as_mut().unwrap().then = then }
+}
+
+#[allow(dead_code)]
+pub fn get_node_els(node: *mut Node) -> Option<*mut Node> {
+    unsafe { node.as_ref().unwrap().els }
+}
+
+#[allow(dead_code)]
+pub fn set_node_els(node: *mut Node, els: Option<*mut Node>) {
+    unsafe { node.as_mut().unwrap().els = els }
 }
 
 #[allow(dead_code)]
