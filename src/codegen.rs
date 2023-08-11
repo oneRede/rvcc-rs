@@ -1,6 +1,7 @@
 use crate::rvcc::{
-    get_node_kind, get_node_lhs, get_node_next, get_node_rhs, get_node_val, Function, Node,
-    NodeKind, ObjIter,
+    get_fuction_locals, get_fuction_stack_size, get_node_body, get_node_kind, get_node_lhs,
+    get_node_next, get_node_rhs, get_node_val, get_node_var, get_obj_offset,
+    set_fuction_stack_size, set_obj_offset, Function, Node, NodeKind, ObjIter, get_fuction_body,
 };
 
 pub static mut DEPTH: usize = 0;
@@ -27,7 +28,7 @@ pub fn align_to(n: i64, align: i64) -> i64 {
 #[allow(dead_code)]
 pub fn gen_addr(node: *mut Node) {
     if get_node_kind(node) == NodeKind::VAR {
-        let offset = unsafe { node.as_ref().unwrap().var.unwrap().as_ref().unwrap().offset };
+        let offset = get_obj_offset(get_node_var(node));
         println!("  addi a0, fp, {}", offset);
         return;
     }
@@ -113,16 +114,16 @@ pub fn gen_expr(node: *mut Node) {
 fn gen_stmt(mut node: *mut Node) {
     match get_node_kind(node) {
         NodeKind::BLOCK => {
-            if unsafe { node.as_ref().unwrap().body.is_none() }{
+            if get_node_body(node).is_none() {
                 return;
             }
-            node = unsafe { node.as_ref().unwrap().body.unwrap() };
+            node = get_node_body(node).unwrap();
             loop {
                 gen_stmt(node);
                 if get_node_next(node).is_none() {
                     return;
                 }
-                node = get_node_next(node).unwrap();   
+                node = get_node_next(node).unwrap();
             }
         }
 
@@ -143,14 +144,13 @@ fn gen_stmt(mut node: *mut Node) {
 #[allow(dead_code)]
 pub fn assign_l_var_offsets(prog: *mut Function) {
     let mut offset = 0;
-    let var = ObjIter::new(unsafe { prog.as_ref().unwrap().locals });
+    let var = ObjIter::new(get_fuction_locals(prog));
 
     for obj in var {
         offset += 8;
-        unsafe { obj.as_mut().unwrap().offset = -offset };
+        set_obj_offset(obj, -offset);
     }
-
-    unsafe { prog.as_mut().unwrap().stack_size = align_to(offset, 16) };
+    set_fuction_stack_size(prog, align_to(offset, 16));
 }
 
 #[allow(dead_code)]
@@ -162,12 +162,10 @@ pub fn codegen(prog: *mut Function) {
     println!("  addi sp, sp, -8");
     println!("  sd fp, 0(sp)");
     println!("  mv fp, sp");
-    println!("  addi sp, sp, -{}", unsafe {
-        prog.as_ref().unwrap().stack_size
-    });
+    println!("  addi sp, sp, -{}", get_fuction_stack_size(prog));
 
-    let node = unsafe { prog.as_ref().unwrap().body.unwrap() };
-    
+    let node = get_fuction_body(prog).unwrap();
+
     gen_stmt(node);
     assert!(unsafe { DEPTH == 0 });
 

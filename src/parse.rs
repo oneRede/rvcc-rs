@@ -1,7 +1,7 @@
 use crate::{
     rvcc::{
         get_node_next, get_obj_name, get_obj_next, Function, Node, NodeKind, Obj, TokenKind,
-        TokenWrap,
+        TokenWrap, set_node_next, set_node_body,
     },
     tokenize::{equal, error_token, skip, str_to_chars},
 };
@@ -192,14 +192,12 @@ pub fn compound_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
         }
         let (n, t) = stmt(token);
         token.set(t.ptr.unwrap());
-        unsafe {
-            cur.as_mut().unwrap().next = n;
-        }
+        set_node_next(cur, n);
         cur = get_node_next(cur).unwrap();
     }
 
     let node: *mut Node = Box::leak(Box::new(Node::new(NodeKind::BLOCK)));
-    unsafe { node.as_mut().unwrap().body = head.as_ref().unwrap().next };
+    set_node_body(node, get_node_next(head));
     return (Some(node), token.set(token.get_next()));
 }
 

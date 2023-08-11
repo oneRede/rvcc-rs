@@ -490,6 +490,11 @@ pub fn get_node_val(node: *mut Node) -> i64 {
 }
 
 #[allow(dead_code)]
+pub fn get_node_var(node: *mut Node) -> *mut Obj {
+    unsafe { node.as_ref().unwrap().var.unwrap() }
+}
+
+#[allow(dead_code)]
 pub fn get_node_lhs(node: *mut Node) -> *mut Node {
     unsafe { node.as_ref().unwrap().lhs.unwrap() }
 }
@@ -505,6 +510,21 @@ pub fn get_node_next(node: *mut Node) -> Option<*mut Node> {
 }
 
 #[allow(dead_code)]
+pub fn set_node_next(node: *mut Node, next: Option<*mut Node>) {
+    unsafe { node.as_mut().unwrap().next = next }
+}
+
+#[allow(dead_code)]
+pub fn get_node_body(node: *mut Node) -> Option<*mut Node> {
+    unsafe { node.as_ref().unwrap().body }
+}
+
+#[allow(dead_code)]
+pub fn set_node_body(node: *mut Node, body: Option<*mut Node>) {
+    unsafe { node.as_mut().unwrap().body = body }
+}
+
+#[allow(dead_code)]
 pub fn get_obj_next(obj: *mut Obj) -> Option<*mut Obj> {
     unsafe { obj.as_ref().unwrap().next }
 }
@@ -512,6 +532,36 @@ pub fn get_obj_next(obj: *mut Obj) -> Option<*mut Obj> {
 #[allow(dead_code)]
 pub fn get_obj_name(obj: *mut Obj) -> &'static str {
     unsafe { obj.as_ref().unwrap().name }
+}
+
+#[allow(dead_code)]
+pub fn get_obj_offset(obj: *mut Obj) -> i64 {
+    unsafe { obj.as_ref().unwrap().offset }
+}
+
+#[allow(dead_code)]
+pub fn set_obj_offset(obj: *mut Obj, offset: i64) {
+    unsafe { obj.as_mut().unwrap().offset = offset }
+}
+
+#[allow(dead_code)]
+pub fn get_fuction_locals(func: *mut Function) -> Option<*mut Obj> {
+    unsafe { func.as_ref().unwrap().locals }
+}
+
+#[allow(dead_code)]
+pub fn set_fuction_stack_size(func: *mut Function, stack_size: i64) {
+    unsafe { func.as_mut().unwrap().stack_size = stack_size }
+}
+
+#[allow(dead_code)]
+pub fn get_fuction_body(func: *mut Function) -> Option<*mut Node> {
+    unsafe { func.as_ref().unwrap().body }
+}
+
+#[allow(dead_code)]
+pub fn get_fuction_stack_size(func: *mut Function) -> i64 {
+    unsafe { func.as_ref().unwrap().stack_size }
 }
 
 #[test]
