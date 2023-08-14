@@ -269,6 +269,22 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
     }
 
+    if equal(token.get_ref(), str_to_chars("while")){
+        let node: *mut Node = create_node(NodeKind::FOR);
+
+        token.set(token.get_next());
+        token.set(skip(token.get_ref(), &['(']).unwrap());
+
+        let (n, mut token) = expr(token);
+        set_node_cond(node, n);
+        token.set(skip(token.get_ref(), &[')']).unwrap());
+
+        let (n, token) = stmt(token);
+        set_node_then(node, n);
+
+        return (Some(node), token)
+    }
+
     if equal(token.get_ref(), &['{']) {
         return compound_stmt(token.set(token.get_next()));
     }

@@ -141,7 +141,10 @@ fn gen_stmt(mut node: *mut Node) {
 
         NodeKind::FOR => {
             let c = count();
-            gen_stmt(get_node_init(node).unwrap());
+            if !get_node_init(node).is_none(){
+                gen_stmt(get_node_init(node).unwrap());
+            }
+            
             println!(".L.begin.{}:", c);
 
             if !get_node_cond(node).is_none(){
