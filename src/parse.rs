@@ -180,6 +180,14 @@ fn unary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
         let (n, t) = unary(token.set(token.get_next()));
         return (Some(create_unary_node_v2(NodeKind::NEG, n.unwrap(), t)), t);
     }
+    if equal(token.get_ref(), &['&']) {
+        let (n, t) = unary(token.set(token.get_next()));
+        return (Some(create_unary_node_v2(NodeKind::ADDR, n.unwrap(), t)), t);
+    }
+    if equal(token.get_ref(), &['*']) {
+        let (n, t) = unary(token.set(token.get_next()));
+        return (Some(create_unary_node_v2(NodeKind::DEREF, n.unwrap(), t)), t);
+    }
 
     primary(token)
 }

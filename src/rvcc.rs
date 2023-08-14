@@ -198,6 +198,8 @@ pub enum NodeKind {
     BLOCK,
     IF,
     FOR,
+    ADDR,
+    DEREF,
 }
 
 impl ToString for NodeKind {
@@ -220,6 +222,8 @@ impl ToString for NodeKind {
             NodeKind::BLOCK => "BLOCK".to_string(),
             NodeKind::IF => "IF".to_string(),
             NodeKind::FOR => "FOR".to_string(),
+            NodeKind::ADDR => "ADDR".to_string(),
+            NodeKind::DEREF => "DEREF".to_string(),
         }
     }
 }
