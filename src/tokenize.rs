@@ -1,8 +1,8 @@
-use std::{process::exit, slice, str};
+use std::{slice, str};
 
 use crate::{
     rvcc::{get_token_ref, Token, TokenKind, TokenWrap},
-    utils::{error_at, get_num_from_chars, read_punct, v_error_at},
+    utils::{error_at, get_num_from_chars, read_punct, error_token},
 };
 
 pub static mut CURRENT_INPUT: Option<&[char]> = None;
@@ -25,13 +25,6 @@ pub fn str_to_chars(s: &str) -> &[char] {
     Box::leak(Box::new(
         s.chars().map(|c| -> char { c }).collect::<Vec<char>>(),
     ))
-}
-
-#[allow(dead_code)]
-pub fn error_token(token: &Token, msg: &str) {
-    let loc = token.loc.unwrap().as_ptr();
-    v_error_at(loc, msg);
-    exit(1);
 }
 
 #[allow(dead_code)]
