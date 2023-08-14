@@ -191,7 +191,8 @@ pub fn new_add(
     }
     let num_node = create_num_node_v2(8, token);
     let rhs = create_binary_node_v2(NodeKind::Mul, rhs.unwrap(), num_node, token);
-    return (Some(rhs), token);
+    let node = create_binary_node_v2(NodeKind::Add, lhs.unwrap(), rhs, token);
+    return (Some(node), token);
 }
 
 #[allow(dead_code)]
