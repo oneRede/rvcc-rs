@@ -1,6 +1,6 @@
 use std::{num::ParseIntError, process::exit};
 
-use crate::tokenize::{CURRENT_INPUT, CURRENT_STR};
+use crate::{tokenize::{CURRENT_INPUT, CURRENT_STR}, rvcc::{TokenWrap, Token}};
 
 #[allow(dead_code)]
 pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
@@ -86,6 +86,13 @@ pub fn v_error_at(loc: *const char, msg: &str) {
 
 #[allow(dead_code)]
 pub fn error_at(loc: *const char, msg: &str) {
+    v_error_at(loc, msg);
+    exit(1);
+}
+
+#[allow(dead_code)]
+pub fn error_token(token: &Token, msg: &str) {
+    let loc = token.loc.unwrap().as_ptr();
     v_error_at(loc, msg);
     exit(1);
 }

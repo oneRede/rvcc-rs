@@ -114,6 +114,7 @@ impl ToString for Token {
 }
 
 #[allow(dead_code)]
+#[derive(Debug)]
 #[derive(Clone, Copy)]
 pub struct TokenWrap {
     pub ptr: Option<*mut Token>,
@@ -243,7 +244,9 @@ pub struct Node {
     pub var: Option<*mut Obj>,
 
     pub init: Option<*mut Node>,
-    pub inc: Option<*mut Node>
+    pub inc: Option<*mut Node>,
+
+    pub token: TokenWrap
 }
 
 #[allow(dead_code)]
@@ -262,6 +265,25 @@ impl Node {
             var: None,
             init:None,
             inc: None,
+            token: TokenWrap::empty()
+        }
+    }
+
+    pub fn new_v2(kind: NodeKind, token: TokenWrap) -> Self {
+        Self {
+            kind: kind,
+            next: None,
+            lhs: None,
+            rhs: None,
+            body: None,
+            cond: None,
+            then: None,
+            els: None,
+            val: 0,
+            var: None,
+            init:None,
+            inc: None,
+            token: token
         }
     }
 
@@ -279,6 +301,25 @@ impl Node {
             var: None,
             init:None,
             inc: None,
+            token: TokenWrap::empty()
+        }
+    }
+
+    pub fn new_binary_v2(kind: NodeKind, lhs: *mut Node, rhs: *mut Node, token: TokenWrap) -> Self {
+        Self {
+            kind: kind,
+            next: None,
+            lhs: Some(lhs),
+            rhs: Some(rhs),
+            body: None,
+            cond: None,
+            then: None,
+            els: None,
+            val: 0,
+            var: None,
+            init:None,
+            inc: None,
+            token: token
         }
     }
 
@@ -296,11 +337,36 @@ impl Node {
             var: None,
             init:None,
             inc: None,
+            token: TokenWrap::empty()
+        }
+    }
+
+    pub fn new_num_v2(val: i64, token:TokenWrap) -> Self {
+        Self {
+            kind: NodeKind::Num,
+            next: None,
+            lhs: None,
+            rhs: None,
+            body: None,
+            cond: None,
+            then: None,
+            els: None,
+            val: val,
+            var: None,
+            init:None,
+            inc: None,
+            token: token
         }
     }
 
     pub fn new_unary(kind: NodeKind, expr: *mut Node) -> Self {
         let mut node: Node = Node::new(kind);
+        node.lhs = Some(expr);
+        return node;
+    }
+
+    pub fn new_unary_v2(kind: NodeKind, expr: *mut Node, token: TokenWrap) -> Self {
+        let mut node: Node = Node::new_v2(kind, token);
         node.lhs = Some(expr);
         return node;
     }
@@ -319,6 +385,25 @@ impl Node {
             var: var,
             init:None,
             inc: None,
+            token: TokenWrap::empty()
+        }
+    }
+
+    pub fn new_var_node_v2(var: Option<*mut Obj>, token: TokenWrap) -> Self {
+        Self {
+            kind: NodeKind::VAR,
+            next: None,
+            lhs: None,
+            rhs: None,
+            body: None,
+            cond: None,
+            then: None,
+            els: None,
+            val: 0,
+            var: var,
+            init:None,
+            inc: None,
+            token: token
         }
     }
 
@@ -662,6 +747,11 @@ pub fn get_node_inc(node: *mut Node) -> Option<*mut Node> {
 #[allow(dead_code)]
 pub fn set_node_inc(node: *mut Node, inc: Option<*mut Node>) {
     unsafe { node.as_mut().unwrap().inc = inc }
+}
+
+#[allow(dead_code)]
+pub fn get_node_token(node: *mut Node) -> TokenWrap {
+    unsafe { node.as_ref().unwrap().token }
 }
 
 

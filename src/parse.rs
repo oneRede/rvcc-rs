@@ -9,13 +9,13 @@ use crate::{
 pub static mut LOCALS: Option<*mut Obj> = None;
 
 #[allow(dead_code)]
-pub fn expr(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
-    return assign(token);
+pub fn create_binary_node(kind: NodeKind, lhs: *mut Node, rhs: *mut Node) -> *mut Node {
+    Box::leak(Box::new(Node::new_binary(kind, lhs, rhs)))
 }
 
 #[allow(dead_code)]
-pub fn create_binary_node(kind: NodeKind, lhs: *mut Node, rhs: *mut Node) -> *mut Node {
-    Box::leak(Box::new(Node::new_binary(kind, lhs, rhs)))
+pub fn create_binary_node_v2(kind: NodeKind, lhs: *mut Node, rhs: *mut Node, token: TokenWrap) -> *mut Node {
+    Box::leak(Box::new(Node::new_binary_v2(kind, lhs, rhs, token)))
 }
 
 #[allow(dead_code)]
@@ -24,8 +24,33 @@ pub fn create_unary_node(kind: NodeKind, expr: *mut Node) -> *mut Node {
 }
 
 #[allow(dead_code)]
+pub fn create_unary_node_v2(kind: NodeKind, expr: *mut Node, token: TokenWrap) -> *mut Node {
+    Box::leak(Box::new(Node::new_unary_v2(kind, expr, token)))
+}
+
+#[allow(dead_code)]
 pub fn create_node(kind: NodeKind) -> *mut Node {
     Box::leak(Box::new(Node::new(kind)))
+}
+
+#[allow(dead_code)]
+pub fn create_num_node_v2(val: i64, token: TokenWrap) -> *mut Node {
+    Box::leak(Box::new(Node::new_num_v2(val, token)))
+}
+
+#[allow(dead_code)]
+pub fn create_var_node_v2(obj: Option<*mut Obj>, token: TokenWrap) -> *mut Node {
+    Box::leak(Box::new(Node::new_var_node_v2(obj, token)))
+}
+
+#[allow(dead_code)]
+pub fn create_node_v2(kind: NodeKind, token: TokenWrap) -> *mut Node {
+    Box::leak(Box::new(Node::new_v2(kind, token)))
+}
+
+#[allow(dead_code)]
+pub fn expr(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
+    return assign(token);
 }
 
 #[allow(dead_code)]
@@ -33,10 +58,11 @@ pub fn assign(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     let (mut node, mut token) = equality(token);
     if equal(token.get_ref(), &['=']) {
         let (n, t) = assign(token.set(token.get_next()));
-        node = Some(create_binary_node(
+        node = Some(create_binary_node_v2(
             NodeKind::ASSIGN,
             node.unwrap(),
             n.unwrap(),
+            token,
         ));
         token = t;
     }
@@ -51,13 +77,13 @@ fn equality(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     loop {
         if equal(token.get_ref(), &['=', '=']) {
             let (n, t) = relational(token.set(token.get_next()));
-            node = Some(create_binary_node(NodeKind::EQ, node.unwrap(), n.unwrap()));
+            node = Some(create_binary_node_v2(NodeKind::EQ, node.unwrap(), n.unwrap(), t));
             token = t;
             continue;
         }
         if equal(token.get_ref(), &['!', '=']) {
             let (n, t) = relational(token.set(token.get_next()));
-            node = Some(create_binary_node(NodeKind::NE, node.unwrap(), n.unwrap()));
+            node = Some(create_binary_node_v2(NodeKind::NE, node.unwrap(), n.unwrap(), t));
             token = t;
             continue;
         }
@@ -73,28 +99,28 @@ fn relational(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     loop {
         if equal(token.get_ref(), &['<']) {
             let (n, t) = add(token.set(token.get_next()));
-            node = Some(create_binary_node(NodeKind::LT, node.unwrap(), n.unwrap()));
+            node = Some(create_binary_node_v2(NodeKind::LT, node.unwrap(), n.unwrap(), t));
             token = t;
             continue;
         }
 
         if equal(token.get_ref(), &['<', '=']) {
             let (n, t) = add(token.set(token.get_next()));
-            node = Some(create_binary_node(NodeKind::LE, node.unwrap(), n.unwrap()));
+            node = Some(create_binary_node_v2(NodeKind::LE, node.unwrap(), n.unwrap(), t));
             token = t;
             continue;
         }
 
         if equal(token.get_ref(), &['>']) {
             let (n, t) = add(token.set(token.get_next()));
-            node = Some(create_binary_node(NodeKind::LT, n.unwrap(), node.unwrap()));
+            node = Some(create_binary_node_v2(NodeKind::LT, n.unwrap(), node.unwrap(), t));
             token = t;
             continue;
         }
 
         if equal(token.get_ref(), &['>', '=']) {
             let (n, t) = add(token.set(token.get_next()));
-            node = Some(create_binary_node(NodeKind::LE, n.unwrap(), node.unwrap()));
+            node = Some(create_binary_node_v2(NodeKind::LE, n.unwrap(), node.unwrap(), t));
             token = t;
             continue;
         }
@@ -110,13 +136,13 @@ fn add(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     loop {
         if equal(token.get_ref(), &['+']) {
             let (n, t) = mul(token.set(token.get_next()));
-            node = Some(create_binary_node(NodeKind::Add, node.unwrap(), n.unwrap()));
+            node = Some(create_binary_node_v2(NodeKind::Add, node.unwrap(), n.unwrap(), t));
             token = t;
             continue;
         }
         if equal(token.get_ref(), &['-']) {
             let (n, t) = mul(token.set(token.get_next()));
-            node = Some(create_binary_node(NodeKind::Sub, node.unwrap(), n.unwrap()));
+            node = Some(create_binary_node_v2(NodeKind::Sub, node.unwrap(), n.unwrap(), t));
             token = t;
             continue;
         }
@@ -131,13 +157,13 @@ fn mul(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     loop {
         if equal(token.get_ref(), &['*']) {
             let (n, t) = unary(token.set(token.get_next()));
-            node = Some(create_binary_node(NodeKind::Mul, node.unwrap(), n.unwrap()));
+            node = Some(create_binary_node_v2(NodeKind::Mul, node.unwrap(), n.unwrap(), t));
             token = t;
             continue;
         }
         if equal(token.get_ref(), &['/']) {
             let (n, t) = unary(token.set(token.get_next()));
-            node = Some(create_binary_node(NodeKind::Div, node.unwrap(), n.unwrap()));
+            node = Some(create_binary_node_v2(NodeKind::Div, node.unwrap(), n.unwrap(), t));
             token = t;
             continue;
         }
@@ -152,7 +178,7 @@ fn unary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     }
     if equal(token.get_ref(), &['-']) {
         let (n, t) = unary(token.set(token.get_next()));
-        return (Some(create_unary_node(NodeKind::NEG, n.unwrap())), t);
+        return (Some(create_unary_node_v2(NodeKind::NEG, n.unwrap(), t)), t);
     }
 
     primary(token)
@@ -173,12 +199,12 @@ fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
             let name: String = token.get_loc().unwrap()[..len].iter().collect();
             var = Some(Obj::new(Box::leak(Box::new(name))));
         }
-        let node = Box::leak(Box::new(Node::new_var_node(var)));
+        let node = create_var_node_v2(var, token);
         return (Some(node), token.set(token.get_next()));
     }
 
     if token.get_kind() == TokenKind::Num {
-        let node = Box::leak(Box::new(Node::new_num(token.get_val() as i64)));
+        let node = create_num_node_v2(token.get_val() as i64, token);
         return (Some(node), token.set(token.get_next()));
     }
 
@@ -188,7 +214,7 @@ fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn compound_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
-    let head: *mut Node = create_node(NodeKind::Num);
+    let head: *mut Node = create_node_v2(NodeKind::Num, token);
     let mut cur = head;
 
     loop {
@@ -211,13 +237,13 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), str_to_chars("return")) {
         let (n, t) = expr(token.set(token.get_next()));
 
-        let node = create_unary_node(NodeKind::RETURN, n.unwrap());
+        let node = create_unary_node_v2(NodeKind::RETURN, n.unwrap(), t);
         token.set(skip(t.get_ref(), &[';']).unwrap());
         return (Some(node), token);
     }
 
     if equal(token.get_ref(), str_to_chars("if")) {
-        let node: *mut Node = create_node(NodeKind::IF);
+        let node: *mut Node = create_node_v2(NodeKind::IF, token);
 
         token.set(token.get_next());
         token.set(skip(token.get_ref(), &['(']).unwrap());
@@ -240,7 +266,7 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     }
 
     if equal(token.get_ref(), str_to_chars("for")){
-        let node: *mut Node = create_node(NodeKind::FOR);
+        let node: *mut Node = create_node_v2(NodeKind::FOR, token);
 
         token.set(token.get_next());
         token.set(skip(token.get_ref(), &['(']).unwrap());
@@ -270,7 +296,7 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     }
 
     if equal(token.get_ref(), str_to_chars("while")){
-        let node: *mut Node = create_node(NodeKind::FOR);
+        let node: *mut Node = create_node_v2(NodeKind::FOR, token);
 
         token.set(token.get_next());
         token.set(skip(token.get_ref(), &['(']).unwrap());
@@ -295,11 +321,11 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 fn expr_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), &[';']) {
         token.set(token.get_next());
-        return (Some(create_node(NodeKind::BLOCK)), token);
+        return (Some(create_node_v2(NodeKind::BLOCK, token)), token);
     }
 
     let (n, t) = expr(token);
-    let node = create_unary_node(NodeKind::ExprStmt, n.unwrap());
+    let node = create_unary_node_v2(NodeKind::ExprStmt, n.unwrap(), token);
     token.set(skip(t.get_ref(), &[';']).unwrap());
     return (Some(node), token);
 }
