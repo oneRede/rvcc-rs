@@ -2,7 +2,7 @@ use crate::rvcc::{
     get_fuction_body, get_fuction_locals, get_fuction_stack_size, get_node_body, get_node_cond,
     get_node_els, get_node_kind, get_node_lhs, get_node_next, get_node_rhs, get_node_then,
     get_node_val, get_node_var, get_obj_offset, set_fuction_stack_size, set_obj_offset, Function,
-    Node, NodeKind, ObjIter,
+    Node, NodeKind, ObjIter, get_node_init, get_node_inc,
 };
 
 pub static mut DEPTH: usize = 0;
@@ -135,6 +135,26 @@ fn gen_stmt(mut node: *mut Node) {
             if !get_node_els(node).is_none() {
                 gen_stmt(get_node_els(node).unwrap())
             }
+            println!(".L.end.{}:", c);
+            return;
+        }
+
+        NodeKind::FOR => {
+            let c = count();
+            gen_stmt(get_node_init(node).unwrap());
+            println!(".L.begin.{}:", c);
+
+            if !get_node_cond(node).is_none(){
+                gen_expr(get_node_cond(node).unwrap());
+                println!("  beqz a0, .L.end.{}", c);
+            }
+
+            gen_stmt(get_node_then(node).unwrap());
+
+            if !get_node_inc(node).is_none() {
+                gen_expr(get_node_inc(node).unwrap())
+            }
+            println!("  j .L.begin.{}", c);
             println!(".L.end.{}:", c);
             return;
         }

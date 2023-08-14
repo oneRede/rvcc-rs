@@ -1,7 +1,7 @@
 use crate::{
     rvcc::{
         get_node_next, get_obj_name, get_obj_next, set_node_body, set_node_cond, set_node_els,
-        set_node_next, set_node_then, Function, Node, NodeKind, Obj, TokenKind, TokenWrap,
+        set_node_next, set_node_then, Function, Node, NodeKind, Obj, TokenKind, TokenWrap, set_node_init, set_node_inc,
     },
     tokenize::{equal, error_token, skip, str_to_chars},
 };
@@ -237,6 +237,36 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
             token = t;
         }
         return (Some(node), token);
+    }
+
+    if equal(token.get_ref(), str_to_chars("for")){
+        let node: *mut Node = create_node(NodeKind::FOR);
+
+        token.set(token.get_next());
+        token.set(skip(token.get_ref(), &['(']).unwrap());
+
+        let (n, mut token) = expr_stmt(token);
+        set_node_init(node, n);
+
+        if !equal(token.get_ref(), &[';']) {
+            let (n, t) = expr(token);
+            set_node_cond(node, n);
+            token = t;
+        }
+        token.set(skip(token.get_ref(), &[';']).unwrap());
+
+        if !equal(token.get_ref(), &[')']) {
+            let (n, t) = expr(token);
+            set_node_inc(node, n);
+            token = t;
+        }
+        token.set(skip(token.get_ref(), &[')']).unwrap());
+
+        let (n, token) = stmt(token);
+        set_node_then(node, n);
+
+        return (Some(node), token)
+
     }
 
     if equal(token.get_ref(), &['{']) {

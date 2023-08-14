@@ -196,6 +196,7 @@ pub enum NodeKind {
     RETURN,
     BLOCK,
     IF,
+    FOR,
 }
 
 impl ToString for NodeKind {
@@ -217,6 +218,7 @@ impl ToString for NodeKind {
             NodeKind::RETURN => "RETURN".to_string(),
             NodeKind::BLOCK => "BLOCK".to_string(),
             NodeKind::IF => "IF".to_string(),
+            NodeKind::FOR => "FOR".to_string(),
         }
     }
 }
@@ -239,6 +241,9 @@ pub struct Node {
 
     pub val: i64,
     pub var: Option<*mut Obj>,
+
+    pub init: Option<*mut Node>,
+    pub inc: Option<*mut Node>
 }
 
 #[allow(dead_code)]
@@ -255,6 +260,8 @@ impl Node {
             els: None,
             val: 0,
             var: None,
+            init:None,
+            inc: None,
         }
     }
 
@@ -270,6 +277,8 @@ impl Node {
             els: None,
             val: 0,
             var: None,
+            init:None,
+            inc: None,
         }
     }
 
@@ -285,6 +294,8 @@ impl Node {
             els: None,
             val: val,
             var: None,
+            init:None,
+            inc: None,
         }
     }
 
@@ -306,6 +317,8 @@ impl Node {
             els: None,
             val: 0,
             var: var,
+            init:None,
+            inc: None,
         }
     }
 
@@ -359,6 +372,20 @@ impl Node {
             _s_els = unsafe { self.els.unwrap().as_ref().unwrap().format() };
         }
 
+        let mut _s_init = "".to_string();
+        if self.init.is_none() {
+            _s_init = "None".to_string();
+        } else {
+            _s_init = unsafe { self.init.unwrap().as_ref().unwrap().format() };
+        }
+
+        let mut _s_inc = "".to_string();
+        if self.inc.is_none() {
+            _s_inc = "None".to_string();
+        } else {
+            _s_inc = unsafe { self.inc.unwrap().as_ref().unwrap().format() };
+        }
+
         let mut _s_var = "".to_string();
         if self.var.is_none() {
             _s_var = "None".to_string();
@@ -390,6 +417,12 @@ impl Node {
             + ","
             + "\"body\":"
             + &_s_els
+            + ","
+            + "\"body\":"
+            + &_s_init
+            + ","
+            + "\"body\":"
+            + &_s_inc
             + ","
             + "\"val\":"
             + &self.val.to_string()
@@ -610,6 +643,27 @@ pub fn get_node_els(node: *mut Node) -> Option<*mut Node> {
 pub fn set_node_els(node: *mut Node, els: Option<*mut Node>) {
     unsafe { node.as_mut().unwrap().els = els }
 }
+
+#[allow(dead_code)]
+pub fn get_node_init(node: *mut Node) -> Option<*mut Node> {
+    unsafe { node.as_ref().unwrap().init }
+}
+
+#[allow(dead_code)]
+pub fn set_node_init(node: *mut Node, init: Option<*mut Node>) {
+    unsafe { node.as_mut().unwrap().init = init }
+}
+
+#[allow(dead_code)]
+pub fn get_node_inc(node: *mut Node) -> Option<*mut Node> {
+    unsafe { node.as_ref().unwrap().inc }
+}
+
+#[allow(dead_code)]
+pub fn set_node_inc(node: *mut Node, inc: Option<*mut Node>) {
+    unsafe { node.as_mut().unwrap().inc = inc }
+}
+
 
 #[allow(dead_code)]
 pub fn get_obj_next(obj: *mut Obj) -> Option<*mut Obj> {
