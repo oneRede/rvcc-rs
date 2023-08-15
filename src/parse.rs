@@ -2,7 +2,7 @@ use crate::{
     rvcc::{
         get_node_next, get_node_ty, get_obj_name, get_obj_next, get_ty_base, get_ty_ref,
         set_node_body, set_node_cond, set_node_els, set_node_inc, set_node_init, set_node_next,
-        set_node_then, Function, Node, NodeKind, Obj, TokenKind, TokenWrap,
+        set_node_then, Function, Node, NodeKind, Obj, TokenKind, TokenWrap, set_node_ty, Ty, TypeKind,
     },
     tokenize::{equal, skip, str_to_chars},
     ty::{add_ty, is_int},
@@ -182,6 +182,11 @@ pub fn new_add(
         let node = create_binary_node_v2(NodeKind::Add, lhs.unwrap(), rhs.unwrap(), token);
         return (Some(node), token);
     }
+    if get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
+        && !get_ty_base(get_node_ty(rhs.unwrap()).unwrap()).is_none()
+    {
+        error_token(token.get_ref(), "invalid operands")
+    }
     if !get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
         && !get_ty_base(get_node_ty(rhs.unwrap()).unwrap()).is_none()
     {
@@ -196,29 +201,68 @@ pub fn new_add(
 }
 
 #[allow(dead_code)]
+pub fn new_sub(
+    lhs: Option<*mut Node>,
+    rhs: Option<*mut Node>,
+    token: TokenWrap,
+) -> (Option<*mut Node>, TokenWrap) {
+    add_ty(lhs);
+    add_ty(rhs);
+
+    if is_int(get_ty_ref(get_node_ty(lhs.unwrap()).unwrap()))
+        && is_int(get_ty_ref(get_node_ty(rhs.unwrap()).unwrap()))
+    {
+        let node = create_binary_node_v2(NodeKind::Sub, lhs.unwrap(), rhs.unwrap(), token);
+        return (Some(node), token);
+    }
+    if get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
+        && !get_ty_base(get_node_ty(rhs.unwrap()).unwrap()).is_none()
+    {
+        let num_node = create_num_node_v2(8, token);
+        let rhs_node = create_binary_node_v2(NodeKind::Mul, rhs.unwrap(), num_node, token);
+        add_ty(Some(rhs_node));
+        let node = create_binary_node_v2(NodeKind::Mul, lhs.unwrap(), rhs_node, token);
+        set_node_ty(node, get_node_ty(lhs.unwrap()));
+        return (Some(node), token)
+    }
+    if get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
+        && is_int(get_ty_ref(get_node_ty(rhs.unwrap()).unwrap()))
+    {
+        let node = create_binary_node_v2(NodeKind::Mul, lhs.unwrap(), rhs.unwrap(), token);
+        let ty = Box::leak(Box::new(Ty::new_with_kind(TypeKind::INT)));
+        set_node_ty(node, Some(ty));
+        let num_node = create_num_node_v2(8, token);
+        let node = create_binary_node_v2(NodeKind::Mul, node, num_node, token);
+        return (Some(node), token)
+    }
+    error_token(token.get_ref(), "invalid operands");
+    return (None, token);
+}
+
+#[allow(dead_code)]
 fn add(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     let (mut node, mut token) = mul(token);
 
     loop {
         if equal(token.get_ref(), &['+']) {
             let (n, t) = mul(token.set(token.get_next()));
-            node = Some(create_binary_node_v2(
-                NodeKind::Add,
-                node.unwrap(),
-                n.unwrap(),
+            let (n, t ) = new_add(
+                node,
+                n,
                 t,
-            ));
+            );
+            node = n;
             token = t;
             continue;
         }
         if equal(token.get_ref(), &['-']) {
             let (n, t) = mul(token.set(token.get_next()));
-            node = Some(create_binary_node_v2(
-                NodeKind::Sub,
-                node.unwrap(),
-                n.unwrap(),
+            let (n ,t) = new_sub(
+                node,
+                n,
                 t,
-            ));
+            );
+            node = n;
             token = t;
             continue;
         }
