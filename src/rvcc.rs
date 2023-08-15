@@ -253,7 +253,7 @@ pub struct Node {
     pub inc: Option<*mut Node>,
 
     pub token: TokenWrap,
-    pub ty: Option<*mut Ty>
+    pub ty: Option<*mut Ty>,
 }
 
 #[allow(dead_code)]
