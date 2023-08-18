@@ -1,7 +1,7 @@
 use crate::rvcc::{
     get_node_body, get_node_cond, get_node_els, get_node_inc, get_node_init, get_node_kind,
     get_node_lhs, get_node_next, get_node_rhs, get_node_then, get_node_ty, get_ty_base,
-    get_ty_kind, set_node_kind, set_node_ty, Node, NodeKind, Ty, TypeKind,
+    get_ty_kind, set_node_ty, Node, NodeKind, Ty, TypeKind,
 };
 
 #[allow(dead_code)]
@@ -11,12 +11,13 @@ pub fn is_int(ty: &Ty) -> bool {
 
 #[allow(dead_code)]
 pub fn add_ty(node: Option<*mut Node>) {
-    if !node.is_none() || !get_node_ty(node.unwrap()).is_none() {
+    if node.is_none() || !get_node_ty(node.unwrap()).is_none() {
         return;
     }
+    println!("#add ty {}", unsafe{node.unwrap().as_ref().unwrap().to_string()});
 
-    add_ty(Some(get_node_lhs(node.unwrap())));
-    add_ty(Some(get_node_rhs(node.unwrap())));
+    add_ty(get_node_lhs(node.unwrap()));
+    add_ty(get_node_rhs(node.unwrap()));
     add_ty(get_node_cond(node.unwrap()));
     add_ty(get_node_then(node.unwrap()));
     add_ty(get_node_els(node.unwrap()));
@@ -39,7 +40,10 @@ pub fn add_ty(node: Option<*mut Node>) {
         NodeKind::Div => {}
         NodeKind::NEG => {}
         NodeKind::ASSIGN => {
-            set_node_kind(node.unwrap(), get_node_kind(get_node_lhs(node.unwrap())));
+            set_node_ty(
+                node.unwrap(),
+                get_node_ty(get_node_lhs(node.unwrap()).unwrap()),
+            );
             return;
         }
         NodeKind::EQ => {}
@@ -58,17 +62,18 @@ pub fn add_ty(node: Option<*mut Node>) {
             set_node_ty(
                 node.unwrap(),
                 Some(Box::leak(Box::new(Ty::point_to(
-                    get_node_ty(get_node_lhs(node.unwrap())).unwrap(),
+                    get_node_ty(get_node_lhs(node.unwrap()).unwrap()).unwrap(),
                 )))),
             );
             return;
         }
         NodeKind::DEREF => {
-            if get_ty_kind(get_node_ty(get_node_lhs(node.unwrap())).unwrap()) == Some(TypeKind::PTR)
+            if get_ty_kind(get_node_ty(get_node_lhs(node.unwrap()).unwrap()).unwrap())
+                == Some(TypeKind::PTR)
             {
                 set_node_ty(
                     node.unwrap(),
-                    get_ty_base(get_node_ty(get_node_lhs(node.unwrap())).unwrap()),
+                    get_ty_base(get_node_ty(get_node_lhs(node.unwrap()).unwrap()).unwrap()),
                 )
             } else {
                 set_node_ty(

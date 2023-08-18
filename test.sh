@@ -38,7 +38,8 @@ assert 0 '{ return 0; }'
 assert 42 '{ return 42; }'
 
 # [2] 支持+ -运算符
-assert 34 '{ return 12-34+56; }'
+assert 22 '{ return 34-12; }'
+assert 46 '{ return 12+34; }'
 
 # [3] 支持空格
 assert 41 '{ return  12 + 34 - 5 ; }'

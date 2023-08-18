@@ -54,7 +54,7 @@ pub fn gen_addr(node: *mut Node) {
             return;
         }
         NodeKind::DEREF => {
-            gen_expr(get_node_lhs(node));
+            gen_expr(get_node_lhs(node).unwrap());
             return;
         }
         _ => {}
@@ -71,7 +71,7 @@ pub fn gen_expr(node: *mut Node) {
             return;
         }
         NodeKind::NEG => {
-            gen_expr(get_node_lhs(node));
+            gen_expr(get_node_lhs(node).unwrap());
             println!("  # 对a0值进行取反");
             println!("  neg a0, a0");
             return;
@@ -83,19 +83,19 @@ pub fn gen_expr(node: *mut Node) {
             return;
         }
         NodeKind::DEREF => {
-            gen_expr(get_node_lhs(node));
+            gen_expr(get_node_lhs(node).unwrap());
             println!("  # 读取a0中存放的地址，得到的值存入a0");
             println!("  ld a0, 0(a0)");
             return;
         }
         NodeKind::ADDR => {
-            gen_addr(get_node_lhs(node));
+            gen_addr(get_node_lhs(node).unwrap());
             return;
         }
         NodeKind::ASSIGN => {
-            gen_addr(get_node_lhs(node));
+            gen_addr(get_node_lhs(node).unwrap());
             push();
-            gen_expr(get_node_rhs(node));
+            gen_expr(get_node_rhs(node).unwrap());
             pop("a1");
             println!("  # 将a0的值，写入到a1中存放的地址");
             println!("  sd a0, 0(a1)");
@@ -104,9 +104,9 @@ pub fn gen_expr(node: *mut Node) {
         _ => {}
     }
 
-    gen_expr(get_node_rhs(node));
+    gen_expr(get_node_rhs(node).unwrap());
     push();
-    gen_expr(get_node_lhs(node));
+    gen_expr(get_node_lhs(node).unwrap());
     pop("a1");
 
     match get_node_kind(node) {
@@ -238,13 +238,13 @@ fn gen_stmt(mut node: *mut Node) {
 
         NodeKind::RETURN => {
             println!("# 返回语句");
-            gen_expr(get_node_lhs(node));
+            gen_expr(get_node_lhs(node).unwrap());
             println!("  # 跳转到.L.return段");
             println!("  j .L.return");
             return;
         }
         NodeKind::ExprStmt => {
-            gen_expr(get_node_lhs(node));
+            gen_expr(get_node_lhs(node).unwrap());
             return;
         }
         _ => {}

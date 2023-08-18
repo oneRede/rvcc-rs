@@ -493,6 +493,13 @@ impl Node {
             _s_var = unsafe { self.var.unwrap().as_ref().unwrap().to_string() };
         }
 
+        let mut _s_ty = "".to_string();
+        if self.ty.is_none() {
+            _s_ty = "None".to_string();
+        } else {
+            _s_ty = unsafe { self.ty.unwrap().as_ref().unwrap().to_string() };
+        }
+
         let _s = "{".to_string()
             + "\"kind\":"
             + &self.kind.to_string()
@@ -509,19 +516,19 @@ impl Node {
             + "\"rhs\":"
             + &_s_rhs
             + ","
-            + "\"body\":"
+            + "\"cond\":"
             + &_s_cond
             + ","
-            + "\"body\":"
+            + "\"then\":"
             + &_s_then
             + ","
-            + "\"body\":"
+            + "\"els\":"
             + &_s_els
             + ","
-            + "\"body\":"
+            + "\"init\":"
             + &_s_init
             + ","
-            + "\"body\":"
+            + "\"inc\":"
             + &_s_inc
             + ","
             + "\"val\":"
@@ -529,6 +536,12 @@ impl Node {
             + ","
             + "\"var\":"
             + &_s_var
+            + ","
+            + "\"token\":"
+            + &self.token.get_ref().to_string()
+            + ","
+            + "\"ty\":"
+            + &_s_ty
             + "}";
         _s
     }
@@ -702,6 +715,15 @@ impl Ty {
     }
 }
 
+impl ToString for Ty {
+    fn to_string(&self) -> String {
+        match &self.kind.unwrap() {
+            TypeKind::INT => {"INT".to_string()},
+            TypeKind::PTR => {"PTR".to_string()},
+        }
+    }
+}
+
 #[allow(dead_code)]
 pub fn get_token_ref(token: *mut Token) -> &'static Token {
     unsafe { token.as_ref().unwrap() }
@@ -728,13 +750,13 @@ pub fn get_node_var(node: *mut Node) -> *mut Obj {
 }
 
 #[allow(dead_code)]
-pub fn get_node_lhs(node: *mut Node) -> *mut Node {
-    unsafe { node.as_ref().unwrap().lhs.unwrap() }
+pub fn get_node_lhs(node: *mut Node) -> Option<*mut Node> {
+    unsafe { node.as_ref().unwrap().lhs }
 }
 
 #[allow(dead_code)]
-pub fn get_node_rhs(node: *mut Node) -> *mut Node {
-    unsafe { node.as_ref().unwrap().rhs.unwrap() }
+pub fn get_node_rhs(node: *mut Node) ->Option<*mut Node> {
+    unsafe { node.as_ref().unwrap().rhs }
 }
 
 #[allow(dead_code)]

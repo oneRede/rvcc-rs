@@ -174,20 +174,24 @@ pub fn new_add(
     token: TokenWrap,
 ) -> (Option<*mut Node>, TokenWrap) {
     add_ty(lhs);
+    println!("#add lhs {}", unsafe{lhs.unwrap().as_ref().unwrap().to_string()});
     add_ty(rhs);
+    println!("#add rhs {}", unsafe{rhs.unwrap().as_ref().unwrap().to_string()});
 
     if is_int(get_ty_ref(get_node_ty(lhs.unwrap()).unwrap()))
         && is_int(get_ty_ref(get_node_ty(rhs.unwrap()).unwrap()))
     {
         let node = create_binary_node_v2(NodeKind::Add, lhs.unwrap(), rhs.unwrap(), token);
+        let ty = Box::leak(Box::new(Ty::new_with_kind(TypeKind::INT)));
+        set_node_ty(node, Some(ty));
         return (Some(node), token);
     }
-    if get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
+    if !get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
         && !get_ty_base(get_node_ty(rhs.unwrap()).unwrap()).is_none()
     {
         error_token(token.get_ref(), "invalid operands")
     }
-    if !get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
+    if get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
         && !get_ty_base(get_node_ty(rhs.unwrap()).unwrap()).is_none()
     {
         let tmp = lhs;
@@ -207,32 +211,36 @@ pub fn new_sub(
     token: TokenWrap,
 ) -> (Option<*mut Node>, TokenWrap) {
     add_ty(lhs);
+    println!("#sub lhs {}", unsafe{lhs.unwrap().as_ref().unwrap().to_string()});
     add_ty(rhs);
+    println!("#sub rhs {}", unsafe{rhs.unwrap().as_ref().unwrap().to_string()});
 
     if is_int(get_ty_ref(get_node_ty(lhs.unwrap()).unwrap()))
         && is_int(get_ty_ref(get_node_ty(rhs.unwrap()).unwrap()))
     {
         let node = create_binary_node_v2(NodeKind::Sub, lhs.unwrap(), rhs.unwrap(), token);
+        let ty = Box::leak(Box::new(Ty::new_with_kind(TypeKind::INT)));
+        set_node_ty(node, Some(ty));
         return (Some(node), token);
     }
-    if get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
-        && !get_ty_base(get_node_ty(rhs.unwrap()).unwrap()).is_none()
+    if !get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
+        && is_int(get_ty_ref(get_node_ty(rhs.unwrap()).unwrap()))
     {
         let num_node = create_num_node_v2(8, token);
         let rhs_node = create_binary_node_v2(NodeKind::Mul, rhs.unwrap(), num_node, token);
         add_ty(Some(rhs_node));
-        let node = create_binary_node_v2(NodeKind::Mul, lhs.unwrap(), rhs_node, token);
+        let node = create_binary_node_v2(NodeKind::Sub, lhs.unwrap(), rhs_node, token);
         set_node_ty(node, get_node_ty(lhs.unwrap()));
         return (Some(node), token)
     }
-    if get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
-        && is_int(get_ty_ref(get_node_ty(rhs.unwrap()).unwrap()))
+    if !get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none()
+        && !get_ty_base(get_node_ty(rhs.unwrap()).unwrap()).is_none()
     {
-        let node = create_binary_node_v2(NodeKind::Mul, lhs.unwrap(), rhs.unwrap(), token);
+        let node = create_binary_node_v2(NodeKind::Sub, lhs.unwrap(), rhs.unwrap(), token);
         let ty = Box::leak(Box::new(Ty::new_with_kind(TypeKind::INT)));
         set_node_ty(node, Some(ty));
         let num_node = create_num_node_v2(8, token);
-        let node = create_binary_node_v2(NodeKind::Mul, node, num_node, token);
+        let node = create_binary_node_v2(NodeKind::Div, node, num_node, token);
         return (Some(node), token)
     }
     error_token(token.get_ref(), "invalid operands");
