@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["{ return 12-34+56; }"],
+            "args": ["{ x=3; y=5; return *(&y-1); }"],
             "cwd": "${workspaceFolder}"
         },
         {

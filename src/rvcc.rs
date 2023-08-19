@@ -57,6 +57,9 @@ impl Token {
     }
 
     fn format(&self) -> String {
+        if self.loc.is_none() {
+            return "".to_string();
+        }
         let loc: String = self.loc.unwrap()[..self.len].iter().collect();
         let mut _s = "".to_string();
         if self.next.is_none() {
@@ -368,7 +371,7 @@ impl Node {
             init: None,
             inc: None,
             token: token,
-            ty: None,
+            ty: Some(Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))))),
         }
     }
 
@@ -700,17 +703,17 @@ impl Ty {
         }
     }
 
-    pub fn new_with_kind(kind: TypeKind) -> Self {
+    pub fn new_with_kind(kind: Option<TypeKind>) -> Self {
         Self {
-            kind: Some(kind),
+            kind: kind,
             base: None,
         }
     }
 
-    pub fn point_to(base: *mut Ty) -> Self {
+    pub fn point_to(base: Option<*mut Ty>) -> Self {
         Self {
             kind: Some(TypeKind::PTR),
-            base: Some(base),
+            base: base,
         }
     }
 }
@@ -718,8 +721,8 @@ impl Ty {
 impl ToString for Ty {
     fn to_string(&self) -> String {
         match &self.kind.unwrap() {
-            TypeKind::INT => {"INT".to_string()},
-            TypeKind::PTR => {"PTR".to_string()},
+            TypeKind::INT => "INT".to_string(),
+            TypeKind::PTR => "PTR".to_string(),
         }
     }
 }
@@ -755,7 +758,7 @@ pub fn get_node_lhs(node: *mut Node) -> Option<*mut Node> {
 }
 
 #[allow(dead_code)]
-pub fn get_node_rhs(node: *mut Node) ->Option<*mut Node> {
+pub fn get_node_rhs(node: *mut Node) -> Option<*mut Node> {
     unsafe { node.as_ref().unwrap().rhs }
 }
 
@@ -885,8 +888,11 @@ pub fn get_fuction_stack_size(func: *mut Function) -> i64 {
 }
 
 #[allow(dead_code)]
-pub fn get_ty_kind(ty: *mut Ty) -> Option<TypeKind> {
-    unsafe { ty.as_ref().unwrap().kind }
+pub fn get_ty_kind(ty: Option<*mut Ty>) -> Option<TypeKind> {
+    if ty.is_none() {
+        return None;
+    }
+    unsafe { ty.unwrap().as_ref().unwrap().kind }
 }
 
 #[allow(dead_code)]
@@ -895,8 +901,11 @@ pub fn get_ty_base(ty: *mut Ty) -> Option<*mut Ty> {
 }
 
 #[allow(dead_code)]
-pub fn get_ty_ref(ty: *mut Ty) -> &'static Ty {
-    unsafe { ty.as_ref().unwrap() }
+pub fn get_ty_ref(ty: Option<*mut Ty>) -> &'static Ty {
+    if ty.is_none() {
+        return Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))));
+    }
+    unsafe { ty.unwrap().as_ref().unwrap() }
 }
 
 #[test]

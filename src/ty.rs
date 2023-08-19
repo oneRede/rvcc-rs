@@ -14,7 +14,6 @@ pub fn add_ty(node: Option<*mut Node>) {
     if node.is_none() || !get_node_ty(node.unwrap()).is_none() {
         return;
     }
-    println!("#add ty {}", unsafe{node.unwrap().as_ref().unwrap().to_string()});
 
     add_ty(get_node_lhs(node.unwrap()));
     add_ty(get_node_rhs(node.unwrap()));
@@ -54,22 +53,22 @@ pub fn add_ty(node: Option<*mut Node>) {
         NodeKind::Num => {
             set_node_ty(
                 node.unwrap(),
-                Some(Box::leak(Box::new(Ty::new_with_kind(TypeKind::INT)))),
+                Some(Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))))),
             );
             return;
         }
         NodeKind::ADDR => {
+            let ty = Box::leak(Box::new(Ty::point_to(get_node_ty(
+                get_node_lhs(node.unwrap()).unwrap(),
+            ))));
             set_node_ty(
                 node.unwrap(),
-                Some(Box::leak(Box::new(Ty::point_to(
-                    get_node_ty(get_node_lhs(node.unwrap()).unwrap()).unwrap(),
-                )))),
+                Some(ty),
             );
             return;
         }
         NodeKind::DEREF => {
-            if get_ty_kind(get_node_ty(get_node_lhs(node.unwrap()).unwrap()).unwrap())
-                == Some(TypeKind::PTR)
+            if get_ty_kind(get_node_ty(get_node_lhs(node.unwrap()).unwrap())) == Some(TypeKind::PTR)
             {
                 set_node_ty(
                     node.unwrap(),
@@ -78,11 +77,12 @@ pub fn add_ty(node: Option<*mut Node>) {
             } else {
                 set_node_ty(
                     node.unwrap(),
-                    Some(Box::leak(Box::new(Ty::new_with_kind(TypeKind::INT)))),
+                    Some(Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))))),
                 );
             }
             return;
         }
         _ => {}
     }
+    return;
 }
