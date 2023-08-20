@@ -33,7 +33,7 @@ pub fn create_unary_node(kind: NodeKind, expr: *mut Node) -> *mut Node {
 }
 
 #[allow(dead_code)]
-pub fn create_unary_node_v2(kind: NodeKind, expr: *mut Node, token: TokenWrap) -> *mut Node {
+pub fn create_unary_node_v2(kind: NodeKind, expr: Option<*mut Node>, token: TokenWrap) -> *mut Node {
     Box::leak(Box::new(Node::new_unary_v2(kind, expr, token)))
 }
 
@@ -216,7 +216,7 @@ pub fn new_sub(
         let node = create_binary_node_v2(NodeKind::Sub, lhs.unwrap(), rhs.unwrap(), token);
         return (Some(node), token);
     }
-    println!("{:?}", get_ty_base(get_node_ty(lhs.unwrap()).unwrap()));
+    
     if !(get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none())
         && is_int(get_ty_ref(get_node_ty(rhs.unwrap())))
     {
@@ -303,16 +303,16 @@ fn unary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     }
     if equal(token.get_ref(), &['-']) {
         let (n, t) = unary(token.set(token.get_next()));
-        return (Some(create_unary_node_v2(NodeKind::NEG, n.unwrap(), t)), t);
+        return (Some(create_unary_node_v2(NodeKind::NEG, n, t)), t);
     }
     if equal(token.get_ref(), &['&']) {
         let (n, t) = unary(token.set(token.get_next()));
-        return (Some(create_unary_node_v2(NodeKind::ADDR, n.unwrap(), t)), t);
+        return (Some(create_unary_node_v2(NodeKind::ADDR, n, t)), t);
     }
     if equal(token.get_ref(), &['*']) {
         let (n, t) = unary(token.set(token.get_next()));
         return (
-            Some(create_unary_node_v2(NodeKind::DEREF, n.unwrap(), t)),
+            Some(create_unary_node_v2(NodeKind::DEREF, n, t)),
             t,
         );
     }
@@ -374,7 +374,7 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), str_to_chars("return")) {
         let (n, t) = expr(token.set(token.get_next()));
 
-        let node = create_unary_node_v2(NodeKind::RETURN, n.unwrap(), t);
+        let node = create_unary_node_v2(NodeKind::RETURN, n, t);
         token.set(skip(t.get_ref(), &[';']).unwrap());
         return (Some(node), token);
     }
@@ -461,7 +461,7 @@ fn expr_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     }
 
     let (n, t) = expr(token);
-    let node = create_unary_node_v2(NodeKind::ExprStmt, n.unwrap(), token);
+    let node = create_unary_node_v2(NodeKind::ExprStmt, n, token);
     token.set(skip(t.get_ref(), &[';']).unwrap());
     return (Some(node), token);
 }

@@ -381,29 +381,10 @@ impl Node {
         return node;
     }
 
-    pub fn new_unary_v2(kind: NodeKind, expr: *mut Node, token: TokenWrap) -> Self {
+    pub fn new_unary_v2(kind: NodeKind, expr: Option<*mut Node>, token: TokenWrap) -> Self {
         let mut node: Node = Node::new_v2(kind, token);
-        node.lhs = Some(expr);
+        node.lhs = expr;
         return node;
-    }
-
-    pub fn new_var_node(var: Option<*mut Obj>) -> Self {
-        Self {
-            kind: NodeKind::VAR,
-            next: None,
-            lhs: None,
-            rhs: None,
-            body: None,
-            cond: None,
-            then: None,
-            els: None,
-            val: 0,
-            var: var,
-            init: None,
-            inc: None,
-            token: TokenWrap::empty(),
-            ty: None,
-        }
     }
 
     pub fn new_var_node_v2(var: Option<*mut Obj>, token: TokenWrap) -> Self {

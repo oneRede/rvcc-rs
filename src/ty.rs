@@ -33,24 +33,24 @@ pub fn add_ty(node: Option<*mut Node>) {
     }
 
     match get_node_kind(node.unwrap()) {
-        NodeKind::Add => {}
-        NodeKind::Sub => {}
-        NodeKind::Mul => {}
-        NodeKind::Div => {}
-        NodeKind::NEG => {}
-        NodeKind::ASSIGN => {
+        NodeKind::ASSIGN
+        | NodeKind::NEG
+        | NodeKind::Div
+        | NodeKind::Mul
+        | NodeKind::Sub
+        | NodeKind::Add => {
             set_node_ty(
                 node.unwrap(),
                 get_node_ty(get_node_lhs(node.unwrap()).unwrap()),
             );
             return;
         }
-        NodeKind::EQ => {}
-        NodeKind::NE => {}
-        NodeKind::LT => {}
-        NodeKind::LE => {}
-        NodeKind::VAR => {}
-        NodeKind::Num => {
+        NodeKind::EQ
+        | NodeKind::NE
+        | NodeKind::LT
+        | NodeKind::LE
+        | NodeKind::VAR
+        | NodeKind::Num => {
             set_node_ty(
                 node.unwrap(),
                 Some(Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))))),
@@ -61,10 +61,7 @@ pub fn add_ty(node: Option<*mut Node>) {
             let ty = Box::leak(Box::new(Ty::point_to(get_node_ty(
                 get_node_lhs(node.unwrap()).unwrap(),
             ))));
-            set_node_ty(
-                node.unwrap(),
-                Some(ty),
-            );
+            set_node_ty(node.unwrap(), Some(ty));
             return;
         }
         NodeKind::DEREF => {
