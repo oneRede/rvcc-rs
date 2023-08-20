@@ -6,7 +6,7 @@ use crate::{
         TypeKind,
     },
     tokenize::{equal, skip, str_to_chars},
-    ty::{add_ty, is_int},
+    ty::{add_ty, is_int, create_ty},
     utils::error_token,
 };
 
@@ -235,8 +235,8 @@ pub fn new_sub(
         && !get_ty_base(get_node_ty(rhs.unwrap()).unwrap()).is_none()
     {
         let node = create_binary_node_v2(NodeKind::Sub, lhs.unwrap(), rhs.unwrap(), token);
-        let ty = Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))));
-        set_node_ty(node, Some(ty));
+        let ty = create_ty(TypeKind::INT);
+        set_node_ty(node, ty);
         let num_node = create_num_node_v2(8, token);
         let node = create_binary_node_v2(NodeKind::Div, node, num_node, token);
         return (Some(node), token);

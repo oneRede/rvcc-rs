@@ -10,6 +10,11 @@ pub fn is_int(ty: &Ty) -> bool {
 }
 
 #[allow(dead_code)]
+pub fn create_ty(kind: TypeKind) -> Option<*mut Ty>{
+    Some(Box::leak(Box::new(Ty::new_with_kind(Some(kind)))))
+}
+
+#[allow(dead_code)]
 pub fn add_ty(node: Option<*mut Node>) {
     if node.is_none() || !get_node_ty(node.unwrap()).is_none() {
         return;
@@ -53,7 +58,7 @@ pub fn add_ty(node: Option<*mut Node>) {
         | NodeKind::Num => {
             set_node_ty(
                 node.unwrap(),
-                Some(Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))))),
+                create_ty(TypeKind::INT),
             );
             return;
         }
@@ -74,7 +79,7 @@ pub fn add_ty(node: Option<*mut Node>) {
             } else {
                 set_node_ty(
                     node.unwrap(),
-                    Some(Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))))),
+                    create_ty(TypeKind::INT),
                 );
             }
             return;
