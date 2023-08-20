@@ -33,7 +33,11 @@ pub fn create_unary_node(kind: NodeKind, expr: *mut Node) -> *mut Node {
 }
 
 #[allow(dead_code)]
-pub fn create_unary_node_v2(kind: NodeKind, expr: Option<*mut Node>, token: TokenWrap) -> *mut Node {
+pub fn create_unary_node_v2(
+    kind: NodeKind,
+    expr: Option<*mut Node>,
+    token: TokenWrap,
+) -> *mut Node {
     Box::leak(Box::new(Node::new_unary_v2(kind, expr, token)))
 }
 
@@ -216,7 +220,7 @@ pub fn new_sub(
         let node = create_binary_node_v2(NodeKind::Sub, lhs.unwrap(), rhs.unwrap(), token);
         return (Some(node), token);
     }
-    
+
     if !(get_ty_base(get_node_ty(lhs.unwrap()).unwrap()).is_none())
         && is_int(get_ty_ref(get_node_ty(rhs.unwrap())))
     {
@@ -311,10 +315,7 @@ fn unary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     }
     if equal(token.get_ref(), &['*']) {
         let (n, t) = unary(token.set(token.get_next()));
-        return (
-            Some(create_unary_node_v2(NodeKind::DEREF, n, t)),
-            t,
-        );
+        return (Some(create_unary_node_v2(NodeKind::DEREF, n, t)), t);
     }
 
     primary(token)

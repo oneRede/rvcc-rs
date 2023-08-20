@@ -2,7 +2,7 @@ use std::{slice, str};
 
 use crate::{
     rvcc::{get_token_ref, Token, TokenKind, TokenWrap},
-    utils::{error_at, get_num_from_chars, read_punct, error_token},
+    utils::{error_at, error_token, get_num_from_chars, read_punct},
 };
 
 pub static mut CURRENT_INPUT: Option<&[char]> = None;
