@@ -515,7 +515,7 @@ pub fn declspec(mut token: TokenWrap) -> (TokenWrap, Option<*mut Ty>) {
     token.set(skip(token.get_ref(), str_to_chars("int")).unwrap());
     return (
         token,
-        Some(Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))))),
+        create_ty(TypeKind::INT),
     );
 }
 
