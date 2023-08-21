@@ -120,6 +120,7 @@ impl ToString for Token {
 }
 
 #[allow(dead_code)]
+#[derive(PartialEq)]
 #[derive(Debug, Clone, Copy)]
 pub struct TokenWrap {
     pub ptr: Option<*mut Token>,
@@ -562,15 +563,17 @@ pub struct Obj {
     pub next: Option<*mut Obj>,
     pub name: &'static str,
     pub offset: i64,
+    pub ty: Option<*mut Ty>
 }
 
 #[allow(dead_code)]
 impl Obj {
-    pub fn new(name: &'static str) -> *mut Obj {
+    pub fn new(name: &'static str, ty: Option<*mut Ty>) -> *mut Obj {
         let mut var = Self {
             next: None,
             name: name,
             offset: 0,
+            ty: ty
         };
         var.next = unsafe { LOCALS };
         let var: *mut Obj = Box::leak(Box::new(var));
@@ -673,6 +676,7 @@ pub enum TypeKind {
 pub struct Ty {
     pub kind: Option<TypeKind>,
     pub base: Option<*mut Ty>,
+    pub token: TokenWrap,
 }
 
 #[allow(dead_code)]
@@ -681,6 +685,7 @@ impl Ty {
         Self {
             kind: None,
             base: None,
+            token: TokenWrap::empty()
         }
     }
 
@@ -688,6 +693,7 @@ impl Ty {
         Self {
             kind: kind,
             base: None,
+            token: TokenWrap::empty()
         }
     }
 
@@ -695,6 +701,7 @@ impl Ty {
         Self {
             kind: Some(TypeKind::PTR),
             base: base,
+            token: TokenWrap::empty()
         }
     }
 }
@@ -849,6 +856,11 @@ pub fn set_obj_offset(obj: *mut Obj, offset: i64) {
 }
 
 #[allow(dead_code)]
+pub fn get_obj_ty(obj: *mut Obj) -> Option<*mut Ty> {
+    unsafe { obj.as_ref().unwrap().ty }
+}
+
+#[allow(dead_code)]
 pub fn get_fuction_locals(func: *mut Function) -> Option<*mut Obj> {
     unsafe { func.as_ref().unwrap().locals }
 }
@@ -887,6 +899,16 @@ pub fn get_ty_ref(ty: Option<*mut Ty>) -> &'static Ty {
         return Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))));
     }
     unsafe { ty.unwrap().as_ref().unwrap() }
+}
+
+#[allow(dead_code)]
+pub fn get_ty_token(ty: *mut Ty) -> TokenWrap{
+    unsafe { ty.as_ref().unwrap().token }
+}
+
+#[allow(dead_code)]
+pub fn set_ty_token(ty: *mut Ty, token: TokenWrap) {
+    unsafe { ty.as_mut().unwrap().token = token }
 }
 
 #[test]

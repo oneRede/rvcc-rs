@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["{ x=3; y=5; return *(&y-1); }"],
+            "args": ["{ int x=3; int *y=&x; int **z=&y; return **z; }"],
             "cwd": "${workspaceFolder}"
         },
         {

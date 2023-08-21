@@ -154,7 +154,7 @@ pub fn convert_keyword(token: TokenWrap) {
 
 #[allow(dead_code)]
 fn is_keyword(token: &Token) -> bool {
-    let keywords = ["return", "if", "else", "for", "while"];
+    let keywords = ["return", "if", "else", "for", "while", "int"];
 
     for kw in keywords {
         if equal(token, str_to_chars(kw)) {
@@ -162,4 +162,13 @@ fn is_keyword(token: &Token) -> bool {
         }
     }
     false
+}
+
+#[allow(dead_code)]
+pub fn consume(mut token: TokenWrap, s: &str) -> (bool, TokenWrap) {
+    if equal(token.get_ref(), str_to_chars(s)) {
+        token.set(token.get_next());
+        return (true, token);
+    }
+    return (false, token)
 }

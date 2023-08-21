@@ -1,12 +1,12 @@
 use crate::{
     rvcc::{
         get_node_next, get_node_ty, get_obj_name, get_obj_next, get_ty_base, get_ty_ref,
-        set_node_body, set_node_cond, set_node_els, set_node_inc, set_node_init, set_node_next,
-        set_node_then, set_node_ty, Function, Node, NodeKind, Obj, TokenKind, TokenWrap, Ty,
-        TypeKind,
+        get_ty_token, set_node_body, set_node_cond, set_node_els, set_node_inc, set_node_init,
+        set_node_next, set_node_then, set_node_ty, set_ty_token, Function, Node, NodeKind, Obj,
+        TokenKind, TokenWrap, Ty, TypeKind,
     },
-    tokenize::{equal, skip, str_to_chars},
-    ty::{add_ty, is_int, create_ty},
+    tokenize::{consume, equal, skip, str_to_chars},
+    ty::{add_ty, create_ty, is_int},
     utils::error_token,
 };
 
@@ -330,11 +330,9 @@ fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     }
 
     if token.get_kind() == TokenKind::IDENT {
-        let mut var = find_var(token);
+        let var = find_var(token);
         if var.is_none() {
-            let len = token.get_len();
-            let name: String = token.get_loc().unwrap()[..len].iter().collect();
-            var = Some(Obj::new(Box::leak(Box::new(name))));
+            error_token(token.get_ref(), "undefined variable");
         }
         let node = create_var_node_v2(var, token);
         return (Some(node), token.set(token.get_next()));
@@ -354,13 +352,17 @@ pub fn compound_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     let head: *mut Node = create_node_v2(NodeKind::Num, token);
     let mut cur = head;
 
-    loop {
-        if equal(token.get_ref(), &['}']) {
-            break;
+    while !equal(token.get_ref(), &['}']) {
+        if equal(token.get_ref(), str_to_chars("int")) {
+            let dec = declaration(token);
+            token = dec.1;
+            set_node_next(cur, dec.0)
+        } else {
+            let (n, t) = stmt(token);
+            token = t;
+            set_node_next(cur, n);
         }
-        let (n, t) = stmt(token);
-        token = t;
-        set_node_next(cur, n);
+
         cur = get_node_next(cur).unwrap();
         add_ty(Some(cur));
     }
@@ -495,4 +497,95 @@ pub fn find_var(token: TokenWrap) -> Option<*mut Obj> {
         var = get_obj_next(var).unwrap();
     }
     None
+}
+
+#[allow(dead_code)]
+pub fn get_ident(token: TokenWrap) -> &'static str {
+    if token.get_kind() != TokenKind::IDENT {
+        error_token(token.get_ref(), "expected an identifier");
+    }
+
+    let len = token.get_len();
+    let name: String = token.get_loc().unwrap()[..len].iter().collect();
+    Box::leak(Box::new(name))
+}
+
+#[allow(dead_code)]
+pub fn declspec(mut token: TokenWrap) -> (TokenWrap, Option<*mut Ty>) {
+    token.set(skip(token.get_ref(), str_to_chars("int")).unwrap());
+    return (
+        token,
+        Some(Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))))),
+    );
+}
+
+#[allow(dead_code)]
+pub fn declarator(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut Ty>, TokenWrap) {
+
+    // while consume(token, "*").0 {
+    //     token = consume(token, "*").1;
+    //     ty = Some(Box::leak(Box::new(Ty::point_to(ty))));
+    // }
+    loop{
+        println!("# loop");
+        let (b, t) = consume(token, "*");
+        if !b {
+          break;
+        }
+        token = t;
+        ty = Some(Box::leak(Box::new(Ty::point_to(ty))));
+    }
+
+    if token.get_kind() != TokenKind::IDENT {
+        error_token(token.get_ref(), "expected a variable name");
+    }
+
+    set_ty_token(ty.unwrap(), token);
+    token.set(token.get_next());
+
+    return (ty, token);
+}
+
+#[allow(dead_code)]
+pub fn declaration(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
+    let base_ty = declspec(token).1;
+    token = declspec(token).0;
+
+    let head: *mut Node = create_node_v2(NodeKind::Num, token);
+    let mut cur = head;
+
+    let mut i = 0;
+
+    while !equal(token.get_ref(), &[';']) {
+        
+        if i > 0 {
+            token.set(skip(token.get_ref(), &[',']).unwrap());
+        }
+        i += 1;
+
+        let ty = declarator(token, base_ty).0;
+        token = declarator(token, base_ty).1;
+        let var = Obj::new(get_ident(get_ty_token(ty.unwrap())), ty);
+
+        if !equal(token.get_ref(), &['=']) {
+            continue;
+        }
+
+        let lhs = create_var_node_v2(Some(var), get_ty_token(ty.unwrap()));
+        let rhs = assign(token.set(token.get_next()));
+        token = rhs.1;
+        let node = create_binary_node_v2(NodeKind::ASSIGN, lhs, rhs.0.unwrap(), token);
+
+        set_node_next(
+            cur,
+            Some(create_unary_node_v2(NodeKind::ExprStmt, Some(node), token)),
+        );
+        cur = get_node_next(cur).unwrap();
+    }
+
+    let node = create_node_v2(NodeKind::BLOCK, token);
+    set_node_body(node, get_node_next(head));
+    token.set(token.get_next());
+
+    return (Some(node), token);
 }
