@@ -521,13 +521,7 @@ pub fn declspec(mut token: TokenWrap) -> (TokenWrap, Option<*mut Ty>) {
 
 #[allow(dead_code)]
 pub fn declarator(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut Ty>, TokenWrap) {
-
-    // while consume(token, "*").0 {
-    //     token = consume(token, "*").1;
-    //     ty = Some(Box::leak(Box::new(Ty::point_to(ty))));
-    // }
     loop{
-        println!("# loop");
         let (b, t) = consume(token, "*");
         if !b {
           break;
