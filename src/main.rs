@@ -4,8 +4,8 @@ mod codegen;
 mod parse;
 mod rvcc;
 mod tokenize;
-mod utils;
 mod ty;
+mod utils;
 
 use crate::parse::parse;
 use codegen::codegen;

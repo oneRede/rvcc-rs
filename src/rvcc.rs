@@ -1,4 +1,4 @@
-use crate::parse::LOCALS;
+use crate::{parse::LOCALS, ty::create_ty};
 
 #[allow(dead_code)]
 pub static mut TYPE_INT: Option<*mut Ty> = None;
@@ -206,6 +206,7 @@ pub enum NodeKind {
     FOR,
     ADDR,
     DEREF,
+    FUNCALL
 }
 
 impl ToString for NodeKind {
@@ -230,6 +231,7 @@ impl ToString for NodeKind {
             NodeKind::FOR => "FOR".to_string(),
             NodeKind::ADDR => "ADDR".to_string(),
             NodeKind::DEREF => "DEREF".to_string(),
+            NodeKind::FUNCALL => "FUNCALL".to_string(),
         }
     }
 }
@@ -258,6 +260,8 @@ pub struct Node {
 
     pub token: TokenWrap,
     pub ty: Option<*mut Ty>,
+
+    pub func_name: &'static str
 }
 
 #[allow(dead_code)]
@@ -278,6 +282,7 @@ impl Node {
             inc: None,
             token: TokenWrap::empty(),
             ty: None,
+            func_name: ""
         }
     }
 
@@ -297,6 +302,7 @@ impl Node {
             inc: None,
             token: token,
             ty: None,
+            func_name: ""
         }
     }
 
@@ -316,6 +322,7 @@ impl Node {
             inc: None,
             token: TokenWrap::empty(),
             ty: None,
+            func_name: ""
         }
     }
 
@@ -335,6 +342,7 @@ impl Node {
             inc: None,
             token: token,
             ty: None,
+            func_name: ""
         }
     }
 
@@ -354,6 +362,7 @@ impl Node {
             inc: None,
             token: TokenWrap::empty(),
             ty: None,
+            func_name: ""
         }
     }
 
@@ -372,7 +381,8 @@ impl Node {
             init: None,
             inc: None,
             token: token,
-            ty: Some(Box::leak(Box::new(Ty::new_with_kind(Some(TypeKind::INT))))),
+            ty: create_ty(TypeKind::INT),
+            func_name: ""
         }
     }
 
@@ -404,6 +414,7 @@ impl Node {
             inc: None,
             token: token,
             ty: None,
+            func_name: ""
         }
     }
 
@@ -833,6 +844,16 @@ pub fn get_node_ty(node: *mut Node) -> Option<*mut Ty> {
 #[allow(dead_code)]
 pub fn set_node_ty(node: *mut Node, ty: Option<*mut Ty>) {
     unsafe { node.as_mut().unwrap().ty = ty }
+}
+
+#[allow(dead_code)]
+pub fn get_node_func_name(node: *mut Node) -> &'static str {
+    unsafe { node.as_ref().unwrap().func_name }
+}
+
+#[allow(dead_code)]
+pub fn set_node_func_name(node: *mut Node, func_name: &'static str) {
+    unsafe { node.as_mut().unwrap().func_name = func_name }
 }
 
 #[allow(dead_code)]

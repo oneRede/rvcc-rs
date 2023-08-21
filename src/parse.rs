@@ -3,7 +3,7 @@ use crate::{
         get_node_next, get_node_ty, get_obj_name, get_obj_next, get_ty_base, get_ty_ref,
         get_ty_token, set_node_body, set_node_cond, set_node_els, set_node_inc, set_node_init,
         set_node_next, set_node_then, set_node_ty, set_ty_token, Function, Node, NodeKind, Obj,
-        TokenKind, TokenWrap, Ty, TypeKind,
+        TokenKind, TokenWrap, Ty, TypeKind, set_node_func_name,
     },
     tokenize::{consume, equal, skip, str_to_chars},
     ty::{add_ty, create_ty, is_int},
@@ -330,6 +330,18 @@ fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     }
 
     if token.get_kind() == TokenKind::IDENT {
+        if equal(unsafe { token.get_next().as_ref().unwrap() }, &['(']){
+            let node = create_node_v2(NodeKind::FUNCALL, token);
+            let len = token.get_len();
+            let func_name: String = token.get_loc().unwrap()[..len].iter().collect();
+            set_node_func_name(node, Box::leak(Box::new(func_name)));
+
+            token.set(token.get_next());
+            token.set(token.get_next());
+            token.set(skip(token.get_ref(), &[')']).unwrap());
+            return (Some(node), token)
+        }
+
         let var = find_var(token);
         if var.is_none() {
             error_token(token.get_ref(), "undefined variable");

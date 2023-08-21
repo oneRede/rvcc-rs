@@ -1,9 +1,10 @@
 use crate::{
     rvcc::{
         get_fuction_body, get_fuction_locals, get_fuction_stack_size, get_node_body, get_node_cond,
-        get_node_els, get_node_inc, get_node_init, get_node_kind, get_node_lhs, get_node_next,
-        get_node_rhs, get_node_then, get_node_token, get_node_val, get_node_var, get_obj_name,
-        get_obj_offset, set_fuction_stack_size, set_obj_offset, Function, Node, NodeKind, ObjIter,
+        get_node_els, get_node_func_name, get_node_inc, get_node_init, get_node_kind, get_node_lhs,
+        get_node_next, get_node_rhs, get_node_then, get_node_token, get_node_val, get_node_var,
+        get_obj_name, get_obj_offset, set_fuction_stack_size, set_obj_offset, Function, Node,
+        NodeKind, ObjIter,
     },
     utils::error_token,
 };
@@ -99,6 +100,11 @@ pub fn gen_expr(node: *mut Node) {
             pop("a1");
             println!("  # 将a0的值，写入到a1中存放的地址");
             println!("  sd a0, 0(a1)");
+            return;
+        }
+        NodeKind::FUNCALL => {
+            println!("\n  # 调用函数{}", get_node_func_name(node));
+            println!("  call {}", get_node_func_name(node));
             return;
         }
         _ => {}
@@ -273,8 +279,12 @@ pub fn codegen(prog: *mut Function) {
     println!("# main段标签，也是程序入口段");
     println!("main:");
 
+    println!("  # 将ra寄存器压栈,保存ra的值");
+    println!("  addi sp, sp, -16");
+    println!("  sd ra, 8(sp)");
+
     println!("  # 将fp压栈，fp属于“被调用者保存”的寄存器，需要恢复原值");
-    println!("  addi sp, sp, -8");
+    // println!("  addi sp, sp, -8");
     println!("  sd fp, 0(sp)");
     println!("  # 将sp的值写入fp");
     println!("  mv fp, sp");
@@ -295,7 +305,11 @@ pub fn codegen(prog: *mut Function) {
     println!("  mv sp, fp");
     println!("  # 将最早fp保存的值弹栈，恢复fp和sp");
     println!("  ld fp, 0(sp)");
-    println!("  addi sp, sp, 8");
+    // println!("  addi sp, sp, 8");
+
+    println!("  # 将ra寄存器弹栈,恢复ra的值");
+    println!("  ld ra, 8(sp)");
+    println!("  addi sp, sp, 16");
 
     println!("  # 返回a0值给系统调用");
     println!("  ret");

@@ -129,5 +129,10 @@ assert 7 '{ int x=3; int y=5; *(&x+1)=7; return y; }'
 assert 8 '{ int x, y; x=3; y=5; return x+y; }'
 assert 8 '{ int x=3, y=5; return x+y; }'
 
+# [23] 支持零参函数调用
+assert 3 '{ return ret3(); }'
+assert 5 '{ return ret5(); }'
+assert 8 '{ return ret3()+ret5(); }'
+
 # 如果运行正常未提前退出，程序将显示OK
 echo OK
