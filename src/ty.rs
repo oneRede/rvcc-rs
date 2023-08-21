@@ -29,10 +29,7 @@ pub fn add_ty(node: Option<*mut Node>) {
     add_ty(get_node_inc(node.unwrap()));
 
     let mut next = get_node_body(node.unwrap());
-    loop {
-        if next.is_none() {
-            break;
-        }
+    while !next.is_none() {  
         add_ty(next);
         next = get_node_next(next.unwrap());
     }

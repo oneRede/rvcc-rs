@@ -513,23 +513,16 @@ pub fn get_ident(token: TokenWrap) -> &'static str {
 #[allow(dead_code)]
 pub fn declspec(mut token: TokenWrap) -> (TokenWrap, Option<*mut Ty>) {
     token.set(skip(token.get_ref(), str_to_chars("int")).unwrap());
-    return (
-        token,
-        create_ty(TypeKind::INT),
-    );
+    return (token, create_ty(TypeKind::INT));
 }
 
 #[allow(dead_code)]
 pub fn declarator(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut Ty>, TokenWrap) {
-    loop{
-        let (b, t) = consume(token, "*");
-        if !b {
-          break;
-        }
-        token = t;
+    while consume(token, "*").0 {
+        token = consume(token, "*").1;
         ty = Some(Box::leak(Box::new(Ty::point_to(ty))));
     }
-
+    
     if token.get_kind() != TokenKind::IDENT {
         error_token(token.get_ref(), "expected a variable name");
     }
@@ -549,9 +542,7 @@ pub fn declaration(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     let mut cur = head;
 
     let mut i = 0;
-
     while !equal(token.get_ref(), &[';']) {
-        
         if i > 0 {
             token.set(skip(token.get_ref(), &[',']).unwrap());
         }
