@@ -31,7 +31,6 @@ assert() {
   fi
 }
 
-
 # assert 期待值 输入值
 # [1] 返回指定数值
 assert 0 '{ return 0; }'
