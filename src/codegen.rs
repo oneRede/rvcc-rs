@@ -1,8 +1,8 @@
 use crate::{
     rvcc::{
         get_function_body, get_function_locals, get_function_name, get_function_next,
-        get_function_stack_size, get_node_args, get_node_body, get_node_cond, get_node_els,
-        get_node_func_name, get_node_inc, get_node_init, get_node_kind, get_node_lhs,
+        get_function_params, get_function_stack_size, get_node_args, get_node_body, get_node_cond,
+        get_node_els, get_node_func_name, get_node_inc, get_node_init, get_node_kind, get_node_lhs,
         get_node_next, get_node_rhs, get_node_then, get_node_token, get_node_val, get_node_var,
         get_obj_name, get_obj_offset, set_function_stack_size, set_obj_offset, Function, Node,
         NodeKind, ObjIter,
@@ -311,7 +311,6 @@ pub fn codegen(prog: Option<*mut Function>) {
         println!("# {}段标签", get_function_name(func.unwrap()));
         println!("{}:", get_function_name(func.unwrap()));
         unsafe { FUNCTION = func };
-        
 
         println!("  # 将ra寄存器压栈,保存ra的值");
         println!("  addi sp, sp, -16");
@@ -326,9 +325,20 @@ pub fn codegen(prog: Option<*mut Function>) {
         println!("  # sp腾出StackSize大小的栈空间");
         println!("  addi sp, sp, -{}", get_function_stack_size(func.unwrap()));
 
-        let node = get_function_body(func.unwrap()).unwrap();
+        let mut i = 0;
+        let var = get_function_params(func.unwrap());
+        while !var.is_none() {
+            println!(
+                "  # 将{}寄存器的值存入{}的栈地址",
+                ARG_REG[i],
+                get_obj_name(var.unwrap())
+            );
+            println!("  sd {}, {}(fp)", ARG_REG[i], get_obj_offset(var.unwrap()));
+            i += 1;
+        }
 
         println!("\n# =====段主体===============");
+        let node = get_function_body(func.unwrap()).unwrap();
         gen_stmt(node);
         assert!(unsafe { DEPTH == 0 });
 

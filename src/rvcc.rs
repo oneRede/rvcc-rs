@@ -663,6 +663,7 @@ pub struct Function {
     pub body: Option<*mut Node>,
     pub locals: Option<*mut Obj>,
     pub stack_size: i64,
+    pub params: Option<*mut Obj>
 }
 
 
@@ -675,6 +676,7 @@ impl Function {
             body: Some(body),
             locals: locals,
             stack_size: 0,
+            params: None,
         }
     }
 
@@ -685,6 +687,7 @@ impl Function {
             body: None,
             locals: None,
             stack_size: 0,
+            params: None,
         }
     }
 }
@@ -704,6 +707,8 @@ pub struct Ty {
     pub base: Option<*mut Ty>,
     pub token: TokenWrap,
     pub return_ty: Option<*mut Ty>,
+    pub params: Option<*mut Ty>,
+    pub next: Option<*mut Ty>,
 }
 
 #[allow(dead_code)]
@@ -714,6 +719,8 @@ impl Ty {
             base: None,
             token: TokenWrap::empty(),
             return_ty: None,
+            params: None,
+            next: None,
         }
     }
 
@@ -723,6 +730,8 @@ impl Ty {
             base: None,
             token: TokenWrap::empty(),
             return_ty: None,
+            params: None,
+            next: None,
         }
     }
 
@@ -732,6 +741,8 @@ impl Ty {
             base: None,
             token: TokenWrap::empty(),
             return_ty: return_ty,
+            params: None,
+            next: None,
         }
     }
 
@@ -741,7 +752,21 @@ impl Ty {
             base: base,
             token: TokenWrap::empty(),
             return_ty: None,
+            params: None,
+            next: None,
         }
+    }
+
+    pub fn copy(&self) -> Option<*mut Ty>{
+        let mut tmp = Ty::new();
+        tmp.kind = self.kind;
+        tmp.base = self.base;
+        tmp.token = self.token;
+        tmp.return_ty = self.return_ty;
+        tmp.params=  self.params;
+        tmp.next = self.next;
+
+        Some(Box::leak(Box::new(tmp)))
     }
 }
 
@@ -956,6 +981,11 @@ pub fn set_function_next(func: *mut Function, next: Option<*mut Function>) {
 }
 
 #[allow(dead_code)]
+pub fn get_function_params(func: *mut Function) -> Option<*mut Obj> {
+    unsafe { func.as_ref().unwrap().params }
+}
+
+#[allow(dead_code)]
 pub fn get_ty_kind(ty: Option<*mut Ty>) -> Option<TypeKind> {
     if ty.is_none() {
         return None;
@@ -984,6 +1014,26 @@ pub fn get_ty_token(ty: *mut Ty) -> TokenWrap {
 #[allow(dead_code)]
 pub fn set_ty_token(ty: *mut Ty, token: TokenWrap) {
     unsafe { ty.as_mut().unwrap().token = token }
+}
+
+#[allow(dead_code)]
+pub fn get_ty_next(ty: *mut Ty) -> Option<*mut Ty> {
+    unsafe { ty.as_ref().unwrap().next }
+}
+
+#[allow(dead_code)]
+pub fn set_ty_next(ty: *mut Ty, next: Option<*mut Ty>) {
+    unsafe { ty.as_mut().unwrap().next = next }
+}
+
+#[allow(dead_code)]
+pub fn get_ty_params(ty: *mut Ty) -> Option<*mut Ty> {
+    unsafe { ty.as_ref().unwrap().params }
+}
+
+#[allow(dead_code)]
+pub fn set_ty_params(ty: *mut Ty, params: Option<*mut Ty>) {
+    unsafe { ty.as_mut().unwrap().params = params }
 }
 
 #[test]

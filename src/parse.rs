@@ -1,10 +1,10 @@
 use crate::{
     rvcc::{
         get_function_next, get_node_next, get_node_ty, get_obj_name, get_obj_next, get_ty_base,
-        get_ty_ref, get_ty_token, set_function_next, set_node_args, set_node_body, set_node_cond,
-        set_node_els, set_node_func_name, set_node_inc, set_node_init, set_node_next,
-        set_node_then, set_node_ty, set_ty_token, Function, Node, NodeKind, Obj, TokenKind,
-        TokenWrap, Ty, TypeKind,
+        get_ty_next, get_ty_ref, get_ty_token, set_function_next, set_node_args, set_node_body,
+        set_node_cond, set_node_els, set_node_func_name, set_node_inc, set_node_init,
+        set_node_next, set_node_then, set_node_ty, set_ty_next, set_ty_params, set_ty_token,
+        Function, Node, NodeKind, Obj, TokenKind, TokenWrap, Ty, TypeKind, get_ty_params,
     },
     tokenize::{consume, equal, skip, str_to_chars},
     ty::{add_ty, create_ty, is_int},
@@ -526,7 +526,7 @@ pub fn declarator(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut
     let (typ, tk) = ty_suffix(token.set(token.get_next()), ty);
     ty = typ;
     set_ty_token(ty.unwrap(), start);
-    
+
     return (ty, tk);
 }
 
@@ -603,11 +603,33 @@ pub fn func_call(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn ty_suffix(mut token: TokenWrap, ty: Option<*mut Ty>) -> (Option<*mut Ty>, TokenWrap) {
+pub fn ty_suffix(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut Ty>, TokenWrap) {
     if equal(token.get_ref(), &['(']) {
         token.set(token.get_next());
-        token.set(skip(token.get_ref(), &[')']).unwrap());
-        return (Some(Box::leak(Box::new(Ty::new_func_ty(ty)))), token);
+        let head: Option<*mut Ty> = Some(Box::leak(Box::new(Ty::new())));
+        let mut cur = head;
+
+        while !equal(token.get_ref(), &[')']) {
+            if cur != head {
+                token.set(skip(token.get_ref(), &[',']).unwrap());
+            }
+            let (tk, base_ty) = declspec(token);
+            let (declar_ty, tk) = declarator(tk, base_ty);
+
+            set_ty_next(
+                cur.unwrap(),
+                Ty::copy(unsafe { declar_ty.unwrap().as_ref().unwrap() }),
+            );
+            cur = get_ty_next(cur.unwrap());
+            token = tk;
+        }
+
+        ty = Some(Box::leak(Box::new(Ty::new_func_ty(ty))));
+        set_ty_params(ty.unwrap(), get_ty_next(head.unwrap()));
+
+        token.set(token.get_next());
+
+        return (ty, token);
     }
 
     return (ty, token);
@@ -622,6 +644,9 @@ pub fn function(mut token: TokenWrap) -> (Option<*mut Function>, TokenWrap) {
 
     let mut func = Function::empty();
     func.name = get_ident(get_ty_token(typ.unwrap()));
+
+    create_param_l_vars(get_ty_params(typ.unwrap()));
+    func.params = unsafe { LOCALS };
 
     token.set(skip(tk.get_ref(), &['{']).unwrap());
     let (n, t) = compound_stmt(token);
@@ -644,4 +669,12 @@ pub fn parse(mut token: TokenWrap) -> Option<*mut Function> {
     }
 
     return get_function_next(head.unwrap());
+}
+
+#[allow(dead_code)]
+pub fn create_param_l_vars(params: Option<*mut Ty>){
+    if !params.is_none(){
+        create_param_l_vars(get_ty_next(params.unwrap()));
+        Obj::new(get_ident(get_ty_token(params.unwrap())), params);
+    }
 }

@@ -3,7 +3,7 @@ use crate::{
         get_node_body, get_node_cond, get_node_els, get_node_inc, get_node_init, get_node_kind,
         get_node_lhs, get_node_next, get_node_rhs, get_node_then, get_node_token, get_node_ty,
         get_node_var, get_obj_ty, get_ty_base, get_ty_kind, set_node_ty, Node, NodeKind, Ty,
-        TypeKind,
+        TypeKind, get_node_args,
     },
     utils::error_token,
 };
@@ -33,6 +33,12 @@ pub fn add_ty(node: Option<*mut Node>) {
     add_ty(get_node_inc(node.unwrap()));
 
     let mut next = get_node_body(node.unwrap());
+    while !next.is_none() {
+        add_ty(next);
+        next = get_node_next(next.unwrap());
+    }
+
+    let mut next = get_node_args(node.unwrap());
     while !next.is_none() {
         add_ty(next);
         next = get_node_next(next.unwrap());
