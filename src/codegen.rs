@@ -1,16 +1,18 @@
 use crate::{
     rvcc::{
-        get_fuction_body, get_fuction_locals, get_fuction_stack_size, get_node_body, get_node_cond,
-        get_node_els, get_node_func_name, get_node_inc, get_node_init, get_node_kind, get_node_lhs,
-        get_node_next, get_node_rhs, get_node_then, get_node_token, get_node_val, get_node_var,
-        get_obj_name, get_obj_offset, set_fuction_stack_size, set_obj_offset, Function, Node,
-        NodeKind, ObjIter,
+        get_fuction_body, get_fuction_locals, get_fuction_stack_size, get_node_args, get_node_body,
+        get_node_cond, get_node_els, get_node_func_name, get_node_inc, get_node_init,
+        get_node_kind, get_node_lhs, get_node_next, get_node_rhs, get_node_then, get_node_token,
+        get_node_val, get_node_var, get_obj_name, get_obj_offset, set_fuction_stack_size,
+        set_obj_offset, Function, Node, NodeKind, ObjIter,
     },
     utils::error_token,
 };
 
 pub static mut DEPTH: usize = 0;
 pub static mut I: i64 = 1;
+
+pub static ARG_REG: [&str; 6] = ["a0", "a1", "a2", "a3", "a4", "a5"];
 
 #[allow(dead_code)]
 pub fn count() -> i64 {
@@ -103,6 +105,20 @@ pub fn gen_expr(node: *mut Node) {
             return;
         }
         NodeKind::FUNCALL => {
+            let mut n_args = 0;
+
+            let arg = get_node_args(node);
+            while !arg.is_none() {
+                gen_expr(arg.unwrap());
+                push();
+                n_args += 1;
+            }
+
+            let i = n_args - 1;
+            while i > 0 {
+                pop(ARG_REG[i])
+            }
+
             println!("\n  # 调用函数{}", get_node_func_name(node));
             println!("  call {}", get_node_func_name(node));
             return;

@@ -1,9 +1,9 @@
 use crate::{
     rvcc::{
         get_node_next, get_node_ty, get_obj_name, get_obj_next, get_ty_base, get_ty_ref,
-        get_ty_token, set_node_body, set_node_cond, set_node_els, set_node_inc, set_node_init,
-        set_node_next, set_node_then, set_node_ty, set_ty_token, Function, Node, NodeKind, Obj,
-        TokenKind, TokenWrap, Ty, TypeKind, set_node_func_name,
+        get_ty_token, set_node_args, set_node_body, set_node_cond, set_node_els,
+        set_node_func_name, set_node_inc, set_node_init, set_node_next, set_node_then, set_node_ty,
+        set_ty_token, Function, Node, NodeKind, Obj, TokenKind, TokenWrap, Ty, TypeKind,
     },
     tokenize::{consume, equal, skip, str_to_chars},
     ty::{add_ty, create_ty, is_int},
@@ -330,16 +330,8 @@ fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     }
 
     if token.get_kind() == TokenKind::IDENT {
-        if equal(unsafe { token.get_next().as_ref().unwrap() }, &['(']){
-            let node = create_node_v2(NodeKind::FUNCALL, token);
-            let len = token.get_len();
-            let func_name: String = token.get_loc().unwrap()[..len].iter().collect();
-            set_node_func_name(node, Box::leak(Box::new(func_name)));
-
-            token.set(token.get_next());
-            token.set(token.get_next());
-            token.set(skip(token.get_ref(), &[')']).unwrap());
-            return (Some(node), token)
+        if equal(unsafe { token.get_next().as_ref().unwrap() }, &['(']) {
+            return func_call(token);
         }
 
         let var = find_var(token);
@@ -534,7 +526,7 @@ pub fn declarator(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut
         token = consume(token, "*").1;
         ty = Some(Box::leak(Box::new(Ty::point_to(ty))));
     }
-    
+
     if token.get_kind() != TokenKind::IDENT {
         error_token(token.get_ref(), "expected a variable name");
     }
@@ -583,6 +575,36 @@ pub fn declaration(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     let node = create_node_v2(NodeKind::BLOCK, token);
     set_node_body(node, get_node_next(head));
     token.set(token.get_next());
+
+    return (Some(node), token);
+}
+
+#[allow(dead_code)]
+pub fn func_call(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
+    let start = token;
+    token.set(token.get_next());
+    token.set(token.get_next());
+
+    let head: *mut Node = create_node_v2(NodeKind::Num, token);
+    let mut cur = head;
+
+    while !equal(token.get_ref(), &[')']) {
+        if cur != head {
+            token.set(skip(token.get_ref(), &[',']).unwrap());
+        }
+        let (n, t) = assign(token);
+        set_node_next(cur, n);
+        cur = get_node_next(cur).unwrap();
+        token = t;
+    }
+    token.set(skip(token.get_ref(), &[')']).unwrap());
+
+    let node = create_node_v2(NodeKind::FUNCALL, start);
+    let len = start.get_len();
+    let func_name: String = start.get_loc().unwrap()[..len].iter().collect();
+    set_node_func_name(node, Box::leak(Box::new(func_name)));
+
+    set_node_args(node, get_node_next(head));
 
     return (Some(node), token);
 }

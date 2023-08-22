@@ -120,8 +120,7 @@ impl ToString for Token {
 }
 
 #[allow(dead_code)]
-#[derive(PartialEq)]
-#[derive(Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 pub struct TokenWrap {
     pub ptr: Option<*mut Token>,
 }
@@ -206,7 +205,7 @@ pub enum NodeKind {
     FOR,
     ADDR,
     DEREF,
-    FUNCALL
+    FUNCALL,
 }
 
 impl ToString for NodeKind {
@@ -261,7 +260,8 @@ pub struct Node {
     pub token: TokenWrap,
     pub ty: Option<*mut Ty>,
 
-    pub func_name: &'static str
+    pub func_name: &'static str,
+    pub args: Option<*mut Node>,
 }
 
 #[allow(dead_code)]
@@ -282,7 +282,8 @@ impl Node {
             inc: None,
             token: TokenWrap::empty(),
             ty: None,
-            func_name: ""
+            func_name: "",
+            args: None,
         }
     }
 
@@ -302,7 +303,8 @@ impl Node {
             inc: None,
             token: token,
             ty: None,
-            func_name: ""
+            func_name: "",
+            args: None,
         }
     }
 
@@ -322,7 +324,8 @@ impl Node {
             inc: None,
             token: TokenWrap::empty(),
             ty: None,
-            func_name: ""
+            func_name: "",
+            args: None,
         }
     }
 
@@ -342,7 +345,8 @@ impl Node {
             inc: None,
             token: token,
             ty: None,
-            func_name: ""
+            func_name: "",
+            args: None,
         }
     }
 
@@ -362,7 +366,8 @@ impl Node {
             inc: None,
             token: TokenWrap::empty(),
             ty: None,
-            func_name: ""
+            func_name: "",
+            args: None,
         }
     }
 
@@ -382,7 +387,8 @@ impl Node {
             inc: None,
             token: token,
             ty: create_ty(TypeKind::INT),
-            func_name: ""
+            func_name: "",
+            args: None,
         }
     }
 
@@ -414,7 +420,8 @@ impl Node {
             inc: None,
             token: token,
             ty: None,
-            func_name: ""
+            func_name: "",
+            args: None,
         }
     }
 
@@ -574,7 +581,7 @@ pub struct Obj {
     pub next: Option<*mut Obj>,
     pub name: &'static str,
     pub offset: i64,
-    pub ty: Option<*mut Ty>
+    pub ty: Option<*mut Ty>,
 }
 
 #[allow(dead_code)]
@@ -584,7 +591,7 @@ impl Obj {
             next: None,
             name: name,
             offset: 0,
-            ty: ty
+            ty: ty,
         };
         var.next = unsafe { LOCALS };
         let var: *mut Obj = Box::leak(Box::new(var));
@@ -696,7 +703,7 @@ impl Ty {
         Self {
             kind: None,
             base: None,
-            token: TokenWrap::empty()
+            token: TokenWrap::empty(),
         }
     }
 
@@ -704,7 +711,7 @@ impl Ty {
         Self {
             kind: kind,
             base: None,
-            token: TokenWrap::empty()
+            token: TokenWrap::empty(),
         }
     }
 
@@ -712,7 +719,7 @@ impl Ty {
         Self {
             kind: Some(TypeKind::PTR),
             base: base,
-            token: TokenWrap::empty()
+            token: TokenWrap::empty(),
         }
     }
 }
@@ -857,6 +864,16 @@ pub fn set_node_func_name(node: *mut Node, func_name: &'static str) {
 }
 
 #[allow(dead_code)]
+pub fn get_node_args(node: *mut Node) -> Option<*mut Node> {
+    unsafe { node.as_ref().unwrap().args }
+}
+
+#[allow(dead_code)]
+pub fn set_node_args(node: *mut Node, args: Option<*mut Node>) {
+    unsafe { node.as_mut().unwrap().args = args }
+}
+
+#[allow(dead_code)]
 pub fn get_obj_next(obj: *mut Obj) -> Option<*mut Obj> {
     unsafe { obj.as_ref().unwrap().next }
 }
@@ -923,7 +940,7 @@ pub fn get_ty_ref(ty: Option<*mut Ty>) -> &'static Ty {
 }
 
 #[allow(dead_code)]
-pub fn get_ty_token(ty: *mut Ty) -> TokenWrap{
+pub fn get_ty_token(ty: *mut Ty) -> TokenWrap {
     unsafe { ty.as_ref().unwrap().token }
 }
 

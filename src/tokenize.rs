@@ -170,5 +170,5 @@ pub fn consume(mut token: TokenWrap, s: &str) -> (bool, TokenWrap) {
         token.set(token.get_next());
         return (true, token);
     }
-    return (false, token)
+    return (false, token);
 }
