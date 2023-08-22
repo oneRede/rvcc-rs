@@ -141,8 +141,8 @@ impl TokenWrap {
         Self { ptr: self.ptr }
     }
 
-    pub fn set(&mut self, ptr: *mut Token) -> Self {
-        self.ptr = Some(ptr);
+    pub fn set(&mut self, ptr: Option<*mut Token>) -> Self {
+        self.ptr = ptr;
         *self
     }
 
@@ -158,8 +158,8 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().len = len };
     }
 
-    pub fn get_next(&self) -> *mut Token {
-        unsafe { self.ptr.unwrap().as_ref().unwrap().next.unwrap() }
+    pub fn get_next(&self) -> Option<*mut Token> {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().next }
     }
 
     pub fn get_kind(&self) -> TokenKind {
@@ -329,12 +329,12 @@ impl Node {
         }
     }
 
-    pub fn new_binary_v2(kind: NodeKind, lhs: *mut Node, rhs: *mut Node, token: TokenWrap) -> Self {
+    pub fn new_binary_v2(kind: NodeKind, lhs: Option<*mut Node>, rhs: Option<*mut Node>, token: TokenWrap) -> Self {
         Self {
             kind: kind,
             next: None,
-            lhs: Some(lhs),
-            rhs: Some(rhs),
+            lhs: lhs,
+            rhs: rhs,
             body: None,
             cond: None,
             then: None,
@@ -642,13 +642,13 @@ impl ObjIter {
 
 #[allow(dead_code)]
 impl Iterator for ObjIter {
-    type Item = *mut Obj;
+    type Item = Option<*mut Obj>;
 
     fn next(&mut self) -> Option<Self::Item> {
         let now = self.ptr;
         if !now.is_none() {
             self.ptr = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
-            return now;
+            return Some(now);
         } else {
             return None;
         }
@@ -663,9 +663,8 @@ pub struct Function {
     pub body: Option<*mut Node>,
     pub locals: Option<*mut Obj>,
     pub stack_size: i64,
-    pub params: Option<*mut Obj>
+    pub params: Option<*mut Obj>,
 }
-
 
 #[allow(dead_code)]
 impl Function {
@@ -698,6 +697,7 @@ pub enum TypeKind {
     INT,
     PTR,
     FUNC,
+    ARRAY,
 }
 
 #[allow(dead_code)]
@@ -709,6 +709,8 @@ pub struct Ty {
     pub return_ty: Option<*mut Ty>,
     pub params: Option<*mut Ty>,
     pub next: Option<*mut Ty>,
+    pub size: usize,
+    pub array_len: usize,
 }
 
 #[allow(dead_code)]
@@ -721,6 +723,8 @@ impl Ty {
             return_ty: None,
             params: None,
             next: None,
+            size: 8,
+            array_len: 0,
         }
     }
 
@@ -732,6 +736,8 @@ impl Ty {
             return_ty: None,
             params: None,
             next: None,
+            size: 8,
+            array_len: 0,
         }
     }
 
@@ -743,6 +749,21 @@ impl Ty {
             return_ty: return_ty,
             params: None,
             next: None,
+            size: 8,
+            array_len: 0,
+        }
+    }
+
+    pub fn new_array_ty(base: Option<*mut Ty>, len: usize) -> Self {
+        Self {
+            kind: Some(TypeKind::ARRAY),
+            base: base,
+            token: TokenWrap::empty(),
+            return_ty: None,
+            params: None,
+            next: None,
+            size: get_ty_size(base) * len,
+            array_len: len,
         }
     }
 
@@ -754,16 +775,18 @@ impl Ty {
             return_ty: None,
             params: None,
             next: None,
+            size: 8,
+            array_len: 0,
         }
     }
 
-    pub fn copy(&self) -> Option<*mut Ty>{
+    pub fn copy(&self) -> Option<*mut Ty> {
         let mut tmp = Ty::new();
         tmp.kind = self.kind;
         tmp.base = self.base;
         tmp.token = self.token;
         tmp.return_ty = self.return_ty;
-        tmp.params=  self.params;
+        tmp.params = self.params;
         tmp.next = self.next;
 
         Some(Box::leak(Box::new(tmp)))
@@ -776,6 +799,7 @@ impl ToString for Ty {
             TypeKind::INT => "INT".to_string(),
             TypeKind::PTR => "PTR".to_string(),
             TypeKind::FUNC => "FUNC".to_string(),
+            TypeKind::ARRAY => "ARRAY".to_string(),
         }
     }
 }
@@ -786,203 +810,203 @@ pub fn get_token_ref(token: *mut Token) -> &'static Token {
 }
 
 #[allow(dead_code)]
-pub fn get_node_kind(node: *mut Node) -> NodeKind {
-    unsafe { node.as_ref().unwrap().kind }
+pub fn get_node_kind(node: Option<*mut Node>) -> NodeKind {
+    unsafe { node.unwrap().as_ref().unwrap().kind }
 }
 
 #[allow(dead_code)]
-pub fn set_node_kind(node: *mut Node, kind: NodeKind) {
-    unsafe { node.as_mut().unwrap().kind = kind }
+pub fn set_node_kind(node: Option<*mut Node>, kind: NodeKind) {
+    unsafe { node.unwrap().as_mut().unwrap().kind = kind }
 }
 
 #[allow(dead_code)]
-pub fn get_node_val(node: *mut Node) -> i64 {
-    unsafe { node.as_ref().unwrap().val }
+pub fn get_node_val(node: Option<*mut Node>) -> i64 {
+    unsafe { node.unwrap().as_ref().unwrap().val }
 }
 
 #[allow(dead_code)]
-pub fn get_node_var(node: *mut Node) -> *mut Obj {
-    unsafe { node.as_ref().unwrap().var.unwrap() }
+pub fn get_node_var(node: Option<*mut Node>) -> Option<*mut Obj> {
+    unsafe { node.unwrap().as_ref().unwrap().var }
 }
 
 #[allow(dead_code)]
-pub fn get_node_lhs(node: *mut Node) -> Option<*mut Node> {
-    unsafe { node.as_ref().unwrap().lhs }
+pub fn get_node_lhs(node: Option<*mut Node>) -> Option<*mut Node> {
+    unsafe { node.unwrap().as_ref().unwrap().lhs }
 }
 
 #[allow(dead_code)]
-pub fn get_node_rhs(node: *mut Node) -> Option<*mut Node> {
-    unsafe { node.as_ref().unwrap().rhs }
+pub fn get_node_rhs(node: Option<*mut Node>) -> Option<*mut Node> {
+    unsafe { node.unwrap().as_ref().unwrap().rhs }
 }
 
 #[allow(dead_code)]
-pub fn get_node_next(node: *mut Node) -> Option<*mut Node> {
-    unsafe { node.as_ref().unwrap().next }
+pub fn get_node_next(node: Option<*mut Node>) -> Option<*mut Node> {
+    unsafe { node.unwrap().as_ref().unwrap().next }
 }
 
 #[allow(dead_code)]
-pub fn set_node_next(node: *mut Node, next: Option<*mut Node>) {
-    unsafe { node.as_mut().unwrap().next = next }
+pub fn set_node_next(node: Option<*mut Node>, next: Option<*mut Node>) {
+    unsafe { node.unwrap().as_mut().unwrap().next = next }
 }
 
 #[allow(dead_code)]
-pub fn get_node_body(node: *mut Node) -> Option<*mut Node> {
-    unsafe { node.as_ref().unwrap().body }
+pub fn get_node_body(node: Option<*mut Node>) -> Option<*mut Node> {
+    unsafe { node.unwrap().as_ref().unwrap().body }
 }
 
 #[allow(dead_code)]
-pub fn set_node_body(node: *mut Node, body: Option<*mut Node>) {
-    unsafe { node.as_mut().unwrap().body = body }
+pub fn set_node_body(node: Option<*mut Node>, body: Option<*mut Node>) {
+    unsafe { node.unwrap().as_mut().unwrap().body = body }
 }
 
 #[allow(dead_code)]
-pub fn get_node_cond(node: *mut Node) -> Option<*mut Node> {
-    unsafe { node.as_ref().unwrap().cond }
+pub fn get_node_cond(node: Option<*mut Node>) -> Option<*mut Node> {
+    unsafe { node.unwrap().as_ref().unwrap().cond }
 }
 
 #[allow(dead_code)]
-pub fn set_node_cond(node: *mut Node, cond: Option<*mut Node>) {
-    unsafe { node.as_mut().unwrap().cond = cond }
+pub fn set_node_cond(node: Option<*mut Node>, cond: Option<*mut Node>) {
+    unsafe { node.unwrap().as_mut().unwrap().cond = cond }
 }
 
 #[allow(dead_code)]
-pub fn get_node_then(node: *mut Node) -> Option<*mut Node> {
-    unsafe { node.as_ref().unwrap().then }
+pub fn get_node_then(node: Option<*mut Node>) -> Option<*mut Node> {
+    unsafe { node.unwrap().as_ref().unwrap().then }
 }
 
 #[allow(dead_code)]
-pub fn set_node_then(node: *mut Node, then: Option<*mut Node>) {
-    unsafe { node.as_mut().unwrap().then = then }
+pub fn set_node_then(node: Option<*mut Node>, then: Option<*mut Node>) {
+    unsafe { node.unwrap().as_mut().unwrap().then = then }
 }
 
 #[allow(dead_code)]
-pub fn get_node_els(node: *mut Node) -> Option<*mut Node> {
-    unsafe { node.as_ref().unwrap().els }
+pub fn get_node_els(node: Option<*mut Node>) -> Option<*mut Node> {
+    unsafe { node.unwrap().as_ref().unwrap().els }
 }
 
 #[allow(dead_code)]
-pub fn set_node_els(node: *mut Node, els: Option<*mut Node>) {
-    unsafe { node.as_mut().unwrap().els = els }
+pub fn set_node_els(node: Option<*mut Node>, els: Option<*mut Node>) {
+    unsafe { node.unwrap().as_mut().unwrap().els = els }
 }
 
 #[allow(dead_code)]
-pub fn get_node_init(node: *mut Node) -> Option<*mut Node> {
-    unsafe { node.as_ref().unwrap().init }
+pub fn get_node_init(node: Option<*mut Node>) -> Option<*mut Node> {
+    unsafe { node.unwrap().as_ref().unwrap().init }
 }
 
 #[allow(dead_code)]
-pub fn set_node_init(node: *mut Node, init: Option<*mut Node>) {
-    unsafe { node.as_mut().unwrap().init = init }
+pub fn set_node_init(node: Option<*mut Node>, init: Option<*mut Node>) {
+    unsafe { node.unwrap().as_mut().unwrap().init = init }
 }
 
 #[allow(dead_code)]
-pub fn get_node_inc(node: *mut Node) -> Option<*mut Node> {
-    unsafe { node.as_ref().unwrap().inc }
+pub fn get_node_inc(node: Option<*mut Node>) -> Option<*mut Node> {
+    unsafe { node.unwrap().as_ref().unwrap().inc }
 }
 
 #[allow(dead_code)]
-pub fn set_node_inc(node: *mut Node, inc: Option<*mut Node>) {
-    unsafe { node.as_mut().unwrap().inc = inc }
+pub fn set_node_inc(node: Option<*mut Node>, inc: Option<*mut Node>) {
+    unsafe { node.unwrap().as_mut().unwrap().inc = inc }
 }
 
 #[allow(dead_code)]
-pub fn get_node_token(node: *mut Node) -> TokenWrap {
-    unsafe { node.as_ref().unwrap().token }
+pub fn get_node_token(node: Option<*mut Node>) -> TokenWrap {
+    unsafe { node.unwrap().as_ref().unwrap().token }
 }
 
 #[allow(dead_code)]
-pub fn get_node_ty(node: *mut Node) -> Option<*mut Ty> {
-    unsafe { node.as_ref().unwrap().ty }
+pub fn get_node_ty(node: Option<*mut Node>) -> Option<*mut Ty> {
+    unsafe { node.unwrap().as_ref().unwrap().ty }
 }
 
 #[allow(dead_code)]
-pub fn set_node_ty(node: *mut Node, ty: Option<*mut Ty>) {
-    unsafe { node.as_mut().unwrap().ty = ty }
+pub fn set_node_ty(node: Option<*mut Node>, ty: Option<*mut Ty>) {
+    unsafe { node.unwrap().as_mut().unwrap().ty = ty }
 }
 
 #[allow(dead_code)]
-pub fn get_node_func_name(node: *mut Node) -> &'static str {
-    unsafe { node.as_ref().unwrap().func_name }
+pub fn get_node_func_name(node: Option<*mut Node>) -> &'static str {
+    unsafe { node.unwrap().as_ref().unwrap().func_name }
 }
 
 #[allow(dead_code)]
-pub fn set_node_func_name(node: *mut Node, func_name: &'static str) {
-    unsafe { node.as_mut().unwrap().func_name = func_name }
+pub fn set_node_func_name(node: Option<*mut Node>, func_name: &'static str) {
+    unsafe { node.unwrap().as_mut().unwrap().func_name = func_name }
 }
 
 #[allow(dead_code)]
-pub fn get_node_args(node: *mut Node) -> Option<*mut Node> {
-    unsafe { node.as_ref().unwrap().args }
+pub fn get_node_args(node: Option<*mut Node>) -> Option<*mut Node> {
+    unsafe { node.unwrap().as_ref().unwrap().args }
 }
 
 #[allow(dead_code)]
-pub fn set_node_args(node: *mut Node, args: Option<*mut Node>) {
-    unsafe { node.as_mut().unwrap().args = args }
+pub fn set_node_args(node: Option<*mut Node>, args: Option<*mut Node>) {
+    unsafe { node.unwrap().as_mut().unwrap().args = args }
 }
 
 #[allow(dead_code)]
-pub fn get_obj_next(obj: *mut Obj) -> Option<*mut Obj> {
-    unsafe { obj.as_ref().unwrap().next }
+pub fn get_obj_next(obj: Option<*mut Obj>) -> Option<*mut Obj> {
+    unsafe { obj.unwrap().as_ref().unwrap().next }
 }
 
 #[allow(dead_code)]
-pub fn get_obj_name(obj: *mut Obj) -> &'static str {
-    unsafe { obj.as_ref().unwrap().name }
+pub fn get_obj_name(obj: Option<*mut Obj>) -> &'static str {
+    unsafe { obj.unwrap().as_ref().unwrap().name }
 }
 
 #[allow(dead_code)]
-pub fn get_obj_offset(obj: *mut Obj) -> i64 {
-    unsafe { obj.as_ref().unwrap().offset }
+pub fn get_obj_offset(obj: Option<*mut Obj>) -> i64 {
+    unsafe { obj.unwrap().as_ref().unwrap().offset }
 }
 
 #[allow(dead_code)]
-pub fn set_obj_offset(obj: *mut Obj, offset: i64) {
-    unsafe { obj.as_mut().unwrap().offset = offset }
+pub fn set_obj_offset(obj: Option<*mut Obj>, offset: i64) {
+    unsafe { obj.unwrap().as_mut().unwrap().offset = offset }
 }
 
 #[allow(dead_code)]
-pub fn get_obj_ty(obj: *mut Obj) -> Option<*mut Ty> {
-    unsafe { obj.as_ref().unwrap().ty }
+pub fn get_obj_ty(obj: Option<*mut Obj>) -> Option<*mut Ty> {
+    unsafe { obj.unwrap().as_ref().unwrap().ty }
 }
 
 #[allow(dead_code)]
-pub fn get_function_locals(func: *mut Function) -> Option<*mut Obj> {
-    unsafe { func.as_ref().unwrap().locals }
+pub fn get_function_locals(func: Option<*mut Function>) -> Option<*mut Obj> {
+    unsafe { func.unwrap().as_ref().unwrap().locals }
 }
 
 #[allow(dead_code)]
-pub fn set_function_stack_size(func: *mut Function, stack_size: i64) {
-    unsafe { func.as_mut().unwrap().stack_size = stack_size }
+pub fn set_function_stack_size(func: Option<*mut Function>, stack_size: i64) {
+    unsafe { func.unwrap().as_mut().unwrap().stack_size = stack_size }
 }
 
 #[allow(dead_code)]
-pub fn get_function_body(func: *mut Function) -> Option<*mut Node> {
-    unsafe { func.as_ref().unwrap().body }
+pub fn get_function_body(func: Option<*mut Function>) -> Option<*mut Node> {
+    unsafe { func.unwrap().as_ref().unwrap().body }
 }
 
 #[allow(dead_code)]
-pub fn get_function_stack_size(func: *mut Function) -> i64 {
-    unsafe { func.as_ref().unwrap().stack_size }
+pub fn get_function_stack_size(func: Option<*mut Function>) -> i64 {
+    unsafe { func.unwrap().as_ref().unwrap().stack_size }
 }
 
 #[allow(dead_code)]
-pub fn get_function_name(func: *mut Function) -> &'static str {
-    unsafe { func.as_ref().unwrap().name }
+pub fn get_function_name(func: Option<*mut Function>) -> &'static str {
+    unsafe { func.unwrap().as_ref().unwrap().name }
 }
 
 #[allow(dead_code)]
-pub fn get_function_next(func: *mut Function) -> Option<*mut Function> {
-    unsafe { func.as_ref().unwrap().next }
+pub fn get_function_next(func: Option<*mut Function>) -> Option<*mut Function> {
+    unsafe { func.unwrap().as_ref().unwrap().next }
 }
 
 #[allow(dead_code)]
-pub fn set_function_next(func: *mut Function, next: Option<*mut Function>) {
-    unsafe { func.as_mut().unwrap().next = next }
+pub fn set_function_next(func: Option<*mut Function>, next: Option<*mut Function>) {
+    unsafe { func.unwrap().as_mut().unwrap().next = next }
 }
 
 #[allow(dead_code)]
-pub fn get_function_params(func: *mut Function) -> Option<*mut Obj> {
-    unsafe { func.as_ref().unwrap().params }
+pub fn get_function_params(func: Option<*mut Function>) -> Option<*mut Obj> {
+    unsafe { func.unwrap().as_ref().unwrap().params }
 }
 
 #[allow(dead_code)]
@@ -994,8 +1018,8 @@ pub fn get_ty_kind(ty: Option<*mut Ty>) -> Option<TypeKind> {
 }
 
 #[allow(dead_code)]
-pub fn get_ty_base(ty: *mut Ty) -> Option<*mut Ty> {
-    unsafe { ty.as_ref().unwrap().base }
+pub fn get_ty_base(ty: Option<*mut Ty>) -> Option<*mut Ty> {
+    unsafe { ty.unwrap().as_ref().unwrap().base }
 }
 
 #[allow(dead_code)]
@@ -1007,33 +1031,38 @@ pub fn get_ty_ref(ty: Option<*mut Ty>) -> &'static Ty {
 }
 
 #[allow(dead_code)]
-pub fn get_ty_token(ty: *mut Ty) -> TokenWrap {
-    unsafe { ty.as_ref().unwrap().token }
+pub fn get_ty_token(ty: Option<*mut Ty>) -> TokenWrap {
+    unsafe { ty.unwrap().as_ref().unwrap().token }
 }
 
 #[allow(dead_code)]
-pub fn set_ty_token(ty: *mut Ty, token: TokenWrap) {
-    unsafe { ty.as_mut().unwrap().token = token }
+pub fn set_ty_token(ty: Option<*mut Ty>, token: TokenWrap) {
+    unsafe { ty.unwrap().as_mut().unwrap().token = token }
 }
 
 #[allow(dead_code)]
-pub fn get_ty_next(ty: *mut Ty) -> Option<*mut Ty> {
-    unsafe { ty.as_ref().unwrap().next }
+pub fn get_ty_next(ty: Option<*mut Ty>) -> Option<*mut Ty> {
+    unsafe { ty.unwrap().as_ref().unwrap().next }
 }
 
 #[allow(dead_code)]
-pub fn set_ty_next(ty: *mut Ty, next: Option<*mut Ty>) {
-    unsafe { ty.as_mut().unwrap().next = next }
+pub fn set_ty_next(ty: Option<*mut Ty>, next: Option<*mut Ty>) {
+    unsafe { ty.unwrap().as_mut().unwrap().next = next }
 }
 
 #[allow(dead_code)]
-pub fn get_ty_params(ty: *mut Ty) -> Option<*mut Ty> {
-    unsafe { ty.as_ref().unwrap().params }
+pub fn get_ty_params(ty: Option<*mut Ty>) -> Option<*mut Ty> {
+    unsafe { ty.unwrap().as_ref().unwrap().params }
 }
 
 #[allow(dead_code)]
-pub fn set_ty_params(ty: *mut Ty, params: Option<*mut Ty>) {
-    unsafe { ty.as_mut().unwrap().params = params }
+pub fn set_ty_params(ty: Option<*mut Ty>, params: Option<*mut Ty>) {
+    unsafe { ty.unwrap().as_mut().unwrap().params = params }
+}
+
+#[allow(dead_code)]
+pub fn get_ty_size(ty: Option<*mut Ty>) -> usize {
+    unsafe { ty.unwrap().as_ref().unwrap().size }
 }
 
 #[test]

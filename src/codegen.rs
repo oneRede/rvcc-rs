@@ -4,8 +4,8 @@ use crate::{
         get_function_params, get_function_stack_size, get_node_args, get_node_body, get_node_cond,
         get_node_els, get_node_func_name, get_node_inc, get_node_init, get_node_kind, get_node_lhs,
         get_node_next, get_node_rhs, get_node_then, get_node_token, get_node_val, get_node_var,
-        get_obj_name, get_obj_offset, set_function_stack_size, set_obj_offset, Function, Node,
-        NodeKind, ObjIter,
+        get_obj_name, get_obj_next, get_obj_offset, get_ty_kind, set_function_stack_size,
+        set_obj_offset, Function, Node, NodeKind, ObjIter, Ty, TypeKind, get_node_ty, get_ty_size, get_obj_ty,
     },
     utils::error_token,
 };
@@ -46,7 +46,7 @@ pub fn align_to(n: i64, align: i64) -> i64 {
 }
 
 #[allow(dead_code)]
-pub fn gen_addr(node: *mut Node) {
+pub fn gen_addr(node: Option<*mut Node>) {
     match get_node_kind(node) {
         NodeKind::VAR => {
             let offset = get_obj_offset(get_node_var(node));
@@ -59,7 +59,7 @@ pub fn gen_addr(node: *mut Node) {
             return;
         }
         NodeKind::DEREF => {
-            gen_expr(get_node_lhs(node).unwrap());
+            gen_expr(get_node_lhs(node));
             return;
         }
         _ => {}
@@ -68,7 +68,7 @@ pub fn gen_addr(node: *mut Node) {
 }
 
 #[allow(dead_code)]
-pub fn gen_expr(node: *mut Node) {
+pub fn gen_expr(node: Option<*mut Node>) {
     match get_node_kind(node) {
         NodeKind::Num => {
             println!("  # 将{}加载到a0中", get_node_val(node));
@@ -76,49 +76,47 @@ pub fn gen_expr(node: *mut Node) {
             return;
         }
         NodeKind::NEG => {
-            gen_expr(get_node_lhs(node).unwrap());
+            gen_expr(get_node_lhs(node));
             println!("  # 对a0值进行取反");
             println!("  neg a0, a0");
             return;
         }
         NodeKind::VAR => {
             gen_addr(node);
-            println!("  # 读取a0中存放的地址，得到的值存入a0");
-            println!("  ld a0, 0(a0)");
+            load(get_node_ty(node));
             return;
         }
         NodeKind::DEREF => {
-            gen_expr(get_node_lhs(node).unwrap());
-            println!("  # 读取a0中存放的地址，得到的值存入a0");
-            println!("  ld a0, 0(a0)");
+            gen_expr(get_node_lhs(node));
+            load(get_node_ty(node));
             return;
         }
         NodeKind::ADDR => {
-            gen_addr(get_node_lhs(node).unwrap());
+            gen_addr(get_node_lhs(node));
             return;
         }
         NodeKind::ASSIGN => {
-            gen_addr(get_node_lhs(node).unwrap());
+            gen_addr(get_node_lhs(node));
             push();
-            gen_expr(get_node_rhs(node).unwrap());
-            pop("a1");
-            println!("  # 将a0的值，写入到a1中存放的地址");
-            println!("  sd a0, 0(a1)");
+            gen_expr(get_node_rhs(node));
+            store();
             return;
         }
         NodeKind::FUNCALL => {
             let mut n_args = 0;
 
-            let arg = get_node_args(node);
+            let mut arg = get_node_args(node);
             while !arg.is_none() {
-                gen_expr(arg.unwrap());
+                gen_expr(arg);
                 push();
+                arg = get_node_next(arg);
                 n_args += 1;
             }
 
-            let i = n_args - 1;
-            while i > 0 {
-                pop(ARG_REG[i])
+            let mut index: isize = n_args - 1;
+            while index >= 0 {
+                pop(ARG_REG[index as usize]);
+                index -= 1;
             }
 
             println!("\n  # 调用函数{}", get_node_func_name(node));
@@ -128,9 +126,9 @@ pub fn gen_expr(node: *mut Node) {
         _ => {}
     }
 
-    gen_expr(get_node_rhs(node).unwrap());
+    gen_expr(get_node_rhs(node));
     push();
-    gen_expr(get_node_lhs(node).unwrap());
+    gen_expr(get_node_lhs(node));
     pop("a1");
 
     match get_node_kind(node) {
@@ -187,18 +185,18 @@ pub fn gen_expr(node: *mut Node) {
 }
 
 #[allow(dead_code)]
-fn gen_stmt(mut node: *mut Node) {
+fn gen_stmt(mut node: Option<*mut Node>) {
     match get_node_kind(node) {
         NodeKind::IF => {
             let c = count();
             println!("\n# =====分支语句{}==============", c);
             println!("\n# Cond表达式{}", c);
-            gen_expr(get_node_cond(node).unwrap());
+            gen_expr(get_node_cond(node));
             println!("  # 若a0为0，则跳转到分支{}的.L.else.{}段", c, c);
             println!("  beqz a0, .L.else.{}", c);
 
             println!("\n# Then语句{}", c);
-            gen_stmt(get_node_then(node).unwrap());
+            gen_stmt(get_node_then(node));
             println!("  # 跳转到分支{}的.L.end.{}段\n", c, c);
             println!("  j .L.end.{}", c);
             println!("\n# Else语句{}", c);
@@ -206,7 +204,7 @@ fn gen_stmt(mut node: *mut Node) {
             println!(".L.else.{}:", c);
 
             if !get_node_els(node).is_none() {
-                gen_stmt(get_node_els(node).unwrap())
+                gen_stmt(get_node_els(node))
             }
             println!("\n# 分支{}的.L.end.{}段标签", c, c);
             println!(".L.end.{}:", c);
@@ -218,7 +216,7 @@ fn gen_stmt(mut node: *mut Node) {
             println!("\n# =====循环语句{}===============", c);
             if !get_node_init(node).is_none() {
                 println!("\n# Init语句%{}", c);
-                gen_stmt(get_node_init(node).unwrap());
+                gen_stmt(get_node_init(node));
             }
 
             println!("\n# 循环{}的.L.begin.{}段标签", c, c);
@@ -226,17 +224,17 @@ fn gen_stmt(mut node: *mut Node) {
 
             println!("# Cond表达式{}", c);
             if !get_node_cond(node).is_none() {
-                gen_expr(get_node_cond(node).unwrap());
+                gen_expr(get_node_cond(node));
                 println!("  # 若a0为0，则跳转到循环{}的.L.end.{}段", c, c);
                 println!("  beqz a0, .L.end.{}", c);
             }
 
             println!("\n# Then语句{}", c);
-            gen_stmt(get_node_then(node).unwrap());
+            gen_stmt(get_node_then(node));
 
             if !get_node_inc(node).is_none() {
                 println!("\n# Inc语句{}", c);
-                gen_expr(get_node_inc(node).unwrap())
+                gen_expr(get_node_inc(node))
             }
 
             println!("  # 跳转到循环{}的.L.begin.{}段", c, c);
@@ -250,31 +248,31 @@ fn gen_stmt(mut node: *mut Node) {
             if get_node_body(node).is_none() {
                 return;
             }
-            node = get_node_body(node).unwrap();
+            node = get_node_body(node);
             loop {
                 gen_stmt(node);
                 if get_node_next(node).is_none() {
                     return;
                 }
-                node = get_node_next(node).unwrap();
+                node = get_node_next(node)
             }
         }
 
         NodeKind::RETURN => {
             println!("# 返回语句");
-            gen_expr(get_node_lhs(node).unwrap());
+            gen_expr(get_node_lhs(node));
             println!(
                 "  # 跳转到.L.return.{}段",
-                get_function_name(unsafe { FUNCTION.unwrap() })
+                get_function_name(unsafe { FUNCTION })
             );
             println!(
                 "  j .L.return.{}",
-                get_function_name(unsafe { FUNCTION.unwrap() })
+                get_function_name(unsafe { FUNCTION })
             );
             return;
         }
         NodeKind::ExprStmt => {
-            gen_expr(get_node_lhs(node).unwrap());
+            gen_expr(get_node_lhs(node));
             return;
         }
         _ => {}
@@ -287,13 +285,13 @@ pub fn assign_l_var_offsets(prog: Option<*mut Function>) {
     let mut func = prog;
     while !func.is_none() {
         let mut offset = 0;
-        let var = ObjIter::new(get_function_locals(func.unwrap()));
+        let var = ObjIter::new(get_function_locals(func));
         for obj in var {
-            offset += 8;
+            offset += get_ty_size(get_obj_ty(obj)) as i64;
             set_obj_offset(obj, -offset);
         }
-        set_function_stack_size(func.unwrap(), align_to(offset, 16));
-        func = get_function_next(func.unwrap());
+        set_function_stack_size(func, align_to(offset, 16));
+        func = get_function_next(func);
     }
 }
 
@@ -302,14 +300,14 @@ pub fn codegen(prog: Option<*mut Function>) {
     assign_l_var_offsets(prog);
     let mut func = prog;
     while !func.is_none() {
-        println!("\n  # 定义全局{}段", get_function_name(func.unwrap()));
-        println!("  .globl {}", get_function_name(func.unwrap()));
+        println!("\n  # 定义全局{}段", get_function_name(func));
+        println!("  .globl {}", get_function_name(func));
         println!(
             "# ====={}段开始===============",
-            get_function_name(func.unwrap())
+            get_function_name(func)
         );
-        println!("# {}段标签", get_function_name(func.unwrap()));
-        println!("{}:", get_function_name(func.unwrap()));
+        println!("# {}段标签", get_function_name(func));
+        println!("{}:", get_function_name(func));
         unsafe { FUNCTION = func };
 
         println!("  # 将ra寄存器压栈,保存ra的值");
@@ -317,34 +315,34 @@ pub fn codegen(prog: Option<*mut Function>) {
         println!("  sd ra, 8(sp)");
 
         println!("  # 将fp压栈，fp属于“被调用者保存”的寄存器，需要恢复原值");
-        // println!("  addi sp, sp, -8");
         println!("  sd fp, 0(sp)");
         println!("  # 将sp的值写入fp");
         println!("  mv fp, sp");
 
         println!("  # sp腾出StackSize大小的栈空间");
-        println!("  addi sp, sp, -{}", get_function_stack_size(func.unwrap()));
+        println!("  addi sp, sp, -{}", get_function_stack_size(func));
 
         let mut i = 0;
-        let var = get_function_params(func.unwrap());
+        let mut var = get_function_params(func);
         while !var.is_none() {
             println!(
                 "  # 将{}寄存器的值存入{}的栈地址",
                 ARG_REG[i],
-                get_obj_name(var.unwrap())
+                get_obj_name(var)
             );
-            println!("  sd {}, {}(fp)", ARG_REG[i], get_obj_offset(var.unwrap()));
+            println!("  sd {}, {}(fp)", ARG_REG[i], get_obj_offset(var));
+            var = get_obj_next(var);
             i += 1;
         }
 
         println!("\n# =====段主体===============");
-        let node = get_function_body(func.unwrap()).unwrap();
+        let node = get_function_body(func);
         gen_stmt(node);
         assert!(unsafe { DEPTH == 0 });
 
         println!("\n# =====段结束===============");
         println!("# return段标签");
-        println!(".L.return.{}:", get_function_name(func.unwrap()));
+        println!(".L.return.{}:", get_function_name(func));
         println!("  # 将fp的值写回sp");
         println!("  mv sp, fp");
         println!("  # 将最早fp保存的值弹栈，恢复fp和sp");
@@ -357,6 +355,22 @@ pub fn codegen(prog: Option<*mut Function>) {
 
         println!("  # 返回a0值给系统调用");
         println!("  ret");
-        func = get_function_next(func.unwrap());
+        func = get_function_next(func);
     }
+}
+
+#[allow(dead_code)]
+pub fn load(ty: Option<*mut Ty>) {
+    if get_ty_kind(ty) == Some(TypeKind::ARRAY) {
+        return;
+    }
+    println!("  # 读取a0中存放的地址，得到的值存入a0");
+    println!("  ld a0, 0(a0)");
+}
+
+#[allow(dead_code)]
+pub fn store() {
+    pop("a1");
+    println!("  # 将a0的值，写入到a1中存放的地址");
+    println!("  sd a0, 0(a1)");
 }

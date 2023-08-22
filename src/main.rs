@@ -26,8 +26,8 @@ fn main() {
     unsafe { CURRENT_INPUT = Some(chars) };
 
     let token = tokenize(chars);
-    let prog = Some(parse(token));
+    let prog = parse(token);
 
-    codegen(prog.unwrap());
+    codegen(prog);
     return;
 }
