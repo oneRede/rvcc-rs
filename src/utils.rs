@@ -15,7 +15,8 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
                 i += 1;
                 num_string += c.to_string().as_ref();
             }
-            '-' | '+' | '/' | '*' | ' ' | '(' | ')' | '=' | '<' | '>' | '!' | ';' | '&' | ',' => {
+            '-' | '+' | '/' | '*' | ' ' | '(' | ')' | '=' | '<' | '>' 
+            | '!' | ';' | '&' | ',' | '[' | ']' => {
                 break;
             }
             'a'..='z' => {
@@ -61,6 +62,8 @@ pub fn read_punct(ptr: &[char]) -> usize {
         || ptr[0] == '}'
         || ptr[0] == '&'
         || ptr[0] == ','
+        || ptr[0] == '['
+        || ptr[0] == ']'
     {
         return 1;
     } else {

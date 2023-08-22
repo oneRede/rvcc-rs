@@ -330,12 +330,11 @@ fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), &['(']) {
         let (n, t) = expr(token.set(token.get_next()));
         token = t;
-        return (n, token.set(token.get_next()));
+        return (n, token.set(skip(token.get_ref(), &[')'])));
     }
 
     if token.get_kind() == TokenKind::IDENT {
-        token.set(token.get_next());
-        if equal(token.get_ref(), &['(']) {
+        if equal(unsafe{token.get_next().unwrap().as_ref().unwrap()}, &['(']) {
             return func_call(token);
         }
 
@@ -642,7 +641,8 @@ pub fn ty_suffix(mut token: TokenWrap, ty: Option<*mut Ty>) -> (Option<*mut Ty>,
     }
 
     if equal(token.get_ref(), &['[']) {
-        let sz = get_number(token.set(token.get_next()));
+        let mut start = token;
+        let sz = get_number(start.set(token.get_next()));
         token.set(token.get_next());
         token.set(token.get_next());
         token.set(skip(token.get_ref(), &[']']));

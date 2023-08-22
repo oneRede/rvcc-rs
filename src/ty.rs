@@ -86,7 +86,7 @@ pub fn add_ty(node: Option<*mut Node>) {
             return;
         }
         NodeKind::DEREF => {
-            if !get_ty_base(get_node_ty(get_node_lhs(node))).is_none() {
+            if get_ty_base(get_node_ty(get_node_lhs(node))).is_none() {
                 error_token(
                     get_node_token(node).get_ref(),
                     "invalid pointer dereference",
