@@ -1,9 +1,10 @@
 use crate::{
     rvcc::{
-        get_node_next, get_node_ty, get_obj_name, get_obj_next, get_ty_base, get_ty_ref,
-        get_ty_token, set_node_args, set_node_body, set_node_cond, set_node_els,
-        set_node_func_name, set_node_inc, set_node_init, set_node_next, set_node_then, set_node_ty,
-        set_ty_token, Function, Node, NodeKind, Obj, TokenKind, TokenWrap, Ty, TypeKind,
+        get_function_next, get_node_next, get_node_ty, get_obj_name, get_obj_next, get_ty_base,
+        get_ty_ref, get_ty_token, set_function_next, set_node_args, set_node_body, set_node_cond,
+        set_node_els, set_node_func_name, set_node_inc, set_node_init, set_node_next,
+        set_node_then, set_node_ty, set_ty_token, Function, Node, NodeKind, Obj, TokenKind,
+        TokenWrap, Ty, TypeKind,
     },
     tokenize::{consume, equal, skip, str_to_chars},
     ty::{add_ty, create_ty, is_int},
@@ -474,17 +475,6 @@ fn expr_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn parse(mut token: TokenWrap) -> *mut Function {
-    token.set(skip(token.get_ref(), &['{']).unwrap());
-
-    let mut prog = Function::empty();
-    let (n, _t) = compound_stmt(token);
-    prog.body = n;
-    prog.locals = unsafe { LOCALS };
-    return Box::leak(Box::new(prog));
-}
-
-#[allow(dead_code)]
 pub fn find_var(token: TokenWrap) -> Option<*mut Obj> {
     if unsafe { LOCALS.is_none() } {
         return None;
@@ -531,8 +521,10 @@ pub fn declarator(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut
         error_token(token.get_ref(), "expected a variable name");
     }
 
+    let (typ, tk) = ty_suffix(token, ty);
+    ty = typ;
+    token = tk;
     set_ty_token(ty.unwrap(), token);
-    token.set(token.get_next());
 
     return (ty, token);
 }
@@ -607,4 +599,42 @@ pub fn func_call(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     set_node_args(node, get_node_next(head));
 
     return (Some(node), token);
+}
+
+#[allow(dead_code)]
+pub fn ty_suffix(mut token: TokenWrap, ty: Option<*mut Ty>) -> (Option<*mut Ty>, TokenWrap) {
+    if equal(token.get_ref(), &['(']) {
+        token.set(skip(token.get_ref(), &[')']).unwrap());
+        return (Some(Box::leak(Box::new(Ty::new_func_ty(ty)))), token);
+    }
+
+    return (ty, token);
+}
+
+#[allow(dead_code)]
+pub fn function(token: TokenWrap) -> (Option<*mut Function>, TokenWrap) {
+    let (typ, tk) = declspec(token);
+    let (_typ, tk) = declarator(typ, tk);
+
+    unsafe { LOCALS = None };
+
+    let mut func = Function::empty();
+    func.name = get_ident(tk);
+    func.locals = unsafe { LOCALS };
+
+    return (Some(Box::leak(Box::new(func))), tk);
+}
+
+#[allow(dead_code)]
+pub fn parse(token: TokenWrap) -> Option<*mut Function> {
+    let head: Option<*mut Function> = Some(Box::leak(Box::new(Function::empty())));
+    let mut cur = head;
+
+    while token.get_kind() != TokenKind::EOF {
+        let (f, _tk) = function(token);
+        set_function_next(cur.unwrap(), f);
+        cur = get_function_next(cur.unwrap());
+    }
+
+    return get_function_next(head.unwrap());
 }

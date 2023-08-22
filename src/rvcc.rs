@@ -658,15 +658,20 @@ impl Iterator for ObjIter {
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub struct Function {
+    pub next: Option<*mut Function>,
+    pub name: &'static str,
     pub body: Option<*mut Node>,
     pub locals: Option<*mut Obj>,
     pub stack_size: i64,
 }
 
+
 #[allow(dead_code)]
 impl Function {
     pub fn new(body: *mut Node, locals: Option<*mut Obj>) -> Self {
         Self {
+            next: None,
+            name: "",
             body: Some(body),
             locals: locals,
             stack_size: 0,
@@ -675,6 +680,8 @@ impl Function {
 
     pub fn empty() -> Self {
         Self {
+            next: None,
+            name: "",
             body: None,
             locals: None,
             stack_size: 0,
@@ -687,6 +694,7 @@ impl Function {
 pub enum TypeKind {
     INT,
     PTR,
+    FUNC,
 }
 
 #[allow(dead_code)]
@@ -695,6 +703,7 @@ pub struct Ty {
     pub kind: Option<TypeKind>,
     pub base: Option<*mut Ty>,
     pub token: TokenWrap,
+    pub return_ty: Option<*mut Ty>,
 }
 
 #[allow(dead_code)]
@@ -704,6 +713,7 @@ impl Ty {
             kind: None,
             base: None,
             token: TokenWrap::empty(),
+            return_ty: None,
         }
     }
 
@@ -712,6 +722,16 @@ impl Ty {
             kind: kind,
             base: None,
             token: TokenWrap::empty(),
+            return_ty: None,
+        }
+    }
+
+    pub fn new_func_ty(return_ty: Option<*mut Ty>) -> Self {
+        Self {
+            kind: Some(TypeKind::FUNC),
+            base: None,
+            token: TokenWrap::empty(),
+            return_ty: return_ty,
         }
     }
 
@@ -720,6 +740,7 @@ impl Ty {
             kind: Some(TypeKind::PTR),
             base: base,
             token: TokenWrap::empty(),
+            return_ty: None,
         }
     }
 }
@@ -729,6 +750,7 @@ impl ToString for Ty {
         match &self.kind.unwrap() {
             TypeKind::INT => "INT".to_string(),
             TypeKind::PTR => "PTR".to_string(),
+            TypeKind::FUNC => "FUNC".to_string(),
         }
     }
 }
@@ -899,23 +921,38 @@ pub fn get_obj_ty(obj: *mut Obj) -> Option<*mut Ty> {
 }
 
 #[allow(dead_code)]
-pub fn get_fuction_locals(func: *mut Function) -> Option<*mut Obj> {
+pub fn get_function_locals(func: *mut Function) -> Option<*mut Obj> {
     unsafe { func.as_ref().unwrap().locals }
 }
 
 #[allow(dead_code)]
-pub fn set_fuction_stack_size(func: *mut Function, stack_size: i64) {
+pub fn set_function_stack_size(func: *mut Function, stack_size: i64) {
     unsafe { func.as_mut().unwrap().stack_size = stack_size }
 }
 
 #[allow(dead_code)]
-pub fn get_fuction_body(func: *mut Function) -> Option<*mut Node> {
+pub fn get_function_body(func: *mut Function) -> Option<*mut Node> {
     unsafe { func.as_ref().unwrap().body }
 }
 
 #[allow(dead_code)]
-pub fn get_fuction_stack_size(func: *mut Function) -> i64 {
+pub fn get_function_stack_size(func: *mut Function) -> i64 {
     unsafe { func.as_ref().unwrap().stack_size }
+}
+
+#[allow(dead_code)]
+pub fn get_function_name(func: *mut Function) -> &'static str {
+    unsafe { func.as_ref().unwrap().name }
+}
+
+#[allow(dead_code)]
+pub fn get_function_next(func: *mut Function) -> Option<*mut Function> {
+    unsafe { func.as_ref().unwrap().next }
+}
+
+#[allow(dead_code)]
+pub fn set_function_next(func: *mut Function, next: Option<*mut Function>) {
+    unsafe { func.as_mut().unwrap().next = next }
 }
 
 #[allow(dead_code)]

@@ -1,10 +1,11 @@
 use crate::{
     rvcc::{
-        get_fuction_body, get_fuction_locals, get_fuction_stack_size, get_node_args, get_node_body,
-        get_node_cond, get_node_els, get_node_func_name, get_node_inc, get_node_init,
-        get_node_kind, get_node_lhs, get_node_next, get_node_rhs, get_node_then, get_node_token,
-        get_node_val, get_node_var, get_obj_name, get_obj_offset, set_fuction_stack_size,
-        set_obj_offset, Function, Node, NodeKind, ObjIter,
+        get_function_body, get_function_locals, get_function_name, get_function_next,
+        get_function_stack_size, get_node_args, get_node_body, get_node_cond, get_node_els,
+        get_node_func_name, get_node_inc, get_node_init, get_node_kind, get_node_lhs,
+        get_node_next, get_node_rhs, get_node_then, get_node_token, get_node_val, get_node_var,
+        get_obj_name, get_obj_offset, set_function_stack_size, set_obj_offset, Function, Node,
+        NodeKind, ObjIter,
     },
     utils::error_token,
 };
@@ -13,6 +14,7 @@ pub static mut DEPTH: usize = 0;
 pub static mut I: i64 = 1;
 
 pub static ARG_REG: [&str; 6] = ["a0", "a1", "a2", "a3", "a4", "a5"];
+pub static mut FUNCTION: Option<*mut Function> = None;
 
 #[allow(dead_code)]
 pub fn count() -> i64 {
@@ -261,8 +263,14 @@ fn gen_stmt(mut node: *mut Node) {
         NodeKind::RETURN => {
             println!("# 返回语句");
             gen_expr(get_node_lhs(node).unwrap());
-            println!("  # 跳转到.L.return段");
-            println!("  j .L.return");
+            println!(
+                "  # 跳转到.L.return.{}段",
+                get_function_name(unsafe { FUNCTION.unwrap() })
+            );
+            println!(
+                "  j .L.return.{}",
+                get_function_name(unsafe { FUNCTION.unwrap() })
+            );
             return;
         }
         NodeKind::ExprStmt => {
@@ -275,58 +283,70 @@ fn gen_stmt(mut node: *mut Node) {
 }
 
 #[allow(dead_code)]
-pub fn assign_l_var_offsets(prog: *mut Function) {
-    let mut offset = 0;
-    let var = ObjIter::new(get_fuction_locals(prog));
-
-    for obj in var {
-        offset += 8;
-        set_obj_offset(obj, -offset);
+pub fn assign_l_var_offsets(prog: Option<*mut Function>) {
+    let mut func = prog;
+    while !func.is_none() {
+        let mut offset = 0;
+        let var = ObjIter::new(get_function_locals(func.unwrap()));
+        for obj in var {
+            offset += 8;
+            set_obj_offset(obj, -offset);
+        }
+        set_function_stack_size(func.unwrap(), align_to(offset, 16));
+        func = get_function_next(func.unwrap());
     }
-    set_fuction_stack_size(prog, align_to(offset, 16));
 }
 
 #[allow(dead_code)]
-pub fn codegen(prog: *mut Function) {
+pub fn codegen(prog: Option<*mut Function>) {
     assign_l_var_offsets(prog);
-    println!("  # 定义全局main段");
-    println!("  .globl main");
-    println!("\n# =====程序开始===============");
-    println!("# main段标签，也是程序入口段");
-    println!("main:");
+    let mut func = prog;
+    while !func.is_none() {
+        println!("\n  # 定义全局{}段", get_function_name(func.unwrap()));
+        println!("  .globl {}", get_function_name(func.unwrap()));
+        println!(
+            "# ====={}段开始===============",
+            get_function_name(func.unwrap())
+        );
+        println!("# {}段标签", get_function_name(func.unwrap()));
+        println!("{}:", get_function_name(func.unwrap()));
+        unsafe { FUNCTION = func };
+        
 
-    println!("  # 将ra寄存器压栈,保存ra的值");
-    println!("  addi sp, sp, -16");
-    println!("  sd ra, 8(sp)");
+        println!("  # 将ra寄存器压栈,保存ra的值");
+        println!("  addi sp, sp, -16");
+        println!("  sd ra, 8(sp)");
 
-    println!("  # 将fp压栈，fp属于“被调用者保存”的寄存器，需要恢复原值");
-    // println!("  addi sp, sp, -8");
-    println!("  sd fp, 0(sp)");
-    println!("  # 将sp的值写入fp");
-    println!("  mv fp, sp");
+        println!("  # 将fp压栈，fp属于“被调用者保存”的寄存器，需要恢复原值");
+        // println!("  addi sp, sp, -8");
+        println!("  sd fp, 0(sp)");
+        println!("  # 将sp的值写入fp");
+        println!("  mv fp, sp");
 
-    println!("  # sp腾出StackSize大小的栈空间");
-    println!("  addi sp, sp, -{}", get_fuction_stack_size(prog));
+        println!("  # sp腾出StackSize大小的栈空间");
+        println!("  addi sp, sp, -{}", get_function_stack_size(func.unwrap()));
 
-    let node = get_fuction_body(prog).unwrap();
+        let node = get_function_body(func.unwrap()).unwrap();
 
-    println!("\n# =====程序主体===============");
-    gen_stmt(node);
-    assert!(unsafe { DEPTH == 0 });
+        println!("\n# =====段主体===============");
+        gen_stmt(node);
+        assert!(unsafe { DEPTH == 0 });
 
-    println!("\n# =====程序结束===============");
-    println!("# return段标签");
-    println!(".L.return:");
-    println!("  # 将fp的值写回sp");
-    println!("  mv sp, fp");
-    println!("  # 将最早fp保存的值弹栈，恢复fp和sp");
-    println!("  ld fp, 0(sp)");
-    // println!("  addi sp, sp, 8");
+        println!("\n# =====段结束===============");
+        println!("# return段标签");
+        println!(".L.return.{}:", get_function_name(func.unwrap()));
+        println!("  # 将fp的值写回sp");
+        println!("  mv sp, fp");
+        println!("  # 将最早fp保存的值弹栈，恢复fp和sp");
+        println!("  ld fp, 0(sp)");
+        // println!("  addi sp, sp, 8");
 
-    println!("  # 将ra寄存器弹栈,恢复ra的值");
-    println!("  ld ra, 8(sp)");
-    println!("  addi sp, sp, 16");
+        println!("  # 将ra寄存器弹栈,恢复ra的值");
+        println!("  ld ra, 8(sp)");
+        println!("  addi sp, sp, 16");
 
-    println!("  # 返回a0值给系统调用");
-    println!("  ret");
+        println!("  # 返回a0值给系统调用");
+        println!("  ret");
+        func = get_function_next(func.unwrap());
+    }
 }
