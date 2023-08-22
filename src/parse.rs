@@ -521,12 +521,13 @@ pub fn declarator(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut
         error_token(token.get_ref(), "expected a variable name");
     }
 
-    let (typ, tk) = ty_suffix(token, ty);
-    ty = typ;
-    token = tk;
-    set_ty_token(ty.unwrap(), token);
+    let start = token;
 
-    return (ty, token);
+    let (typ, tk) = ty_suffix(token.set(token.get_next()), ty);
+    ty = typ;
+    set_ty_token(ty.unwrap(), start);
+    
+    return (ty, tk);
 }
 
 #[allow(dead_code)]
@@ -604,6 +605,7 @@ pub fn func_call(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 #[allow(dead_code)]
 pub fn ty_suffix(mut token: TokenWrap, ty: Option<*mut Ty>) -> (Option<*mut Ty>, TokenWrap) {
     if equal(token.get_ref(), &['(']) {
+        token.set(token.get_next());
         token.set(skip(token.get_ref(), &[')']).unwrap());
         return (Some(Box::leak(Box::new(Ty::new_func_ty(ty)))), token);
     }
@@ -612,28 +614,33 @@ pub fn ty_suffix(mut token: TokenWrap, ty: Option<*mut Ty>) -> (Option<*mut Ty>,
 }
 
 #[allow(dead_code)]
-pub fn function(token: TokenWrap) -> (Option<*mut Function>, TokenWrap) {
+pub fn function(mut token: TokenWrap) -> (Option<*mut Function>, TokenWrap) {
     let (typ, tk) = declspec(token);
-    let (_typ, tk) = declarator(typ, tk);
+    let (typ, tk) = declarator(typ, tk);
 
     unsafe { LOCALS = None };
 
     let mut func = Function::empty();
-    func.name = get_ident(tk);
+    func.name = get_ident(get_ty_token(typ.unwrap()));
+
+    token.set(skip(tk.get_ref(), &['{']).unwrap());
+    let (n, t) = compound_stmt(token);
+    func.body = n;
     func.locals = unsafe { LOCALS };
 
-    return (Some(Box::leak(Box::new(func))), tk);
+    return (Some(Box::leak(Box::new(func))), t);
 }
 
 #[allow(dead_code)]
-pub fn parse(token: TokenWrap) -> Option<*mut Function> {
+pub fn parse(mut token: TokenWrap) -> Option<*mut Function> {
     let head: Option<*mut Function> = Some(Box::leak(Box::new(Function::empty())));
     let mut cur = head;
 
     while token.get_kind() != TokenKind::EOF {
-        let (f, _tk) = function(token);
+        let (f, tk) = function(token);
         set_function_next(cur.unwrap(), f);
         cur = get_function_next(cur.unwrap());
+        token = tk;
     }
 
     return get_function_next(head.unwrap());
