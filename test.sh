@@ -141,7 +141,7 @@ assert 7 'int main() { int x=3; int y=5; *(&x+1)=7; return y; }'
 assert 8 'int main() { int x, y; x=3; y=5; return x+y; }'
 assert 8 'int main() { int x=3, y=5; return x+y; }'
 
-[23] 支持零参函数调用
+# [23] 支持零参函数调用
 assert 3 'int main() { return ret3(); }'
 assert 5 'int main() { return ret5(); }'
 assert 8 'int main() { return ret3()+ret5(); }'
