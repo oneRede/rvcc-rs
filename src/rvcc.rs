@@ -835,6 +835,11 @@ pub fn get_node_lhs(node: Option<*mut Node>) -> Option<*mut Node> {
 }
 
 #[allow(dead_code)]
+pub fn set_node_lhs(node: Option<*mut Node>, lhs: Option<*mut Node>) {
+    unsafe { node.unwrap().as_mut().unwrap().lhs = lhs }
+}
+
+#[allow(dead_code)]
 pub fn get_node_rhs(node: Option<*mut Node>) -> Option<*mut Node> {
     unsafe { node.unwrap().as_ref().unwrap().rhs }
 }
