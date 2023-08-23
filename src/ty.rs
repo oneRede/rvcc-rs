@@ -55,7 +55,7 @@ pub fn add_ty(node: Option<*mut Node>) {
         NodeKind::ASSIGN => {
             let kind = get_ty_kind(get_node_ty(get_node_lhs(node)));
             if kind == Some(TypeKind::ARRAY) {
-                error_token(get_node_token(get_node_lhs(node)).get_ref(), "not an lvalue");
+                error_token(get_node_token(get_node_lhs(node)), "not an lvalue");
             }
             set_node_ty(
                 node,
@@ -92,7 +92,7 @@ pub fn add_ty(node: Option<*mut Node>) {
         NodeKind::DEREF => {
             if get_ty_base(get_node_ty(get_node_lhs(node))).is_none() {
                 error_token(
-                    get_node_token(node).get_ref(),
+                    get_node_token(node),
                     "invalid pointer dereference",
                 )
             }

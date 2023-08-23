@@ -26,7 +26,7 @@ pub fn count() -> i64 {
 
 #[allow(dead_code)]
 pub fn push() {
-    println!("  # 压栈，将a0的值存入栈顶");
+    println!("  # 压栈,将a0的值存入栈顶");
     println!("  addi sp, sp, -8");
     println!("  sd a0, 0(sp)");
     unsafe { DEPTH += 1 };
@@ -64,7 +64,7 @@ pub fn gen_addr(node: Option<*mut Node>) {
         }
         _ => {}
     }
-    error_token(get_node_token(node).get_ref(), "not an lvalue");
+    error_token(get_node_token(node), "not an lvalue");
 }
 
 #[allow(dead_code)]
@@ -133,22 +133,22 @@ pub fn gen_expr(node: Option<*mut Node>) {
 
     match get_node_kind(node) {
         NodeKind::Add => {
-            println!("  # a0+a1，结果写入a0");
+            println!("  # a0+a1,结果写入a0");
             println!("  add a0, a0, a1");
             return;
         }
         NodeKind::Sub => {
-            println!("  # a0-a1，结果写入a0");
+            println!("  # a0-a1,结果写入a0");
             println!("  sub a0, a0, a1");
             return;
         }
         NodeKind::Mul => {
-            println!("  # a0×a1，结果写入a0");
+            println!("  # a0*a1,结果写入a0");
             println!("  mul a0, a0, a1");
             return;
         }
         NodeKind::Div => {
-            println!("  # a0÷a1，结果写入a0");
+            println!("  # a0÷a1,结果写入a0");
             println!("  div a0, a0, a1");
             return;
         }
@@ -181,7 +181,7 @@ pub fn gen_expr(node: Option<*mut Node>) {
         }
         _ => {}
     }
-    error_token(get_node_token(node).get_ref(), "invalid expression");
+    error_token(get_node_token(node), "invalid expression");
 }
 
 #[allow(dead_code)]
@@ -192,7 +192,7 @@ fn gen_stmt(mut node: Option<*mut Node>) {
             println!("\n# =====分支语句{}==============", c);
             println!("\n# Cond表达式{}", c);
             gen_expr(get_node_cond(node));
-            println!("  # 若a0为0，则跳转到分支{}的.L.else.{}段", c, c);
+            println!("  # 若a0为0,则跳转到分支{}的.L.else.{}段", c, c);
             println!("  beqz a0, .L.else.{}", c);
 
             println!("\n# Then语句{}", c);
@@ -225,7 +225,7 @@ fn gen_stmt(mut node: Option<*mut Node>) {
             println!("# Cond表达式{}", c);
             if !get_node_cond(node).is_none() {
                 gen_expr(get_node_cond(node));
-                println!("  # 若a0为0，则跳转到循环{}的.L.end.{}段", c, c);
+                println!("  # 若a0为0,则跳转到循环{}的.L.end.{}段", c, c);
                 println!("  beqz a0, .L.end.{}", c);
             }
 
@@ -277,7 +277,7 @@ fn gen_stmt(mut node: Option<*mut Node>) {
         }
         _ => {}
     }
-    error_token(get_node_token(node).get_ref(), "invalid statement");
+    error_token(get_node_token(node), "invalid statement");
 }
 
 #[allow(dead_code)]
@@ -314,7 +314,7 @@ pub fn codegen(prog: Option<*mut Function>) {
         println!("  addi sp, sp, -16");
         println!("  sd ra, 8(sp)");
 
-        println!("  # 将fp压栈，fp属于“被调用者保存”的寄存器，需要恢复原值");
+        println!("  # 将fp压栈,fp属于“被调用者保存”的寄存器,需要恢复原值");
         println!("  sd fp, 0(sp)");
         println!("  # 将sp的值写入fp");
         println!("  mv fp, sp");
@@ -345,7 +345,7 @@ pub fn codegen(prog: Option<*mut Function>) {
         println!(".L.return.{}:", get_function_name(func));
         println!("  # 将fp的值写回sp");
         println!("  mv sp, fp");
-        println!("  # 将最早fp保存的值弹栈，恢复fp和sp");
+        println!("  # 将最早fp保存的值弹栈,恢复fp和sp");
         println!("  ld fp, 0(sp)");
         // println!("  addi sp, sp, 8");
 
@@ -364,13 +364,13 @@ pub fn load(ty: Option<*mut Ty>) {
     if get_ty_kind(ty) == Some(TypeKind::ARRAY) {
         return;
     }
-    println!("  # 读取a0中存放的地址，得到的值存入a0");
+    println!("  # 读取a0中存放的地址,得到的值存入a0");
     println!("  ld a0, 0(a0)");
 }
 
 #[allow(dead_code)]
 pub fn store() {
     pop("a1");
-    println!("  # 将a0的值，写入到a1中存放的地址");
+    println!("  # 将a0的值,写入到a1中存放的地址");
     println!("  sd a0, 0(a1)");
 }

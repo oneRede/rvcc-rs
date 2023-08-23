@@ -1,7 +1,7 @@
 use std::{num::ParseIntError, process::exit};
 
 use crate::{
-    rvcc::Token,
+    rvcc::{TokenWrap, Ty},
     tokenize::{CURRENT_INPUT, CURRENT_STR},
 };
 
@@ -99,8 +99,13 @@ pub fn error_at(loc: *const char, msg: &str) {
 }
 
 #[allow(dead_code)]
-pub fn error_token(token: &Token, msg: &str) {
-    let loc = token.loc.unwrap().as_ptr();
+pub fn error_token(token: TokenWrap, msg: &str) {
+    let loc = token.get_ref().loc.unwrap().as_ptr();
     v_error_at(loc, msg);
     exit(1);
+}
+
+#[allow(dead_code)]
+pub fn static_var(var: Ty) -> Option<*mut Ty>{
+    Some(Box::leak(Box::new(var)))
 }

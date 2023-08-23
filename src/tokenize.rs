@@ -1,7 +1,7 @@
 use std::{slice, str};
 
 use crate::{
-    rvcc::{get_token_ref, Token, TokenKind, TokenWrap},
+    rvcc::{Token, TokenKind, TokenWrap},
     utils::{error_at, error_token, get_num_from_chars, read_punct},
 };
 
@@ -9,7 +9,8 @@ pub static mut CURRENT_INPUT: Option<&[char]> = None;
 pub static mut CURRENT_STR: Option<&str> = None;
 
 #[allow(dead_code)]
-pub fn equal(token: &Token, s: &str) -> bool {
+pub fn equal(token: TokenWrap, s: &str) -> bool {
+    let token = token.get_ref();
     let s = str_to_chars(s);
     if token.len != s.len() {
         return false;
@@ -29,19 +30,19 @@ pub fn str_to_chars(s: &str) -> &[char] {
 }
 
 #[allow(dead_code)]
-pub fn skip<'a>(token: &Token, s: &str) -> Option<*mut Token> {
-    if !equal(&token, s) {
+pub fn skip<'a>(token: TokenWrap, s: &str) -> Option<*mut Token> {
+    if !equal(token, s) {
         error_token(token, &format!("expect {:?}", s));
     }
-    return token.next;
+    return token.next();
 }
 
 #[allow(dead_code)]
-pub fn get_num(token: &Token) -> i32 {
-    if token.kind != TokenKind::Num {
+pub fn get_num(token: TokenWrap) -> i32 {
+    if token.kind() != TokenKind::Num {
         error_token(token, "expect a num");
     }
-    token.val
+    token.val()
 }
 
 #[allow(dead_code)]
@@ -146,15 +147,16 @@ pub fn is_ident_v2(c: char) -> bool {
 
 #[allow(dead_code)]
 pub fn convert_keyword(token: TokenWrap) {
+    let mut start = token;
     for tk in token {
-        if is_keyword(get_token_ref(tk)) {
+        if is_keyword(start.set(Some(tk))) {
             unsafe { tk.as_mut().unwrap().kind = TokenKind::KEYWORD }
         }
     }
 }
 
 #[allow(dead_code)]
-fn is_keyword(token: &Token) -> bool {
+fn is_keyword(token: TokenWrap) -> bool {
     let keywords = ["return", "if", "else", "for", "while", "int"];
 
     for kw in keywords {
@@ -167,7 +169,7 @@ fn is_keyword(token: &Token) -> bool {
 
 #[allow(dead_code)]
 pub fn consume(mut token: TokenWrap, s: &str) -> (bool, TokenWrap) {
-    if equal(token.get_ref(), s) {
+    if equal(token, s) {
         token.set(token.next());
         return (true, token);
     }
