@@ -3,9 +3,9 @@ use crate::{
         get_function_next, get_node_next, get_node_ty, get_obj_name, get_obj_next, get_ty_base,
         get_ty_next, get_ty_params, get_ty_ref, get_ty_size, get_ty_token, set_function_next,
         set_node_args, set_node_body, set_node_cond, set_node_els, set_node_func_name,
-        set_node_inc, set_node_init, set_node_next, set_node_then, set_node_ty, set_ty_next,
-        set_ty_params, set_ty_token, Function, Node, NodeKind, Obj, TokenKind, TokenWrap, Ty,
-        TypeKind, set_node_lhs,
+        set_node_inc, set_node_init, set_node_lhs, set_node_next, set_node_then, set_node_ty,
+        set_ty_next, set_ty_params, set_ty_token, Function, Node, NodeKind, Obj, TokenKind,
+        TokenWrap, Ty, TypeKind,
     },
     tokenize::{consume, equal, skip, str_to_chars},
     ty::{add_ty, create_ty, is_int},
@@ -13,11 +13,6 @@ use crate::{
 };
 
 pub static mut LOCALS: Option<*mut Obj> = None;
-
-#[allow(dead_code)]
-pub fn create_binary_node(kind: NodeKind, lhs: *mut Node, rhs: *mut Node) -> *mut Node {
-    Box::leak(Box::new(Node::new_binary(kind, lhs, rhs)))
-}
 
 #[allow(dead_code)]
 pub fn create_binary_node_v2(
@@ -32,22 +27,12 @@ pub fn create_binary_node_v2(
 }
 
 #[allow(dead_code)]
-pub fn create_unary_node(kind: NodeKind, expr: *mut Node) -> *mut Node {
-    Box::leak(Box::new(Node::new_unary(kind, expr)))
-}
-
-#[allow(dead_code)]
 pub fn create_unary_node_v2(
     kind: NodeKind,
     expr: Option<*mut Node>,
     token: TokenWrap,
 ) -> Option<*mut Node> {
     Some(Box::leak(Box::new(Node::new_unary_v2(kind, expr, token))))
-}
-
-#[allow(dead_code)]
-pub fn create_node(kind: NodeKind) -> Option<*mut Node> {
-    Some(Box::leak(Box::new(Node::new(kind))))
 }
 
 #[allow(dead_code)]
@@ -74,7 +59,7 @@ pub fn expr(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 pub fn assign(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     let (mut node, mut token) = equality(token);
     if equal(token.get_ref(), &['=']) {
-        let (n, t) = assign(token.set(token.get_next()));
+        let (n, t) = assign(token.reset_by_next());
         node = create_binary_node_v2(NodeKind::ASSIGN, node, n, token);
         token = t;
     }
@@ -88,13 +73,13 @@ fn equality(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
     loop {
         if equal(token.get_ref(), &['=', '=']) {
-            let (n, t) = relational(token.set(token.get_next()));
+            let (n, t) = relational(token.reset_by_next());
             node = create_binary_node_v2(NodeKind::EQ, node, n, t);
             token = t;
             continue;
         }
         if equal(token.get_ref(), &['!', '=']) {
-            let (n, t) = relational(token.set(token.get_next()));
+            let (n, t) = relational(token.reset_by_next());
             node = create_binary_node_v2(NodeKind::NE, node, n, t);
             token = t;
             continue;
@@ -110,28 +95,28 @@ fn relational(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
     loop {
         if equal(token.get_ref(), &['<']) {
-            let (n, t) = add(token.set(token.get_next()));
+            let (n, t) = add(token.reset_by_next());
             node = create_binary_node_v2(NodeKind::LT, node, n, t);
             token = t;
             continue;
         }
 
         if equal(token.get_ref(), &['<', '=']) {
-            let (n, t) = add(token.set(token.get_next()));
+            let (n, t) = add(token.reset_by_next());
             node = create_binary_node_v2(NodeKind::LE, node, n, t);
             token = t;
             continue;
         }
 
         if equal(token.get_ref(), &['>']) {
-            let (n, t) = add(token.set(token.get_next()));
+            let (n, t) = add(token.reset_by_next());
             node = create_binary_node_v2(NodeKind::LT, n, node, t);
             token = t;
             continue;
         }
 
         if equal(token.get_ref(), &['>', '=']) {
-            let (n, t) = add(token.set(token.get_next()));
+            let (n, t) = add(token.reset_by_next());
             node = create_binary_node_v2(NodeKind::LE, n, node, t);
             token = t;
             continue;
@@ -211,14 +196,14 @@ fn add(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
     loop {
         if equal(token.get_ref(), &['+']) {
-            let (n, t) = mul(token.set(token.get_next()));
+            let (n, t) = mul(token.reset_by_next());
             let (n, t) = new_add(node, n, t);
             node = n;
             token = t;
             continue;
         }
         if equal(token.get_ref(), &['-']) {
-            let (n, t) = mul(token.set(token.get_next()));
+            let (n, t) = mul(token.reset_by_next());
             let (n, t) = new_sub(node, n, t);
             node = n;
             token = t;
@@ -235,13 +220,13 @@ fn mul(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     loop {
         let start = token;
         if equal(token.get_ref(), &['*']) {
-            let (n, t) = unary(token.set(token.get_next()));
+            let (n, t) = unary(token.reset_by_next());
             node = create_binary_node_v2(NodeKind::Mul, node, n, start);
             token = t;
             continue;
         }
         if equal(token.get_ref(), &['/']) {
-            let (n, t) = unary(token.set(token.get_next()));
+            let (n, t) = unary(token.reset_by_next());
             node = create_binary_node_v2(NodeKind::Div, node, n, start);
             token = t;
             continue;
@@ -253,18 +238,18 @@ fn mul(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 #[allow(dead_code)]
 fn unary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), &['+']) {
-        return unary(token.set(token.get_next()));
+        return unary(token.reset_by_next());
     }
     if equal(token.get_ref(), &['-']) {
-        let (n, t) = unary(token.set(token.get_next()));
+        let (n, t) = unary(token.reset_by_next());
         return (create_unary_node_v2(NodeKind::NEG, n, t), t);
     }
     if equal(token.get_ref(), &['&']) {
-        let (n, t) = unary(token.set(token.get_next()));
+        let (n, t) = unary(token.reset_by_next());
         return (create_unary_node_v2(NodeKind::ADDR, n, t), t);
     }
     if equal(token.get_ref(), &['*']) {
-        let (n, t) = unary(token.set(token.get_next()));
+        let (n, t) = unary(token.reset_by_next());
         return (create_unary_node_v2(NodeKind::DEREF, n, t), t);
     }
 
@@ -274,16 +259,13 @@ fn unary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 #[allow(dead_code)]
 fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), &['(']) {
-        let (n, t) = expr(token.set(token.get_next()));
+        let (n, t) = expr(token.reset_by_next());
         token = t;
         return (n, token.set(skip(token.get_ref(), &[')'])));
     }
 
-    if token.get_kind() == TokenKind::IDENT {
-        if equal(
-            unsafe { token.get_next().unwrap().as_ref().unwrap() },
-            &['('],
-        ) {
+    if token.kind() == TokenKind::IDENT {
+        if equal(unsafe { token.next().unwrap().as_ref().unwrap() }, &['(']) {
             return func_call(token);
         }
 
@@ -292,12 +274,12 @@ fn primary(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
             error_token(token.get_ref(), "undefined variable");
         }
         let node = create_var_node_v2(var, token);
-        return (node, token.set(token.get_next()));
+        return (node, token.reset_by_next());
     }
 
-    if token.get_kind() == TokenKind::Num {
+    if token.kind() == TokenKind::Num {
         let node = create_num_node_v2(token.get_val() as i64, token);
-        token.set(token.get_next());
+        token.reset_by_next();
         return (node, token);
     }
 
@@ -325,16 +307,16 @@ pub fn compound_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
         add_ty(cur);
     }
 
-    let node: Option<*mut Node> = create_node(NodeKind::BLOCK);
+    let node: Option<*mut Node> = create_node_v2(NodeKind::BLOCK, token);
     set_node_body(node, get_node_next(head));
-    return (node, token.set(token.get_next()));
+    return (node, token.reset_by_next());
 }
 
 #[allow(dead_code)]
 fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), str_to_chars("return")) {
-        let node = create_node_v2(NodeKind::RETURN,token);
-        let (n, t) = expr(token.set(token.get_next()));
+        let node = create_node_v2(NodeKind::RETURN, token);
+        let (n, t) = expr(token.reset_by_next());
         set_node_lhs(node, n);
 
         token.set(skip(t.get_ref(), &[';']));
@@ -344,7 +326,7 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), str_to_chars("if")) {
         let node: Option<*mut Node> = create_node_v2(NodeKind::IF, token);
 
-        token.set(token.get_next());
+        token.reset_by_next();
         token.set(skip(token.get_ref(), &['(']));
 
         let (n, t) = expr(token);
@@ -356,7 +338,7 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
         set_node_then(node, n);
 
         if equal(token.get_ref(), str_to_chars("else")) {
-            token.set(token.get_next());
+            token.reset_by_next();
             let (n, t) = stmt(token);
             set_node_els(node, n);
             token = t;
@@ -367,7 +349,7 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), str_to_chars("for")) {
         let node: Option<*mut Node> = create_node_v2(NodeKind::FOR, token);
 
-        token.set(token.get_next());
+        token.reset_by_next();
         token.set(skip(token.get_ref(), &['(']));
 
         let (n, mut token) = expr_stmt(token);
@@ -396,7 +378,7 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), str_to_chars("while")) {
         let node: Option<*mut Node> = create_node_v2(NodeKind::FOR, token);
 
-        token.set(token.get_next());
+        token.reset_by_next();
         token.set(skip(token.get_ref(), &['(']));
 
         let (n, mut token) = expr(token);
@@ -410,7 +392,7 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     }
 
     if equal(token.get_ref(), &['{']) {
-        return compound_stmt(token.set(token.get_next()));
+        return compound_stmt(token.reset_by_next());
     }
     expr_stmt(token)
 }
@@ -418,7 +400,7 @@ fn stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 #[allow(dead_code)]
 fn expr_stmt(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     if equal(token.get_ref(), &[';']) {
-        token.set(token.get_next());
+        token.reset_by_next();
         return (create_node_v2(NodeKind::BLOCK, token), token);
     }
 
@@ -449,7 +431,7 @@ pub fn find_var(token: TokenWrap) -> Option<*mut Obj> {
 
 #[allow(dead_code)]
 pub fn get_ident(token: TokenWrap) -> &'static str {
-    if token.get_kind() != TokenKind::IDENT {
+    if token.kind() != TokenKind::IDENT {
         error_token(token.get_ref(), "expected an identifier");
     }
 
@@ -471,13 +453,13 @@ pub fn declarator(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut
         ty = Some(Box::leak(Box::new(Ty::point_to(ty))));
     }
 
-    if token.get_kind() != TokenKind::IDENT {
+    if token.kind() != TokenKind::IDENT {
         error_token(token.get_ref(), "expected a variable name");
     }
 
     let start = token;
 
-    let (typ, tk) = ty_suffix(token.set(token.get_next()), ty);
+    let (typ, tk) = ty_suffix(token.reset_by_next(), ty);
     ty = typ;
     set_ty_token(ty, start);
 
@@ -508,7 +490,7 @@ pub fn declaration(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
         }
 
         let lhs = create_var_node_v2(Some(var), get_ty_token(ty));
-        let rhs = assign(token.set(token.get_next()));
+        let rhs = assign(token.reset_by_next());
         token = rhs.1;
         let node = create_binary_node_v2(NodeKind::ASSIGN, lhs, rhs.0, token);
 
@@ -518,7 +500,7 @@ pub fn declaration(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
     let node = create_node_v2(NodeKind::BLOCK, token);
     set_node_body(node, get_node_next(head));
-    token.set(token.get_next());
+    token.reset_by_next();
 
     return (node, token);
 }
@@ -526,8 +508,8 @@ pub fn declaration(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 #[allow(dead_code)]
 pub fn func_call(mut token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
     let start = token;
-    token.set(token.get_next());
-    token.set(token.get_next());
+    token.reset_by_next();
+    token.reset_by_next();
 
     let head: Option<*mut Node> = create_node_v2(NodeKind::Num, token);
     let mut cur = head;
@@ -576,7 +558,7 @@ pub fn func_params(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mu
     ty = Some(Box::leak(Box::new(Ty::new_func_ty(ty))));
     set_ty_params(ty, get_ty_next(head));
 
-    token.set(token.get_next());
+    token.reset_by_next();
 
     return (ty, token);
 }
@@ -585,14 +567,14 @@ pub fn func_params(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mu
 pub fn ty_suffix(mut token: TokenWrap, ty: Option<*mut Ty>) -> (Option<*mut Ty>, TokenWrap) {
     if equal(token.get_ref(), &['(']) {
         let mut start = token;
-        return func_params(start.set(start.get_next()), ty);
+        return func_params(start.set(start.next()), ty);
     }
 
     if equal(token.get_ref(), &['[']) {
         let mut start = token;
-        let sz = get_number(start.set(token.get_next()));
-        token.set(token.get_next());
-        token.set(token.get_next());
+        let sz = get_number(start.reset_by_next());
+        token.reset_by_next();
+        token.reset_by_next();
         token.set(skip(token.get_ref(), &[']']));
         let (ty, token) = ty_suffix(token, ty);
         let ty: Option<*mut Ty> = Some(Box::leak(Box::new(Ty::new_array_ty(ty, sz as usize))));
@@ -628,7 +610,7 @@ pub fn parse(mut token: TokenWrap) -> Option<*mut Function> {
     let head: Option<*mut Function> = Some(Box::leak(Box::new(Function::empty())));
     let mut cur = head;
 
-    while token.get_kind() != TokenKind::EOF {
+    while token.kind() != TokenKind::EOF {
         let (f, tk) = function(token);
         set_function_next(cur, f);
         cur = get_function_next(cur);
@@ -648,7 +630,7 @@ pub fn create_param_l_vars(params: Option<*mut Ty>) {
 
 #[allow(dead_code)]
 pub fn get_number(token: TokenWrap) -> i32 {
-    if token.get_kind() != TokenKind::Num {
+    if token.kind() != TokenKind::Num {
         error_token(token.get_ref(), "expected a number");
     }
     return token.get_val();
@@ -660,7 +642,7 @@ pub fn postfix(token: TokenWrap) -> (Option<*mut Node>, TokenWrap) {
 
     while equal(token.get_ref(), &['[']) {
         let start = token;
-        let (idx, mut tk) = expr(token.set(token.get_next()));
+        let (idx, mut tk) = expr(token.reset_by_next());
         tk.set(skip(tk.get_ref(), &[']']));
         token = tk;
 

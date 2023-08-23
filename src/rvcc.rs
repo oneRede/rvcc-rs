@@ -146,6 +146,11 @@ impl TokenWrap {
         *self
     }
 
+    pub fn reset_by_next(&mut self) -> Self {
+        self.ptr = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
+        *self
+    }
+
     pub fn set_next(self, next: *mut Token) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().next = Some(next) };
     }
@@ -158,11 +163,11 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().len = len };
     }
 
-    pub fn get_next(&self) -> Option<*mut Token> {
+    pub fn next(&self) -> Option<*mut Token> {
         unsafe { self.ptr.unwrap().as_ref().unwrap().next }
     }
 
-    pub fn get_kind(&self) -> TokenKind {
+    pub fn kind(&self) -> TokenKind {
         unsafe { self.ptr.unwrap().as_ref().unwrap().kind }
     }
 
@@ -266,26 +271,6 @@ pub struct Node {
 
 #[allow(dead_code)]
 impl Node {
-    pub fn new(kind: NodeKind) -> Self {
-        Self {
-            kind: kind,
-            next: None,
-            lhs: None,
-            rhs: None,
-            body: None,
-            cond: None,
-            then: None,
-            els: None,
-            val: 0,
-            var: None,
-            init: None,
-            inc: None,
-            token: TokenWrap::empty(),
-            ty: None,
-            func_name: "",
-            args: None,
-        }
-    }
 
     pub fn new_v2(kind: NodeKind, token: TokenWrap) -> Self {
         Self {
@@ -302,27 +287,6 @@ impl Node {
             init: None,
             inc: None,
             token: token,
-            ty: None,
-            func_name: "",
-            args: None,
-        }
-    }
-
-    pub fn new_binary(kind: NodeKind, lhs: *mut Node, rhs: *mut Node) -> Self {
-        Self {
-            kind: kind,
-            next: None,
-            lhs: Some(lhs),
-            rhs: Some(rhs),
-            body: None,
-            cond: None,
-            then: None,
-            els: None,
-            val: 0,
-            var: None,
-            init: None,
-            inc: None,
-            token: TokenWrap::empty(),
             ty: None,
             func_name: "",
             args: None,
@@ -350,27 +314,6 @@ impl Node {
         }
     }
 
-    pub fn new_num(val: i64) -> Self {
-        Self {
-            kind: NodeKind::Num,
-            next: None,
-            lhs: None,
-            rhs: None,
-            body: None,
-            cond: None,
-            then: None,
-            els: None,
-            val: val,
-            var: None,
-            init: None,
-            inc: None,
-            token: TokenWrap::empty(),
-            ty: None,
-            func_name: "",
-            args: None,
-        }
-    }
-
     pub fn new_num_v2(val: i64, token: TokenWrap) -> Self {
         Self {
             kind: NodeKind::Num,
@@ -390,12 +333,6 @@ impl Node {
             func_name: "",
             args: None,
         }
-    }
-
-    pub fn new_unary(kind: NodeKind, expr: *mut Node) -> Self {
-        let mut node: Node = Node::new(kind);
-        node.lhs = Some(expr);
-        return node;
     }
 
     pub fn new_unary_v2(kind: NodeKind, expr: Option<*mut Node>, token: TokenWrap) -> Self {

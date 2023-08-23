@@ -52,7 +52,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
         if chars.len() == 0 {
             cur.set_next(Box::leak(Box::new(Token::new(TokenKind::EOF, chars, 0))));
 
-            head.set(head.get_next());
+            head.reset_by_next();
             convert_keyword(head);
             return head;
         }
@@ -72,7 +72,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
             ))));
 
             chars = cs;
-            cur.set(cur.get_next());
+            cur.reset_by_next();
             cur.set_val(num);
             cur.set_len(num.to_string().len());
             continue;
@@ -94,7 +94,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
                 chars,
                 len_ident,
             ))));
-            cur.set(cur.get_next());
+            cur.reset_by_next();
             chars = &chars[len_ident..];
             continue;
         }
@@ -102,7 +102,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
         match chars[0] {
             'a'..='z' => {
                 cur.set_next(Box::leak(Box::new(Token::new(TokenKind::IDENT, chars, 1))));
-                cur.set(cur.get_next());
+                cur.set(cur.next());
                 chars = &chars[1..];
                 continue;
             }
@@ -116,7 +116,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
                 chars,
                 len_punct,
             ))));
-            cur.set(cur.get_next());
+            cur.reset_by_next();
             chars = &chars[len_punct..];
             continue;
         }
@@ -167,7 +167,7 @@ fn is_keyword(token: &Token) -> bool {
 #[allow(dead_code)]
 pub fn consume(mut token: TokenWrap, s: &str) -> (bool, TokenWrap) {
     if equal(token.get_ref(), str_to_chars(s)) {
-        token.set(token.get_next());
+        token.set(token.next());
         return (true, token);
     }
     return (false, token);
