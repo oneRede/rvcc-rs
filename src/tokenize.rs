@@ -9,7 +9,8 @@ pub static mut CURRENT_INPUT: Option<&[char]> = None;
 pub static mut CURRENT_STR: Option<&str> = None;
 
 #[allow(dead_code)]
-pub fn equal(token: &Token, s: &[char]) -> bool {
+pub fn equal(token: &Token, s: &str) -> bool {
+    let s = str_to_chars(s);
     if token.len != s.len() {
         return false;
     }
@@ -28,7 +29,7 @@ pub fn str_to_chars(s: &str) -> &[char] {
 }
 
 #[allow(dead_code)]
-pub fn skip<'a>(token: &Token, s: &[char]) -> Option<*mut Token> {
+pub fn skip<'a>(token: &Token, s: &str) -> Option<*mut Token> {
     if !equal(&token, s) {
         error_token(token, &format!("expect {:?}", s));
     }
@@ -157,7 +158,7 @@ fn is_keyword(token: &Token) -> bool {
     let keywords = ["return", "if", "else", "for", "while", "int"];
 
     for kw in keywords {
-        if equal(token, str_to_chars(kw)) {
+        if equal(token, kw) {
             return true;
         }
     }
@@ -166,7 +167,7 @@ fn is_keyword(token: &Token) -> bool {
 
 #[allow(dead_code)]
 pub fn consume(mut token: TokenWrap, s: &str) -> (bool, TokenWrap) {
-    if equal(token.get_ref(), str_to_chars(s)) {
+    if equal(token.get_ref(), s) {
         token.set(token.next());
         return (true, token);
     }
