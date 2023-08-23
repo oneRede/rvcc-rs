@@ -1019,6 +1019,9 @@ pub fn get_ty_kind(ty: Option<*mut Ty>) -> Option<TypeKind> {
 
 #[allow(dead_code)]
 pub fn get_ty_base(ty: Option<*mut Ty>) -> Option<*mut Ty> {
+    if ty.is_none() {
+        return None
+    }
     unsafe { ty.unwrap().as_ref().unwrap().base }
 }
 

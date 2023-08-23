@@ -4,7 +4,7 @@ use crate::{
         get_ty_next, get_ty_params, get_ty_ref, get_ty_token, set_function_next, set_node_args,
         set_node_body, set_node_cond, set_node_els, set_node_func_name, set_node_inc,
         set_node_init, set_node_next, set_node_then, set_node_ty, set_ty_next, set_ty_params,
-        set_ty_token, Function, Node, NodeKind, Obj, TokenKind, TokenWrap, Ty, TypeKind, get_ty_size,
+        set_ty_token, Function, Node, NodeKind, Obj, TokenKind, TokenWrap, Ty, TypeKind, get_ty_size
     },
     tokenize::{consume, equal, skip, str_to_chars},
     ty::{add_ty, create_ty, is_int},
@@ -646,6 +646,7 @@ pub fn ty_suffix(mut token: TokenWrap, ty: Option<*mut Ty>) -> (Option<*mut Ty>,
         token.set(token.get_next());
         token.set(token.get_next());
         token.set(skip(token.get_ref(), &[']']));
+        let (ty, token) = ty_suffix(token, ty);
         let ty: Option<*mut Ty> = Some(Box::leak(Box::new(Ty::new_array_ty(ty, sz as usize))));
         return (ty, token);
     }

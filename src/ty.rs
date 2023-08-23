@@ -53,15 +53,14 @@ pub fn add_ty(node: Option<*mut Node>) {
             return;
         }
         NodeKind::ASSIGN => {
-            let ty = get_node_ty(get_node_lhs(node));
-            if get_ty_kind(ty) == Some(TypeKind::ARRAY) {
-                set_node_ty(
-                    node,
-                    Some(Box::leak(Box::new(Ty::point_to(get_ty_base(ty))))),
-                );
-            } else {
-                set_node_ty(node, Some(Box::leak(Box::new(Ty::point_to(ty)))));
+            let kind = get_ty_kind(get_node_ty(get_node_lhs(node)));
+            if kind == Some(TypeKind::ARRAY) {
+                error_token(get_node_token(get_node_lhs(node)).get_ref(), "not an lvalue");
             }
+            set_node_ty(
+                node,
+                get_node_ty(get_node_lhs(node)),
+            );
             return;
         }
         NodeKind::FUNCALL
@@ -79,10 +78,15 @@ pub fn add_ty(node: Option<*mut Node>) {
             return;
         }
         NodeKind::ADDR => {
-            let ty = Box::leak(Box::new(Ty::point_to(get_node_ty(
-                get_node_lhs(node),
-            ))));
-            set_node_ty(node, Some(ty));
+            let ty = get_node_ty(get_node_lhs(node));
+            if get_ty_kind(ty) == Some(TypeKind::ARRAY) {
+                set_node_ty(
+                    node,
+                    Some(Box::leak(Box::new(Ty::point_to(get_ty_base(ty))))),
+                );
+            } else {
+                set_node_ty(node, Some(Box::leak(Box::new(Ty::point_to(ty)))));
+            }
             return;
         }
         NodeKind::DEREF => {
