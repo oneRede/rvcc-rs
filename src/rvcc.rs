@@ -515,51 +515,6 @@ pub struct Obj {
     pub offset: i64,
     pub ty: TyWrap,
 }
-
-// #[allow(dead_code)]
-// impl Obj {
-//     pub fn new(name: &'static str, ty: TyWrap) -> *mut Obj {
-//         let mut var = Self {
-//             next: ObjWrap::empty(),
-//             name: name,
-//             offset: 0,
-//             ty: ty,
-//         };
-//         var.next = unsafe { LOCALS };
-//         let var: *mut Obj = Box::leak(Box::new(var));
-//         unsafe { LOCALS = Some(var) };
-//         var
-//     }
-// }
-
-// impl ToString for Obj {
-//     fn to_string(&self) -> String {
-//         let mut _s = "".to_string();
-//         if self.next.is_none() {
-//             _s = "{".to_string()
-//                 + "\"name\":\""
-//                 + self.name
-//                 + "\","
-//                 + "\"offset\":\""
-//                 + &self.offset.to_string()
-//                 + "\","
-//                 + "\"next\": \"None\"}";
-//         } else {
-//             _s = "{".to_string()
-//                 + "\"name\":\""
-//                 + self.name
-//                 + "\","
-//                 + "\"offset\":\""
-//                 + &self.offset.to_string()
-//                 + "\","
-//                 + "\"next\":"
-//                 + unsafe { &self.next.unwrap().as_ref().unwrap().to_string() }
-//                 + "}";
-//         }
-//         _s
-//     }
-// }
-
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub struct ObjWrap {
