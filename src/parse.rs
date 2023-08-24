@@ -1,11 +1,10 @@
 use crate::{
     rvcc::{
-        get_function_next, get_obj_name, get_obj_next, get_ty_base, get_ty_next, get_ty_params,
-        get_ty_ref, get_ty_size, get_ty_token, set_function_next, set_ty_next, set_ty_params,
-        set_ty_token, Function, NodeKind, NodeWrap, Obj, TokenKind, TokenWrap, Ty, TypeKind,
+        get_function_next, get_obj_name, get_obj_next, set_function_next, Function, NodeKind,
+        NodeWrap, Obj, TokenKind, TokenWrap, TyWrap, TypeKind,
     },
-    tokenize::{consume, equal, skip},
-    ty::{add_ty, create_ty, is_int},
+    tokenize::{skip, equal, consume},
+    ty::{add_ty, is_int},
     utils::error_token,
 };
 
@@ -92,19 +91,19 @@ pub fn new_add_v2(mut lhs: NodeWrap, mut rhs: NodeWrap, token: TokenWrap) -> (No
     add_ty(lhs);
     add_ty(rhs);
 
-    if is_int(get_ty_ref(lhs.ty())) && is_int(get_ty_ref(rhs.ty())) {
+    if is_int(lhs.ty()) && is_int(rhs.ty()) {
         let node = NodeWrap::new_binary(NodeKind::Add, lhs, rhs, token);
         return (node, token);
     }
-    if !get_ty_base(lhs.ty()).is_none() && !get_ty_base(rhs.ty()).is_none() {
+    if !lhs.ty().base().ptr.is_none() && !rhs.ty().base().ptr.is_none() {
         error_token(token, "invalid operands")
     }
-    if get_ty_base(lhs.ty()).is_none() && !get_ty_base(rhs.ty()).is_none() {
+    if lhs.ty().base().ptr.is_none() && !rhs.ty().base().ptr.is_none() {
         let tmp = lhs;
         lhs = rhs;
         rhs = tmp;
     }
-    let val = get_ty_size(get_ty_base(lhs.ty()));
+    let val = lhs.ty().base().size();
     let num_node = NodeWrap::new_num(val as i64, token);
     let rhs = NodeWrap::new_binary(NodeKind::Mul, rhs, num_node, token);
     let node = NodeWrap::new_binary(NodeKind::Add, lhs, rhs, token);
@@ -116,13 +115,13 @@ pub fn new_sub_v2(lhs: NodeWrap, rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, 
     add_ty(lhs);
     add_ty(rhs);
 
-    if is_int(get_ty_ref(lhs.ty())) && is_int(get_ty_ref(rhs.ty())) {
+    if is_int(lhs.ty()) && is_int(rhs.ty()) {
         let node = NodeWrap::new_binary(NodeKind::Sub, lhs, rhs, token);
         return (node, token);
     }
 
-    if !(get_ty_base(lhs.ty()).is_none()) && is_int(get_ty_ref(rhs.ty())) {
-        let val = get_ty_size(get_ty_base(lhs.ty()));
+    if !((lhs.ty().base().ptr).is_none()) && is_int(rhs.ty()) {
+        let val = lhs.ty().base().size();
         let num_node = NodeWrap::new_num(val as i64, token);
         let rhs_node = NodeWrap::new_binary(NodeKind::Mul, rhs, num_node, token);
         add_ty(rhs_node);
@@ -130,11 +129,11 @@ pub fn new_sub_v2(lhs: NodeWrap, rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, 
         node.set_ty(lhs.ty());
         return (node, token);
     }
-    if !get_ty_base(lhs.ty()).is_none() && !get_ty_base(rhs.ty()).is_none() {
+    if !lhs.ty().base().ptr.is_none() && !rhs.ty().base().ptr.is_none() {
         let node = NodeWrap::new_binary(NodeKind::Sub, lhs, rhs, token);
-        let ty = create_ty(TypeKind::INT);
+        let ty = TyWrap::new_with_kind(Some(TypeKind::INT));
         node.set_ty(ty);
-        let val = get_ty_size(get_ty_base(lhs.ty()));
+        let val = lhs.ty().base().size();
         let num_node = NodeWrap::new_num(val as i64, token);
         let node = NodeWrap::new_binary(NodeKind::Div, node, num_node, token);
         return (node, token);
@@ -148,7 +147,6 @@ fn add_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let (mut node, mut token) = mul_v2(token);
 
     loop {
-        
         if equal(token, "+") {
             let start = token;
             let (n, t) = mul_v2(token.reset_by_next());
@@ -398,16 +396,16 @@ pub fn get_ident(token: TokenWrap) -> &'static str {
 }
 
 #[allow(dead_code)]
-pub fn declspec(mut token: TokenWrap) -> (TokenWrap, Option<*mut Ty>) {
+pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
     token.set(skip(token, "int"));
-    return (token, create_ty(TypeKind::INT));
+    return (token, TyWrap::new_with_kind(Some(TypeKind::INT)));
 }
 
 #[allow(dead_code)]
-pub fn declarator(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut Ty>, TokenWrap) {
+pub fn declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
     while consume(token, "*").0 {
         token = consume(token, "*").1;
-        ty = Some(Box::leak(Box::new(Ty::point_to(ty))));
+        ty = TyWrap::point_to(ty);
     }
 
     if token.kind() != TokenKind::IDENT {
@@ -418,7 +416,7 @@ pub fn declarator(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut
 
     let (typ, tk) = ty_suffix(token.reset_by_next(), ty);
     ty = typ;
-    set_ty_token(ty, start);
+    ty.set_token(start);
 
     return (ty, tk);
 }
@@ -440,13 +438,13 @@ pub fn declaration_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
         let ty = declarator(token, base_ty).0;
         token = declarator(token, base_ty).1;
-        let var = Obj::new(get_ident(get_ty_token(ty)), ty);
+        let var = Obj::new(get_ident(ty.token()), ty);
 
         if !equal(token, "=") {
             continue;
         }
 
-        let lhs = NodeWrap::new_var_node(Some(var), get_ty_token(ty));
+        let lhs = NodeWrap::new_var_node(Some(var), ty.token());
         let rhs = assign_v2(token.reset_by_next());
         token = rhs.1;
         let node = NodeWrap::new_binary(NodeKind::ASSIGN, lhs, rhs.0, token);
@@ -493,8 +491,8 @@ pub fn func_call_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn func_params(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mut Ty>, TokenWrap) {
-    let head: Option<*mut Ty> = Some(Box::leak(Box::new(Ty::new())));
+pub fn func_params(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
+    let head = TyWrap::new();
     let mut cur = head;
 
     while !equal(token, ")") {
@@ -504,16 +502,13 @@ pub fn func_params(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mu
         let (tk, base_ty) = declspec(token);
         let (declar_ty, tk) = declarator(tk, base_ty);
 
-        set_ty_next(
-            cur,
-            Ty::copy(unsafe { declar_ty.unwrap().as_ref().unwrap() }),
-        );
-        cur = get_ty_next(cur);
+        cur.set_next(TyWrap::copy(declar_ty));
+        cur = cur.next();
         token = tk;
     }
 
-    ty = Some(Box::leak(Box::new(Ty::new_func_ty(ty))));
-    set_ty_params(ty, get_ty_next(head));
+    ty = TyWrap::new_func_ty(ty);
+    ty.set_params(head.next());
 
     token.reset_by_next();
 
@@ -521,7 +516,7 @@ pub fn func_params(mut token: TokenWrap, mut ty: Option<*mut Ty>) -> (Option<*mu
 }
 
 #[allow(dead_code)]
-pub fn ty_suffix(mut token: TokenWrap, ty: Option<*mut Ty>) -> (Option<*mut Ty>, TokenWrap) {
+pub fn ty_suffix(mut token: TokenWrap, ty: TyWrap) -> (TyWrap, TokenWrap) {
     if equal(token, "(") {
         let mut start = token;
         return func_params(start.set(start.next()), ty);
@@ -534,7 +529,7 @@ pub fn ty_suffix(mut token: TokenWrap, ty: Option<*mut Ty>) -> (Option<*mut Ty>,
         token.reset_by_next();
         token.set(skip(token, "]"));
         let (ty, token) = ty_suffix(token, ty);
-        let ty: Option<*mut Ty> = Some(Box::leak(Box::new(Ty::new_array_ty(ty, sz as usize))));
+        let ty = TyWrap::new_array_ty(ty, sz as usize);
         return (ty, token);
     }
 
@@ -549,9 +544,9 @@ pub fn function(mut token: TokenWrap) -> (Option<*mut Function>, TokenWrap) {
     unsafe { LOCALS = None };
 
     let mut func = Function::empty();
-    func.name = get_ident(get_ty_token(typ));
+    func.name = get_ident(typ.token());
 
-    create_param_l_vars(get_ty_params(typ));
+    create_param_l_vars(typ.params());
     func.params = unsafe { LOCALS };
 
     token.set(skip(tk, "{"));
@@ -578,10 +573,10 @@ pub fn parse(mut token: TokenWrap) -> Option<*mut Function> {
 }
 
 #[allow(dead_code)]
-pub fn create_param_l_vars(params: Option<*mut Ty>) {
-    if !params.is_none() {
-        create_param_l_vars(get_ty_next(params));
-        Obj::new(get_ident(get_ty_token(params)), params);
+pub fn create_param_l_vars(params: TyWrap) {
+    if !params.ptr.is_none() {
+        create_param_l_vars(params.next());
+        Obj::new(get_ident(params.token()), params);
     }
 }
 

@@ -1,14 +1,14 @@
 use crate::{
     rvcc::{
-        get_obj_ty, get_ty_base, get_ty_kind,
-        NodeKind, NodeWrap, Ty, TypeKind,
+        get_obj_ty,
+        NodeKind, NodeWrap, Ty, TypeKind, TyWrap,
     },
     utils::error_token,
 };
 
 #[allow(dead_code)]
-pub fn is_int(ty: &Ty) -> bool {
-    return ty.kind == Some(TypeKind::INT);
+pub fn is_int(ty: TyWrap) -> bool {
+    return ty.kind() == Some(TypeKind::INT);
 }
 
 #[allow(dead_code)]
@@ -18,7 +18,7 @@ pub fn create_ty(kind: TypeKind) -> Option<*mut Ty> {
 
 #[allow(dead_code)]
 pub fn add_ty(node: NodeWrap) {
-    if node.ptr.is_none() || !node.ty().is_none() {
+    if node.ptr.is_none() || !node.ty().ptr.is_none() {
         return;
     }
 
@@ -48,7 +48,7 @@ pub fn add_ty(node: NodeWrap) {
             return;
         }
         NodeKind::ASSIGN => {
-            let kind = get_ty_kind(node.lhs().ty());
+            let kind = node.lhs().ty().kind();
             if kind == Some(TypeKind::ARRAY) {
                 error_token(node.lhs().token(), "not an lvalue");
             }
@@ -61,7 +61,7 @@ pub fn add_ty(node: NodeWrap) {
         | NodeKind::LT
         | NodeKind::LE
         | NodeKind::Num => {
-            node.set_ty(create_ty(TypeKind::INT));
+            node.set_ty(TyWrap::new_with_kind(Some(TypeKind::INT)));
             return;
         }
         NodeKind::VAR => {
@@ -71,18 +71,18 @@ pub fn add_ty(node: NodeWrap) {
         }
         NodeKind::ADDR => {
             let ty = node.lhs().ty();
-            if get_ty_kind(ty) == Some(TypeKind::ARRAY) {
-                node.set_ty(Some(Box::leak(Box::new(Ty::point_to(get_ty_base(ty))))));
+            if ty.kind() == Some(TypeKind::ARRAY) {
+                node.set_ty(TyWrap::point_to(ty.base()));
             } else {
-                node.set_ty(Some(Box::leak(Box::new(Ty::point_to(ty)))));
+                node.set_ty(TyWrap::point_to(ty));
             }
             return;
         }
         NodeKind::DEREF => {
-            if get_ty_base(node.lhs().ty()).is_none() {
+            if node.lhs().ty().base().ptr.is_none() {
                 error_token(node.token(), "invalid pointer dereference")
             }
-            node.set_ty(get_ty_base(node.lhs().ty()));
+            node.set_ty(node.lhs().ty().base());
             return;
         }
         _ => {}

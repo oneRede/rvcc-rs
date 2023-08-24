@@ -2,8 +2,8 @@ use crate::{
     rvcc::{
         get_function_body, get_function_locals, get_function_name, get_function_next,
         get_function_params, get_function_stack_size, get_obj_name, get_obj_next, get_obj_offset,
-        get_obj_ty, get_ty_kind, get_ty_size, set_function_stack_size, set_obj_offset, Function,
-        NodeKind, NodeWrap, ObjIter, Ty, TypeKind,
+        get_obj_ty, set_function_stack_size, set_obj_offset, Function,
+        NodeKind, NodeWrap, ObjIter, TyWrap, TypeKind,
     },
     utils::error_token,
 };
@@ -282,7 +282,7 @@ pub fn assign_l_var_offsets(prog: Option<*mut Function>) {
         let mut offset = 0;
         let var = ObjIter::new(get_function_locals(func));
         for obj in var {
-            offset += get_ty_size(get_obj_ty(obj)) as i64;
+            offset += get_obj_ty(obj).size() as i64;
             set_obj_offset(obj, -offset);
         }
         set_function_stack_size(func, align_to(offset, 16));
@@ -352,8 +352,8 @@ pub fn codegen(prog: Option<*mut Function>) {
 }
 
 #[allow(dead_code)]
-pub fn load(ty: Option<*mut Ty>) {
-    if get_ty_kind(ty) == Some(TypeKind::ARRAY) {
+pub fn load(ty: TyWrap) {
+    if ty.kind() == Some(TypeKind::ARRAY) {
         return;
     }
     println!("  # 读取a0中存放的地址,得到的值存入a0");

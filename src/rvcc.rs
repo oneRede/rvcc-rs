@@ -1,4 +1,4 @@
-use crate::{parse::LOCALS, ty::create_ty};
+use crate::parse::LOCALS;
 
 #[allow(dead_code)]
 pub static mut TYPE_INT: Option<*mut Ty> = None;
@@ -256,7 +256,7 @@ pub struct NodeV2 {
     pub init: NodeWrap,
     pub inc: NodeWrap,
     pub token: TokenWrap,
-    pub ty: Option<*mut Ty>,
+    pub ty: TyWrap,
     pub func_name: &'static str,
     pub args: NodeWrap,
 }
@@ -329,7 +329,7 @@ impl NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().token }
     }
 
-    pub fn ty(&self) -> Option<*mut Ty> {
+    pub fn ty(&self) -> TyWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().ty }
     }
 
@@ -393,7 +393,7 @@ impl NodeWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().token = token }
     }
 
-    pub fn set_ty(&self, ty: Option<*mut Ty>) {
+    pub fn set_ty(&self, ty: TyWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().ty = ty }
     }
 
@@ -423,7 +423,7 @@ impl NodeWrap {
             init: NodeWrap::empty(),
             inc: NodeWrap::empty(),
             token: token,
-            ty: None,
+            ty: TyWrap::empty(),
             func_name: "",
             args: NodeWrap::empty(),
         };
@@ -446,7 +446,7 @@ impl NodeWrap {
             init: NodeWrap::empty(),
             inc: NodeWrap::empty(),
             token: token,
-            ty: None,
+            ty: TyWrap::empty(),
             func_name: "",
             args: NodeWrap::empty(),
         };
@@ -469,7 +469,7 @@ impl NodeWrap {
             init: NodeWrap::empty(),
             inc: NodeWrap::empty(),
             token: token,
-            ty: create_ty(TypeKind::INT),
+            ty: TyWrap::new_with_kind(Some(TypeKind::INT)),
             func_name: "",
             args: NodeWrap::empty(),
         };
@@ -498,7 +498,7 @@ impl NodeWrap {
             init: NodeWrap::empty(),
             inc: NodeWrap::empty(),
             token: token,
-            ty: None,
+            ty: TyWrap::empty(),
             func_name: "",
             args: NodeWrap::empty(),
         };
@@ -513,12 +513,12 @@ pub struct Obj {
     pub next: Option<*mut Obj>,
     pub name: &'static str,
     pub offset: i64,
-    pub ty: Option<*mut Ty>,
+    pub ty: TyWrap,
 }
 
 #[allow(dead_code)]
 impl Obj {
-    pub fn new(name: &'static str, ty: Option<*mut Ty>) -> *mut Obj {
+    pub fn new(name: &'static str, ty: TyWrap) -> *mut Obj {
         let mut var = Self {
             next: None,
             name: name,
@@ -676,7 +676,7 @@ impl TyV2 {
 #[allow(dead_code)]
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub struct TyWrap {
-    ptr: Option<*mut TyV2>,
+    pub ptr: Option<*mut TyV2>,
 }
 
 #[allow(dead_code)]
@@ -719,14 +719,14 @@ impl TyWrap {
         ty
     }
 
-    pub fn copy(&self) -> Self {
+    pub fn copy(ty: TyWrap) -> Self {
         let tmp = TyWrap::new();
-        tmp.set_kind(self.kind());
-        tmp.set_base(self.base());
-        tmp.set_token(self.token());
-        tmp.set_return_ty(self.return_ty());
-        tmp.set_params(self.params());
-        tmp.set_next(self.next());
+        tmp.set_kind(ty.kind());
+        tmp.set_base(ty.base());
+        tmp.set_token(ty.token());
+        tmp.set_return_ty(ty.return_ty());
+        tmp.set_params(ty.params());
+        tmp.set_next(ty.next());
         tmp
     }
 
@@ -912,7 +912,7 @@ pub fn set_obj_offset(obj: Option<*mut Obj>, offset: i64) {
 }
 
 #[allow(dead_code)]
-pub fn get_obj_ty(obj: Option<*mut Obj>) -> Option<*mut Ty> {
+pub fn get_obj_ty(obj: Option<*mut Obj>) -> TyWrap {
     unsafe { obj.unwrap().as_ref().unwrap().ty }
 }
 
