@@ -1,8 +1,5 @@
 use crate::{
-    rvcc::{
-        NodeKind,
-        NodeWrap, TyWrap, TypeKind, FunctionWrap,
-    },
+    rvcc::{FunctionWrap, NodeKind, NodeWrap, TyWrap, TypeKind},
     utils::error_token,
 };
 
@@ -101,18 +98,14 @@ pub fn gen_expr(node: NodeWrap) {
         NodeKind::FUNCALL => {
             let mut n_args = 0;
 
-            let mut arg = node.args();
-            while !arg.ptr.is_none() {
-                gen_expr(arg);
+            for nd in node.args() {
+                gen_expr(nd);
                 push();
-                arg = arg.next();
                 n_args += 1;
             }
 
-            let mut index: isize = n_args - 1;
-            while index >= 0 {
-                pop(ARG_REG[index as usize]);
-                index -= 1;
+            for i in 0..(n_args) {
+                pop(ARG_REG[(n_args - 1 - i) as usize]);
             }
 
             println!("\n  # 调用函数{}", node.func_name());
@@ -181,7 +174,7 @@ pub fn gen_expr(node: NodeWrap) {
 }
 
 #[allow(dead_code)]
-fn gen_stmt(mut node: NodeWrap) {
+fn gen_stmt(node: NodeWrap) {
     match node.kind() {
         NodeKind::IF => {
             let c = count();
@@ -241,26 +234,17 @@ fn gen_stmt(mut node: NodeWrap) {
         }
 
         NodeKind::BLOCK => {
-            if node.body().ptr.is_none() {
-                return;
+            for nd in node.body(){
+                gen_stmt(nd);
             }
-            node = node.body();
-            loop {
-                gen_stmt(node);
-                if node.next().ptr.is_none() {
-                    return;
-                }
-                node = node.next()
-            }
+            return;
+
         }
 
         NodeKind::RETURN => {
             println!("# 返回语句");
             gen_expr(node.lhs());
-            println!(
-                "  # 跳转到.L.return.{}段",
-                unsafe { FUNCTION }.name()
-            );
+            println!("  # 跳转到.L.return.{}段", unsafe { FUNCTION }.name());
             println!("  j .L.return.{}", unsafe { FUNCTION }.name());
             return;
         }
@@ -275,8 +259,8 @@ fn gen_stmt(mut node: NodeWrap) {
 
 #[allow(dead_code)]
 pub fn assign_l_var_offsets(prog: FunctionWrap) {
-    let mut func = prog;
-    while !func.ptr.is_none() {
+    let funcs = prog;
+    for func in funcs{
         let mut offset = 0;
         let var = func.locals();
         for obj in var {
@@ -284,15 +268,14 @@ pub fn assign_l_var_offsets(prog: FunctionWrap) {
             obj.set_offset(-offset);
         }
         func.set_stack_size(align_to(offset, 16));
-        func = func.nxt();
     }
 }
 
 #[allow(dead_code)]
 pub fn codegen(prog: FunctionWrap) {
     assign_l_var_offsets(prog);
-    let mut func = prog;
-    while !func.ptr.is_none() {
+    let funcs = prog;
+    for func in funcs {
         println!("\n  # 定义全局{}段", func.name());
         println!("  .globl {}", func.name());
         println!("# ====={}段开始===============", func.name());
@@ -313,11 +296,10 @@ pub fn codegen(prog: FunctionWrap) {
         println!("  addi sp, sp, -{}", func.stack_size());
 
         let mut i = 0;
-        let mut var = func.params();
-        while !var.ptr.is_none() {
+        let vars = func.params();
+        for var in vars {
             println!("  # 将{}寄存器的值存入{}的栈地址", ARG_REG[i], var.name());
             println!("  sd {}, {}(fp)", ARG_REG[i], var.offset());
-            var = var.nxt();
             i += 1;
         }
 
@@ -333,7 +315,6 @@ pub fn codegen(prog: FunctionWrap) {
         println!("  mv sp, fp");
         println!("  # 将最早fp保存的值弹栈,恢复fp和sp");
         println!("  ld fp, 0(sp)");
-        // println!("  addi sp, sp, 8");
 
         println!("  # 将ra寄存器弹栈,恢复ra的值");
         println!("  ld ra, 8(sp)");
@@ -341,7 +322,6 @@ pub fn codegen(prog: FunctionWrap) {
 
         println!("  # 返回a0值给系统调用");
         println!("  ret");
-        func = func.nxt();
     }
 }
 

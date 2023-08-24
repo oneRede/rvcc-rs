@@ -24,16 +24,12 @@ pub fn add_ty(node: NodeWrap) {
     add_ty(node.init());
     add_ty(node.inc());
 
-    let mut next = node.body();
-    while !next.ptr.is_none() {
-        add_ty(next);
-        next = next.next();
+    for nd in node.body(){
+        add_ty(nd);
     }
 
-    let mut next = node.args();
-    while !next.ptr.is_none() {
-        add_ty(next);
-        next = next.next();
+    for nd in node.args() {
+        add_ty(nd)
     }
 
     match node.kind() {

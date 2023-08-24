@@ -1,5 +1,5 @@
 use crate::{
-    rvcc::{ NodeKind, NodeWrap, ObjWrap, TokenKind, TokenWrap, TyWrap, TypeKind, FunctionWrap},
+    rvcc::{FunctionWrap, NodeKind, NodeWrap, ObjWrap, TokenKind, TokenWrap, TyWrap, TypeKind},
     tokenize::{consume, equal, skip},
     ty::{add_ty, is_int},
     utils::error_token,
@@ -248,19 +248,19 @@ pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         if equal(token, "int") {
             let dec = declaration_v2(token);
             token = dec.1;
-            cur.set_next(dec.0)
+            cur.set_nxt(dec.0)
         } else {
             let (n, t) = stmt_v2(token);
             token = t;
-            cur.set_next(n)
+            cur.set_nxt(n)
         }
 
-        cur = cur.next();
+        cur = cur.nxt();
         add_ty(cur);
     }
 
     let node = NodeWrap::new(NodeKind::BLOCK, token);
-    node.set_body(head.next());
+    node.set_body(head.nxt());
     return (node, token.reset_by_next());
 }
 
@@ -367,16 +367,12 @@ pub fn find_var(token: TokenWrap) -> ObjWrap {
     if unsafe { LOCALS.ptr.is_none() } {
         return ObjWrap::empty();
     }
-    let mut var = unsafe { LOCALS };
-    loop {
+    let vars = unsafe { LOCALS };
+    for var in vars{
         let name = var.name();
         if var.name().len() == token.get_len() && equal(token, name) {
             return var;
         }
-        if var.nxt().ptr.is_none() {
-            break;
-        }
-        var = var.nxt();
     }
     ObjWrap::empty()
 }
@@ -446,12 +442,12 @@ pub fn declaration_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         token = rhs.1;
         let node = NodeWrap::new_binary(NodeKind::ASSIGN, lhs, rhs.0, token);
 
-        cur.set_next(NodeWrap::new_unary(NodeKind::ExprStmt, node, token));
-        cur = cur.next();
+        cur.set_nxt(NodeWrap::new_unary(NodeKind::ExprStmt, node, token));
+        cur = cur.nxt();
     }
 
     let node = NodeWrap::new(NodeKind::BLOCK, token);
-    node.set_body(head.next());
+    node.set_body(head.nxt());
     token.reset_by_next();
 
     return (node, token);
@@ -471,8 +467,8 @@ pub fn func_call_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
             token.set(skip(token, ","));
         }
         let (n, t) = assign_v2(token);
-        cur.set_next(n);
-        cur = cur.next();
+        cur.set_nxt(n);
+        cur = cur.nxt();
         token = t;
     }
     token.set(skip(token, ")"));
@@ -482,7 +478,7 @@ pub fn func_call_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let func_name: String = start.get_loc().unwrap()[..len].iter().collect();
     node.set_func_name(Box::leak(Box::new(func_name)));
 
-    node.set_args(head.next());
+    node.set_args(head.nxt());
 
     return (node, token);
 }
@@ -544,7 +540,7 @@ pub fn function(mut token: TokenWrap) -> (FunctionWrap, TokenWrap) {
     func.set_name(get_ident(typ.token()));
 
     create_param_l_vars(typ.params());
-    func.set_params( unsafe { LOCALS });
+    func.set_params(unsafe { LOCALS });
 
     token.set(skip(tk, "{"));
     let (n, t) = compound_stmt_v2(token);
