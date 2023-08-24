@@ -10,7 +10,7 @@ test: rvcc
 # 清理标签，清理所有非源代码文件
 clean:
 	cargo clean
-	rm -rf *.s tmp
+	rm -rf *.s tmp *.o
 
 # 伪目标，没有实际的依赖文件
 .PHONY: test clean
