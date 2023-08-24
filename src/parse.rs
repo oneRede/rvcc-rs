@@ -1,5 +1,5 @@
 use crate::{
-    rvcc::{FunctionWrap, NodeKind, NodeWrap, ObjWrap, TokenKind, TokenWrap, TyWrap, TypeKind},
+    rvcc::{FunctionWrap, NodeKind::*, NodeWrap, ObjWrap, TokenKind, TokenWrap, TyWrap, TypeKind},
     tokenize::{consume, equal, skip},
     ty::{add_ty, is_int},
     utils::error_token,
@@ -16,8 +16,8 @@ pub fn expr_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 pub fn assign_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let (mut node, mut token) = equality_v2(token);
     if equal(token, "=") {
-        let (n, t) = assign_v2(token.reset_by_next());
-        node = NodeWrap::new_binary(NodeKind::ASSIGN, node, n, token);
+        let (n, t) = assign_v2(token.nxt());
+        node = NodeWrap::new_binary(ASSIGN, node, n, token);
         token = t;
     }
 
@@ -30,14 +30,14 @@ fn equality_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
     loop {
         if equal(token, "==") {
-            let (n, t) = relational_v2(token.reset_by_next());
-            node = NodeWrap::new_binary(NodeKind::EQ, node, n, t);
+            let (n, t) = relational_v2(token.nxt());
+            node = NodeWrap::new_binary(EQ, node, n, t);
             token = t;
             continue;
         }
         if equal(token, "!=") {
-            let (n, t) = relational_v2(token.reset_by_next());
-            node = NodeWrap::new_binary(NodeKind::NE, node, n, t);
+            let (n, t) = relational_v2(token.nxt());
+            node = NodeWrap::new_binary(NE, node, n, t);
             token = t;
             continue;
         }
@@ -52,29 +52,29 @@ fn relational_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
     loop {
         if equal(token, "<") {
-            let (n, t) = add_v2(token.reset_by_next());
-            node = NodeWrap::new_binary(NodeKind::LT, node, n, t);
+            let (n, t) = add_v2(token.nxt());
+            node = NodeWrap::new_binary(LT, node, n, t);
             token = t;
             continue;
         }
 
         if equal(token, "<=") {
-            let (n, t) = add_v2(token.reset_by_next());
-            node = NodeWrap::new_binary(NodeKind::LE, node, n, t);
+            let (n, t) = add_v2(token.nxt());
+            node = NodeWrap::new_binary(LE, node, n, t);
             token = t;
             continue;
         }
 
         if equal(token, ">") {
-            let (n, t) = add_v2(token.reset_by_next());
-            node = NodeWrap::new_binary(NodeKind::LT, n, node, t);
+            let (n, t) = add_v2(token.nxt());
+            node = NodeWrap::new_binary(LT, n, node, t);
             token = t;
             continue;
         }
 
         if equal(token, ">=") {
-            let (n, t) = add_v2(token.reset_by_next());
-            node = NodeWrap::new_binary(NodeKind::LE, n, node, t);
+            let (n, t) = add_v2(token.nxt());
+            node = NodeWrap::new_binary(LE, n, node, t);
             token = t;
             continue;
         }
@@ -89,7 +89,7 @@ pub fn new_add_v2(mut lhs: NodeWrap, mut rhs: NodeWrap, token: TokenWrap) -> (No
     add_ty(rhs);
 
     if is_int(lhs.ty()) && is_int(rhs.ty()) {
-        let node = NodeWrap::new_binary(NodeKind::Add, lhs, rhs, token);
+        let node = NodeWrap::new_binary(Add, lhs, rhs, token);
         return (node, token);
     }
     if !lhs.ty().base().ptr.is_none() && !rhs.ty().base().ptr.is_none() {
@@ -102,8 +102,8 @@ pub fn new_add_v2(mut lhs: NodeWrap, mut rhs: NodeWrap, token: TokenWrap) -> (No
     }
     let val = lhs.ty().base().size();
     let num_node = NodeWrap::new_num(val as i64, token);
-    let rhs = NodeWrap::new_binary(NodeKind::Mul, rhs, num_node, token);
-    let node = NodeWrap::new_binary(NodeKind::Add, lhs, rhs, token);
+    let rhs = NodeWrap::new_binary(Mul, rhs, num_node, token);
+    let node = NodeWrap::new_binary(Add, lhs, rhs, token);
     return (node, token);
 }
 
@@ -113,26 +113,26 @@ pub fn new_sub_v2(lhs: NodeWrap, rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, 
     add_ty(rhs);
 
     if is_int(lhs.ty()) && is_int(rhs.ty()) {
-        let node = NodeWrap::new_binary(NodeKind::Sub, lhs, rhs, token);
+        let node = NodeWrap::new_binary(Sub, lhs, rhs, token);
         return (node, token);
     }
 
     if !((lhs.ty().base().ptr).is_none()) && is_int(rhs.ty()) {
         let val = lhs.ty().base().size();
         let num_node = NodeWrap::new_num(val as i64, token);
-        let rhs_node = NodeWrap::new_binary(NodeKind::Mul, rhs, num_node, token);
+        let rhs_node = NodeWrap::new_binary(Mul, rhs, num_node, token);
         add_ty(rhs_node);
-        let node = NodeWrap::new_binary(NodeKind::Sub, lhs, rhs_node, token);
+        let node = NodeWrap::new_binary(Sub, lhs, rhs_node, token);
         node.set_ty(lhs.ty());
         return (node, token);
     }
     if !lhs.ty().base().ptr.is_none() && !rhs.ty().base().ptr.is_none() {
-        let node = NodeWrap::new_binary(NodeKind::Sub, lhs, rhs, token);
+        let node = NodeWrap::new_binary(Sub, lhs, rhs, token);
         let ty = TyWrap::new_with_kind(Some(TypeKind::INT));
         node.set_ty(ty);
         let val = lhs.ty().base().size();
         let num_node = NodeWrap::new_num(val as i64, token);
-        let node = NodeWrap::new_binary(NodeKind::Div, node, num_node, token);
+        let node = NodeWrap::new_binary(Div, node, num_node, token);
         return (node, token);
     }
     error_token(token, "invalid operands");
@@ -146,7 +146,7 @@ fn add_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     loop {
         if equal(token, "+") {
             let start = token;
-            let (n, t) = mul_v2(token.reset_by_next());
+            let (n, t) = mul_v2(token.nxt());
             let (n, _t) = new_add_v2(node, n, start);
             node = n;
             token = t;
@@ -154,7 +154,7 @@ fn add_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         }
         if equal(token, "-") {
             let start = token;
-            let (n, t) = mul_v2(token.reset_by_next());
+            let (n, t) = mul_v2(token.nxt());
             let (n, _t) = new_sub_v2(node, n, start);
             node = n;
             token = t;
@@ -171,14 +171,14 @@ fn mul_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     loop {
         let start = token;
         if equal(token, "*") {
-            let (n, t) = unary_v2(token.reset_by_next());
-            node = NodeWrap::new_binary(NodeKind::Mul, node, n, start);
+            let (n, t) = unary_v2(token.nxt());
+            node = NodeWrap::new_binary(Mul, node, n, start);
             token = t;
             continue;
         }
         if equal(token, "/") {
-            let (n, t) = unary_v2(token.reset_by_next());
-            node = NodeWrap::new_binary(NodeKind::Div, node, n, start);
+            let (n, t) = unary_v2(token.nxt());
+            node = NodeWrap::new_binary(Div, node, n, start);
             token = t;
             continue;
         }
@@ -187,21 +187,21 @@ fn mul_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-fn unary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
+fn unary_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "+") {
-        return unary_v2(token.reset_by_next());
+        return unary_v2(token.nxt());
     }
     if equal(token, "-") {
-        let (n, t) = unary_v2(token.reset_by_next());
-        return (NodeWrap::new_unary(NodeKind::NEG, n, t), t);
+        let (n, t) = unary_v2(token.nxt());
+        return (NodeWrap::new_unary(NEG, n, t), t);
     }
     if equal(token, "&") {
-        let (n, t) = unary_v2(token.reset_by_next());
-        return (NodeWrap::new_unary(NodeKind::ADDR, n, t), t);
+        let (n, t) = unary_v2(token.nxt());
+        return (NodeWrap::new_unary(ADDR, n, t), t);
     }
     if equal(token, "*") {
-        let (n, t) = unary_v2(token.reset_by_next());
-        return (NodeWrap::new_unary(NodeKind::DEREF, n, t), t);
+        let (n, t) = unary_v2(token.nxt());
+        return (NodeWrap::new_unary(DEREF, n, t), t);
     }
 
     postfix_v2(token)
@@ -210,14 +210,14 @@ fn unary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 #[allow(dead_code)]
 fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "(") {
-        let (n, t) = expr_v2(token.reset_by_next());
-        token = t;
-        return (n, token.set(skip(token, ")")));
+        let (n, t) = expr_v2(token.nxt());
+        token = skip(t, ")");
+        return (n, token);
     }
 
     if token.kind() == TokenKind::IDENT {
-        let mut start = token;
-        if equal(start.reset_by_next(), "(") {
+        let start = token;
+        if equal(start.nxt(), "(") {
             return func_call_v2(token);
         }
 
@@ -226,12 +226,12 @@ fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
             error_token(token, "undefined variable");
         }
         let node = NodeWrap::new_var_node(var, token);
-        return (node, token.reset_by_next());
+        return (node, token.nxt());
     }
 
     if token.kind() == TokenKind::Num {
         let node = NodeWrap::new_num(token.val() as i64, token);
-        token.reset_by_next();
+        token = token.nxt();
         return (node, token);
     }
 
@@ -241,7 +241,7 @@ fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let head = NodeWrap::new(NodeKind::Num, token);
+    let head = NodeWrap::new(Num, token);
     let mut cur = head;
 
     while !equal(token, "}") {
@@ -259,38 +259,36 @@ pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         add_ty(cur);
     }
 
-    let node = NodeWrap::new(NodeKind::BLOCK, token);
+    let node = NodeWrap::new(BLOCK, token);
     node.set_body(head.nxt());
-    return (node, token.reset_by_next());
+    return (node, token.nxt());
 }
 
 #[allow(dead_code)]
 fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "return") {
-        let node = NodeWrap::new(NodeKind::RETURN, token);
+        let node = NodeWrap::new(RETURN, token);
         let (n, t) = expr_v2(token.reset_by_next());
         node.set_lhs(n);
 
-        token.set(skip(t, ";"));
+        token = skip(t, ";");
         return (node, token);
     }
 
     if equal(token, "if") {
-        let node = NodeWrap::new(NodeKind::IF, token);
+        let node = NodeWrap::new(IF, token);
 
-        token.reset_by_next();
-        token.set(skip(token, "("));
+        token = skip(token.nxt(), "(");
 
         let (n, t) = expr_v2(token);
         node.set_cond(n);
 
-        token.set(skip(t, ")"));
-        let (n, t) = stmt_v2(token);
-        token = t;
+        token = skip(t, ")");
+        let (n, mut token) = stmt_v2(token);
         node.set_then(n);
 
         if equal(token, "else") {
-            token.reset_by_next();
+            token = token.nxt();
             let (n, t) = stmt_v2(token);
             node.set_els(n);
             token = t;
@@ -299,10 +297,10 @@ fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     }
 
     if equal(token, "for") {
-        let node = NodeWrap::new(NodeKind::FOR, token);
+        let node = NodeWrap::new(FOR, token);
 
-        token.reset_by_next();
-        token.set(skip(token, "("));
+        token = token.nxt();
+        token = skip(token, "(");
 
         let (n, mut token) = expr_stmt_v2(token);
         node.set_init(n);
@@ -312,14 +310,14 @@ fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
             node.set_cond(n);
             token = t;
         }
-        token.set(skip(token, ";"));
+        token = skip(token, ";");
 
         if !equal(token, ")") {
             let (n, t) = expr_v2(token);
             node.set_inc(n);
             token = t;
         }
-        token.set(skip(token, ")"));
+        token = skip(token, ")");
 
         let (n, token) = stmt_v2(token);
         node.set_then(n);
@@ -328,14 +326,14 @@ fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     }
 
     if equal(token, "while") {
-        let node = NodeWrap::new(NodeKind::FOR, token);
+        let node = NodeWrap::new(FOR, token);
 
         token.reset_by_next();
-        token.set(skip(token, "("));
+        token = skip(token, "(");
 
         let (n, mut token) = expr_v2(token);
         node.set_cond(n);
-        token.set(skip(token, ")"));
+        token = skip(token, ")");
 
         let (n, token) = stmt_v2(token);
         node.set_then(n);
@@ -352,13 +350,13 @@ fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 #[allow(dead_code)]
 fn expr_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, ";") {
-        token.reset_by_next();
-        return (NodeWrap::new(NodeKind::BLOCK, token), token);
+        token = token.nxt();
+        return (NodeWrap::new(BLOCK, token), token);
     }
 
     let (n, t) = expr_v2(token);
-    let node = NodeWrap::new_unary(NodeKind::ExprStmt, n, token);
-    token.set(skip(t, ";"));
+    let node = NodeWrap::new_unary(ExprStmt, n, token);
+    token = skip(t, ";");
     return (node, token);
 }
 
@@ -368,7 +366,7 @@ pub fn find_var(token: TokenWrap) -> ObjWrap {
         return ObjWrap::empty();
     }
     let vars = unsafe { LOCALS };
-    for var in vars{
+    for var in vars {
         let name = var.name();
         if var.name().len() == token.get_len() && equal(token, name) {
             return var;
@@ -390,7 +388,7 @@ pub fn get_ident(token: TokenWrap) -> &'static str {
 
 #[allow(dead_code)]
 pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
-    token.set(skip(token, "int"));
+    token = skip(token, "int");
     return (token, TyWrap::new_with_kind(Some(TypeKind::INT)));
 }
 
@@ -419,13 +417,13 @@ pub fn declaration_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let base_ty = declspec(token).1;
     token = declspec(token).0;
 
-    let head = NodeWrap::new(NodeKind::Num, token);
+    let head = NodeWrap::new(Num, token);
     let mut cur = head;
 
     let mut i = 0;
     while !equal(token, ";") {
         if i > 0 {
-            token.set(skip(token, ","));
+            token = skip(token, ",");
         }
         i += 1;
 
@@ -440,40 +438,38 @@ pub fn declaration_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         let lhs = NodeWrap::new_var_node(var, ty.token());
         let rhs = assign_v2(token.reset_by_next());
         token = rhs.1;
-        let node = NodeWrap::new_binary(NodeKind::ASSIGN, lhs, rhs.0, token);
+        let node = NodeWrap::new_binary(ASSIGN, lhs, rhs.0, token);
 
-        cur.set_nxt(NodeWrap::new_unary(NodeKind::ExprStmt, node, token));
+        cur.set_nxt(NodeWrap::new_unary(ExprStmt, node, token));
         cur = cur.nxt();
     }
 
-    let node = NodeWrap::new(NodeKind::BLOCK, token);
+    let node = NodeWrap::new(BLOCK, token);
     node.set_body(head.nxt());
-    token.reset_by_next();
 
-    return (node, token);
+    return (node, token.nxt());
 }
 
 #[allow(dead_code)]
 pub fn func_call_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let start = token;
-    token.reset_by_next();
-    token.reset_by_next();
+    token = token.nxt().nxt();
 
-    let head = NodeWrap::new(NodeKind::Num, token);
+    let head = NodeWrap::new(Num, token);
     let mut cur = head;
 
     while !equal(token, ")") {
         if cur != head {
-            token.set(skip(token, ","));
+            token = skip(token, ",");
         }
         let (n, t) = assign_v2(token);
         cur.set_nxt(n);
         cur = cur.nxt();
         token = t;
     }
-    token.set(skip(token, ")"));
+    token = skip(token, ")");
 
-    let node = NodeWrap::new(NodeKind::FUNCALL, start);
+    let node = NodeWrap::new(FUNCALL, start);
     let len = start.get_len();
     let func_name: String = start.get_loc().unwrap()[..len].iter().collect();
     node.set_func_name(Box::leak(Box::new(func_name)));
@@ -490,7 +486,7 @@ pub fn func_params(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) 
 
     while !equal(token, ")") {
         if cur != head {
-            token.set(skip(token, ","));
+            token = skip(token, ",");
         }
         let (tk, base_ty) = declspec(token);
         let (declar_ty, tk) = declarator(tk, base_ty);
@@ -503,24 +499,21 @@ pub fn func_params(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) 
     ty = TyWrap::new_func_ty(ty);
     ty.set_params(head.next());
 
-    token.reset_by_next();
-
-    return (ty, token);
+    return (ty, token.nxt());
 }
 
 #[allow(dead_code)]
 pub fn ty_suffix(mut token: TokenWrap, ty: TyWrap) -> (TyWrap, TokenWrap) {
     if equal(token, "(") {
-        let mut start = token;
-        return func_params(start.set(start.next()), ty);
+        let start = token;
+        return func_params(start.nxt(), ty);
     }
 
     if equal(token, "[") {
         let mut start = token;
         let sz = get_number(start.reset_by_next());
-        token.reset_by_next();
-        token.reset_by_next();
-        token.set(skip(token, "]"));
+        token = token.nxt().nxt();
+        token = skip(token, "]");
         let (ty, token) = ty_suffix(token, ty);
         let ty = TyWrap::new_array_ty(ty, sz as usize);
         return (ty, token);
@@ -542,7 +535,7 @@ pub fn function(mut token: TokenWrap) -> (FunctionWrap, TokenWrap) {
     create_param_l_vars(typ.params());
     func.set_params(unsafe { LOCALS });
 
-    token.set(skip(tk, "{"));
+    token = skip(tk, "{");
     let (n, t) = compound_stmt_v2(token);
     func.set_body(n);
     func.set_locals(unsafe { LOCALS });
@@ -587,12 +580,12 @@ pub fn postfix_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
     while equal(token, "[") {
         let start = token;
-        let (idx, mut tk) = expr_v2(token.reset_by_next());
-        tk.set(skip(tk, "]"));
-        token = tk;
+        let (idx, tk) = expr_v2(token.reset_by_next());
+        token = skip(tk, "]");
+        
 
         let (nd, _) = new_add_v2(node, idx, start);
-        let nd = NodeWrap::new_unary(NodeKind::DEREF, nd, start);
+        let nd = NodeWrap::new_unary(DEREF, nd, start);
         node = nd;
     }
     return (node, token);

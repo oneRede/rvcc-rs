@@ -29,93 +29,24 @@ impl ToString for TokenKind {
 #[derive(Debug)]
 pub struct Token {
     pub kind: TokenKind,
-    pub next: Option<*mut Token>,
+    pub next: TokenWrap,
     pub val: i32,
     pub loc: Option<&'static [char]>,
     pub len: usize,
 }
 
 #[allow(dead_code)]
-impl Token {
-    pub fn new(token_kind: TokenKind, loc: &'static [char], len: usize) -> Self {
-        Self {
-            kind: token_kind,
-            next: None,
-            val: 0,
-            loc: Some(loc),
-            len: len,
-        }
-    }
-    pub fn empty() -> Self {
-        Self {
-            kind: TokenKind::EOF,
-            next: None,
-            val: 0,
-            loc: None,
-            len: 0,
-        }
-    }
-
-    fn format(&self) -> String {
-        if self.loc.is_none() {
-            return "".to_string();
-        }
-        let loc: String = self.loc.unwrap()[..self.len].iter().collect();
-        let mut _s = "".to_string();
-        if self.next.is_none() {
-            _s = "{".to_string()
-                + "\"kind\":\""
-                + &self.kind.to_string()
-                + "\","
-                + "\"val\":\""
-                + &self.val.to_string()
-                + "\","
-                + "\"loc\":\""
-                + &loc
-                + "\","
-                + "\"len\":\""
-                + &self.len.to_string()
-                + "\","
-                + "\"next\": \"None\"}";
-        } else {
-            _s = "{".to_string()
-                + "\"kind\":\""
-                + &self.kind.to_string()
-                + "\","
-                + "\"val\":\""
-                + &self.val.to_string()
-                + "\","
-                + "\"loc\":\""
-                + &loc
-                + "\","
-                + "\"len\":\""
-                + &self.len.to_string()
-                + "\","
-                + "\"next\":"
-                + unsafe { &self.next.unwrap().as_ref().unwrap().format() }
-                + "}";
-        }
-        _s
-    }
-}
-
 impl Iterator for TokenWrap {
-    type Item = *mut Token;
+    type Item = TokenWrap;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let now = self.ptr;
-        if !now.is_none() {
-            self.ptr = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
-            return now;
+        let now = *self;
+        if !now.ptr.is_none() {
+            self.ptr = self.nxt().ptr;
+            return Some(now);
         } else {
             return None;
         }
-    }
-}
-
-impl ToString for Token {
-    fn to_string(&self) -> String {
-        self.format()
     }
 }
 
@@ -127,13 +58,33 @@ pub struct TokenWrap {
 
 #[allow(dead_code)]
 impl TokenWrap {
-    pub fn new(ptr: *mut Token) -> Self {
-        Self { ptr: Some(ptr) }
+    pub fn new(token_kind: TokenKind, loc: &'static [char], len: usize) -> Self {
+        let tk = Token{
+            kind: token_kind,
+            next: TokenWrap::empty(),
+            val: 0,
+            loc: Some(loc),
+            len: len,
+        };
+        let tk: Option<*mut Token> = Some(Box::leak(Box::new(tk)));
+        Self { ptr: tk }
+    }
+
+    pub fn init() -> Self {
+        let tk = Token{
+            kind: TokenKind::Num,
+            next: TokenWrap::empty(),
+            val: 0,
+            loc:None,
+            len: 0,
+        };
+        let tk: Option<*mut Token> = Some(Box::leak(Box::new(tk)));
+        Self { ptr: tk }
     }
 
     pub fn empty() -> Self {
         Self {
-            ptr: Some(Box::leak(Box::new(Token::empty()))),
+            ptr: None,
         }
     }
 
@@ -141,18 +92,22 @@ impl TokenWrap {
         Self { ptr: self.ptr }
     }
 
+    pub fn reset_by_next(&mut self) -> Self {
+        *self = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
+        *self
+    }
+
     pub fn set(&mut self, ptr: Option<*mut Token>) -> Self {
         self.ptr = ptr;
         *self
     }
 
-    pub fn reset_by_next(&mut self) -> Self {
-        self.ptr = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
-        *self
+    pub fn set_next(self, next: TokenWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().next = next };
     }
 
-    pub fn set_next(self, next: *mut Token) {
-        unsafe { self.ptr.unwrap().as_mut().unwrap().next = Some(next) };
+    pub fn set_kind(self, kind: TokenKind) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().kind = kind };
     }
 
     pub fn set_val(self, val: i32) {
@@ -163,7 +118,7 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().len = len };
     }
 
-    pub fn next(&self) -> Option<*mut Token> {
+    pub fn nxt(&self) -> TokenWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().next }
     }
 

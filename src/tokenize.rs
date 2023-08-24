@@ -1,7 +1,7 @@
 use std::{slice, str};
 
 use crate::{
-    rvcc::{Token, TokenKind, TokenWrap},
+    rvcc::{TokenKind::*, TokenWrap},
     utils::{error_at, error_token, get_num_from_chars, read_punct},
 };
 
@@ -30,16 +30,16 @@ pub fn str_to_chars(s: &str) -> &[char] {
 }
 
 #[allow(dead_code)]
-pub fn skip<'a>(token: TokenWrap, s: &str) -> Option<*mut Token> {
+pub fn skip<'a>(token: TokenWrap, s: &str) -> TokenWrap {
     if !equal(token, s) {
         error_token(token, &format!("expect {:?}", s));
     }
-    return token.next();
+    return token.nxt();
 }
 
 #[allow(dead_code)]
 pub fn get_num(token: TokenWrap) -> i32 {
-    if token.kind() != TokenKind::Num {
+    if token.kind() != Num {
         error_token(token, "expect a num");
     }
     token.val()
@@ -47,12 +47,12 @@ pub fn get_num(token: TokenWrap) -> i32 {
 
 #[allow(dead_code)]
 pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
-    let mut head: TokenWrap = TokenWrap::empty();
-    let mut cur = head.clone();
+    let mut head: TokenWrap = TokenWrap::init();
+    let mut cur = head;
 
     loop {
         if chars.len() == 0 {
-            cur.set_next(Box::leak(Box::new(Token::new(TokenKind::EOF, chars, 0))));
+            cur.set_next(TokenWrap::new(EOF, chars, 0));
 
             head.reset_by_next();
             convert_keyword(head);
@@ -67,11 +67,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
 
         let num_rs = get_num_from_chars(chars);
         if let Ok((num, cs)) = num_rs {
-            cur.set_next(Box::leak(Box::new(Token::new(
-                TokenKind::Num,
-                chars,
-                num.to_string().len(),
-            ))));
+            cur.set_next(TokenWrap::new(Num, chars, num.to_string().len()));
 
             chars = cs;
             cur.reset_by_next();
@@ -91,11 +87,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
                 }
             }
 
-            cur.set_next(Box::leak(Box::new(Token::new(
-                TokenKind::IDENT,
-                chars,
-                len_ident,
-            ))));
+            cur.set_next(TokenWrap::new(IDENT, chars, len_ident));
             cur.reset_by_next();
             chars = &chars[len_ident..];
             continue;
@@ -103,8 +95,8 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
 
         match chars[0] {
             'a'..='z' => {
-                cur.set_next(Box::leak(Box::new(Token::new(TokenKind::IDENT, chars, 1))));
-                cur.set(cur.next());
+                cur.set_next(TokenWrap::new(IDENT, chars, 1));
+                cur = cur.nxt();
                 chars = &chars[1..];
                 continue;
             }
@@ -113,11 +105,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
 
         let len_punct = read_punct(chars);
         if len_punct > 0 {
-            cur.set_next(Box::leak(Box::new(Token::new(
-                TokenKind::Punct,
-                chars,
-                len_punct,
-            ))));
+            cur.set_next(TokenWrap::new(Punct, chars, len_punct));
             cur.reset_by_next();
             chars = &chars[len_punct..];
             continue;
@@ -147,10 +135,10 @@ pub fn is_ident_v2(c: char) -> bool {
 
 #[allow(dead_code)]
 pub fn convert_keyword(token: TokenWrap) {
-    let mut start = token;
     for tk in token {
-        if is_keyword(start.set(Some(tk))) {
-            unsafe { tk.as_mut().unwrap().kind = TokenKind::KEYWORD }
+        if is_keyword(tk) {
+            tk.set_kind(KEYWORD);
+            return;
         }
     }
 }
@@ -168,10 +156,9 @@ fn is_keyword(token: TokenWrap) -> bool {
 }
 
 #[allow(dead_code)]
-pub fn consume(mut token: TokenWrap, s: &str) -> (bool, TokenWrap) {
+pub fn consume(token: TokenWrap, s: &str) -> (bool, TokenWrap) {
     if equal(token, s) {
-        token.set(token.next());
-        return (true, token);
+        return (true, token.nxt());
     }
     return (false, token);
 }
