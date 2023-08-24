@@ -1,9 +1,6 @@
 use crate::{
-    rvcc::{
-        get_function_next, set_function_next, Function, NodeKind,
-        NodeWrap, TokenKind, TokenWrap, TyWrap, TypeKind, ObjWrap,
-    },
-    tokenize::{skip, equal, consume},
+    rvcc::{ NodeKind, NodeWrap, ObjWrap, TokenKind, TokenWrap, TyWrap, TypeKind, FunctionWrap},
+    tokenize::{consume, equal, skip},
     ty::{add_ty, is_int},
     utils::error_token,
 };
@@ -537,39 +534,39 @@ pub fn ty_suffix(mut token: TokenWrap, ty: TyWrap) -> (TyWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn function(mut token: TokenWrap) -> (Option<*mut Function>, TokenWrap) {
+pub fn function(mut token: TokenWrap) -> (FunctionWrap, TokenWrap) {
     let (typ, tk) = declspec(token);
     let (typ, tk) = declarator(typ, tk);
 
     unsafe { LOCALS = ObjWrap::empty() };
 
-    let mut func = Function::empty();
-    func.name = get_ident(typ.token());
+    let func = FunctionWrap::init();
+    func.set_name(get_ident(typ.token()));
 
     create_param_l_vars(typ.params());
-    func.params = unsafe { LOCALS };
+    func.set_params( unsafe { LOCALS });
 
     token.set(skip(tk, "{"));
     let (n, t) = compound_stmt_v2(token);
-    func.body = n;
-    func.locals = unsafe { LOCALS };
+    func.set_body(n);
+    func.set_locals(unsafe { LOCALS });
 
-    return (Some(Box::leak(Box::new(func))), t);
+    return (func, t);
 }
 
 #[allow(dead_code)]
-pub fn parse(mut token: TokenWrap) -> Option<*mut Function> {
-    let head: Option<*mut Function> = Some(Box::leak(Box::new(Function::empty())));
+pub fn parse(mut token: TokenWrap) -> FunctionWrap {
+    let head = FunctionWrap::init();
     let mut cur = head;
 
     while token.kind() != TokenKind::EOF {
         let (f, tk) = function(token);
-        set_function_next(cur, f);
-        cur = get_function_next(cur);
+        cur.set_nxt(f);
+        cur = cur.nxt();
         token = tk;
     }
 
-    return get_function_next(head);
+    return head.nxt();
 }
 
 #[allow(dead_code)]

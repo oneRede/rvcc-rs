@@ -1,6 +1,6 @@
 use crate::{
     rvcc::{
-        NodeKind, NodeWrap, Ty, TypeKind, TyWrap,
+        NodeKind, NodeWrap, TypeKind, TyWrap,
     },
     utils::error_token,
 };
@@ -8,11 +8,6 @@ use crate::{
 #[allow(dead_code)]
 pub fn is_int(ty: TyWrap) -> bool {
     return ty.kind() == Some(TypeKind::INT);
-}
-
-#[allow(dead_code)]
-pub fn create_ty(kind: TypeKind) -> Option<*mut Ty> {
-    Some(Box::leak(Box::new(Ty::new_with_kind(Some(kind)))))
 }
 
 #[allow(dead_code)]

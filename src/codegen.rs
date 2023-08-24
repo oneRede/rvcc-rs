@@ -1,8 +1,7 @@
 use crate::{
     rvcc::{
-        get_function_body, get_function_locals, get_function_name, get_function_next,
-        get_function_params, get_function_stack_size, set_function_stack_size, Function, NodeKind,
-        NodeWrap, TyWrap, TypeKind,
+        NodeKind,
+        NodeWrap, TyWrap, TypeKind, FunctionWrap,
     },
     utils::error_token,
 };
@@ -11,7 +10,7 @@ pub static mut DEPTH: usize = 0;
 pub static mut I: i64 = 1;
 
 pub static ARG_REG: [&str; 6] = ["a0", "a1", "a2", "a3", "a4", "a5"];
-pub static mut FUNCTION: Option<*mut Function> = None;
+pub static mut FUNCTION: FunctionWrap = FunctionWrap::empty();
 
 #[allow(dead_code)]
 pub fn count() -> i64 {
@@ -260,9 +259,9 @@ fn gen_stmt(mut node: NodeWrap) {
             gen_expr(node.lhs());
             println!(
                 "  # 跳转到.L.return.{}段",
-                get_function_name(unsafe { FUNCTION })
+                unsafe { FUNCTION }.name()
             );
-            println!("  j .L.return.{}", get_function_name(unsafe { FUNCTION }));
+            println!("  j .L.return.{}", unsafe { FUNCTION }.name());
             return;
         }
         NodeKind::ExprStmt => {
@@ -275,30 +274,30 @@ fn gen_stmt(mut node: NodeWrap) {
 }
 
 #[allow(dead_code)]
-pub fn assign_l_var_offsets(prog: Option<*mut Function>) {
+pub fn assign_l_var_offsets(prog: FunctionWrap) {
     let mut func = prog;
-    while !func.is_none() {
+    while !func.ptr.is_none() {
         let mut offset = 0;
-        let var = get_function_locals(func);
+        let var = func.locals();
         for obj in var {
             offset += obj.ty().size() as i64;
             obj.set_offset(-offset);
         }
-        set_function_stack_size(func, align_to(offset, 16));
-        func = get_function_next(func);
+        func.set_stack_size(align_to(offset, 16));
+        func = func.nxt();
     }
 }
 
 #[allow(dead_code)]
-pub fn codegen(prog: Option<*mut Function>) {
+pub fn codegen(prog: FunctionWrap) {
     assign_l_var_offsets(prog);
     let mut func = prog;
-    while !func.is_none() {
-        println!("\n  # 定义全局{}段", get_function_name(func));
-        println!("  .globl {}", get_function_name(func));
-        println!("# ====={}段开始===============", get_function_name(func));
-        println!("# {}段标签", get_function_name(func));
-        println!("{}:", get_function_name(func));
+    while !func.ptr.is_none() {
+        println!("\n  # 定义全局{}段", func.name());
+        println!("  .globl {}", func.name());
+        println!("# ====={}段开始===============", func.name());
+        println!("# {}段标签", func.name());
+        println!("{}:", func.name());
         unsafe { FUNCTION = func };
 
         println!("  # 将ra寄存器压栈,保存ra的值");
@@ -311,10 +310,10 @@ pub fn codegen(prog: Option<*mut Function>) {
         println!("  mv fp, sp");
 
         println!("  # sp腾出StackSize大小的栈空间");
-        println!("  addi sp, sp, -{}", get_function_stack_size(func));
+        println!("  addi sp, sp, -{}", func.stack_size());
 
         let mut i = 0;
-        let mut var = get_function_params(func);
+        let mut var = func.params();
         while !var.ptr.is_none() {
             println!("  # 将{}寄存器的值存入{}的栈地址", ARG_REG[i], var.name());
             println!("  sd {}, {}(fp)", ARG_REG[i], var.offset());
@@ -323,13 +322,13 @@ pub fn codegen(prog: Option<*mut Function>) {
         }
 
         println!("\n# =====段主体===============");
-        let node = get_function_body(func);
+        let node = func.body();
         gen_stmt(node);
         assert!(unsafe { DEPTH == 0 });
 
         println!("\n# =====段结束===============");
         println!("# return段标签");
-        println!(".L.return.{}:", get_function_name(func));
+        println!(".L.return.{}:", func.name());
         println!("  # 将fp的值写回sp");
         println!("  mv sp, fp");
         println!("  # 将最早fp保存的值弹栈,恢复fp和sp");
@@ -342,7 +341,7 @@ pub fn codegen(prog: Option<*mut Function>) {
 
         println!("  # 返回a0值给系统调用");
         println!("  ret");
-        func = get_function_next(func);
+        func = func.nxt();
     }
 }
 
