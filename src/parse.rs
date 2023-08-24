@@ -1,14 +1,14 @@
 use crate::{
     rvcc::{
-        get_function_next, get_obj_name, get_obj_next, set_function_next, Function, NodeKind,
-        NodeWrap, Obj, TokenKind, TokenWrap, TyWrap, TypeKind,
+        get_function_next, set_function_next, Function, NodeKind,
+        NodeWrap, TokenKind, TokenWrap, TyWrap, TypeKind, ObjWrap,
     },
     tokenize::{skip, equal, consume},
     ty::{add_ty, is_int},
     utils::error_token,
 };
 
-pub static mut LOCALS: Option<*mut Obj> = None;
+pub static mut LOCALS: ObjWrap = ObjWrap::empty();
 
 #[allow(dead_code)]
 pub fn expr_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
@@ -225,7 +225,7 @@ fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         }
 
         let var = find_var(token);
-        if var.is_none() {
+        if var.ptr.is_none() {
             error_token(token, "undefined variable");
         }
         let node = NodeWrap::new_var_node(var, token);
@@ -366,22 +366,22 @@ fn expr_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn find_var(token: TokenWrap) -> Option<*mut Obj> {
-    if unsafe { LOCALS.is_none() } {
-        return None;
+pub fn find_var(token: TokenWrap) -> ObjWrap {
+    if unsafe { LOCALS.ptr.is_none() } {
+        return ObjWrap::empty();
     }
     let mut var = unsafe { LOCALS };
     loop {
-        let name = get_obj_name(var);
-        if get_obj_name(var).len() == token.get_len() && equal(token, name) {
+        let name = var.name();
+        if var.name().len() == token.get_len() && equal(token, name) {
             return var;
         }
-        if get_obj_next(var).is_none() {
+        if var.nxt().ptr.is_none() {
             break;
         }
-        var = get_obj_next(var);
+        var = var.nxt();
     }
-    None
+    ObjWrap::empty()
 }
 
 #[allow(dead_code)]
@@ -438,13 +438,13 @@ pub fn declaration_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
         let ty = declarator(token, base_ty).0;
         token = declarator(token, base_ty).1;
-        let var = Obj::new(get_ident(ty.token()), ty);
+        let var = ObjWrap::new(get_ident(ty.token()), ty);
 
         if !equal(token, "=") {
             continue;
         }
 
-        let lhs = NodeWrap::new_var_node(Some(var), ty.token());
+        let lhs = NodeWrap::new_var_node(var, ty.token());
         let rhs = assign_v2(token.reset_by_next());
         token = rhs.1;
         let node = NodeWrap::new_binary(NodeKind::ASSIGN, lhs, rhs.0, token);
@@ -541,7 +541,7 @@ pub fn function(mut token: TokenWrap) -> (Option<*mut Function>, TokenWrap) {
     let (typ, tk) = declspec(token);
     let (typ, tk) = declarator(typ, tk);
 
-    unsafe { LOCALS = None };
+    unsafe { LOCALS = ObjWrap::empty() };
 
     let mut func = Function::empty();
     func.name = get_ident(typ.token());
@@ -576,7 +576,7 @@ pub fn parse(mut token: TokenWrap) -> Option<*mut Function> {
 pub fn create_param_l_vars(params: TyWrap) {
     if !params.ptr.is_none() {
         create_param_l_vars(params.next());
-        Obj::new(get_ident(params.token()), params);
+        ObjWrap::new(get_ident(params.token()), params);
     }
 }
 

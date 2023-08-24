@@ -1,9 +1,8 @@
 use crate::{
     rvcc::{
         get_function_body, get_function_locals, get_function_name, get_function_next,
-        get_function_params, get_function_stack_size, get_obj_name, get_obj_next, get_obj_offset,
-        get_obj_ty, set_function_stack_size, set_obj_offset, Function,
-        NodeKind, NodeWrap, ObjIter, TyWrap, TypeKind,
+        get_function_params, get_function_stack_size, set_function_stack_size, Function, NodeKind,
+        NodeWrap, TyWrap, TypeKind,
     },
     utils::error_token,
 };
@@ -47,11 +46,11 @@ pub fn align_to(n: i64, align: i64) -> i64 {
 pub fn gen_addr(node: NodeWrap) {
     match node.kind() {
         NodeKind::VAR => {
-            let offset = get_obj_offset(node.var());
+            let offset = node.var().offset();
             println!(
                 "  # 获取变量{}的栈内地址为{}(fp)",
-                get_obj_name(node.var()),
-                get_obj_offset(node.var())
+                node.var().name(),
+                node.var().offset()
             );
             println!("  addi a0, fp, {}", offset);
             return;
@@ -280,10 +279,10 @@ pub fn assign_l_var_offsets(prog: Option<*mut Function>) {
     let mut func = prog;
     while !func.is_none() {
         let mut offset = 0;
-        let var = ObjIter::new(get_function_locals(func));
+        let var = get_function_locals(func);
         for obj in var {
-            offset += get_obj_ty(obj).size() as i64;
-            set_obj_offset(obj, -offset);
+            offset += obj.ty().size() as i64;
+            obj.set_offset(-offset);
         }
         set_function_stack_size(func, align_to(offset, 16));
         func = get_function_next(func);
@@ -316,14 +315,10 @@ pub fn codegen(prog: Option<*mut Function>) {
 
         let mut i = 0;
         let mut var = get_function_params(func);
-        while !var.is_none() {
-            println!(
-                "  # 将{}寄存器的值存入{}的栈地址",
-                ARG_REG[i],
-                get_obj_name(var)
-            );
-            println!("  sd {}, {}(fp)", ARG_REG[i], get_obj_offset(var));
-            var = get_obj_next(var);
+        while !var.ptr.is_none() {
+            println!("  # 将{}寄存器的值存入{}的栈地址", ARG_REG[i], var.name());
+            println!("  sd {}, {}(fp)", ARG_REG[i], var.offset());
+            var = var.nxt();
             i += 1;
         }
 

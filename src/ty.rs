@@ -1,6 +1,5 @@
 use crate::{
     rvcc::{
-        get_obj_ty,
         NodeKind, NodeWrap, Ty, TypeKind, TyWrap,
     },
     utils::error_token,
@@ -65,7 +64,7 @@ pub fn add_ty(node: NodeWrap) {
             return;
         }
         NodeKind::VAR => {
-            let ty = get_obj_ty(node.var());
+            let ty = node.var().ty();
             node.set_ty(ty);
             return;
         }

@@ -252,7 +252,7 @@ pub struct NodeV2 {
     pub then: NodeWrap,
     pub els: NodeWrap,
     pub val: i64,
-    pub var: Option<*mut Obj>,
+    pub var: ObjWrap,
     pub init: NodeWrap,
     pub inc: NodeWrap,
     pub token: TokenWrap,
@@ -313,7 +313,7 @@ impl NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().val }
     }
 
-    pub fn var(&self) -> Option<*mut Obj> {
+    pub fn var(&self) -> ObjWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().var }
     }
 
@@ -377,7 +377,7 @@ impl NodeWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().val = val }
     }
 
-    pub fn set_var(&self, var: Option<*mut Obj>) {
+    pub fn set_var(&self, var: ObjWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().var = var }
     }
 
@@ -419,7 +419,7 @@ impl NodeWrap {
             then: NodeWrap::empty(),
             els: NodeWrap::empty(),
             val: 0,
-            var: None,
+            var: ObjWrap::empty(),
             init: NodeWrap::empty(),
             inc: NodeWrap::empty(),
             token: token,
@@ -442,7 +442,7 @@ impl NodeWrap {
             then: NodeWrap::empty(),
             els: NodeWrap::empty(),
             val: 0,
-            var: None,
+            var: ObjWrap::empty(),
             init: NodeWrap::empty(),
             inc: NodeWrap::empty(),
             token: token,
@@ -465,7 +465,7 @@ impl NodeWrap {
             then: NodeWrap::empty(),
             els: NodeWrap::empty(),
             val: val,
-            var: None,
+            var: ObjWrap::empty(),
             init: NodeWrap::empty(),
             inc: NodeWrap::empty(),
             token: token,
@@ -483,7 +483,7 @@ impl NodeWrap {
         return node;
     }
 
-    pub fn new_var_node(var: Option<*mut Obj>, token: TokenWrap) -> NodeWrap {
+    pub fn new_var_node(var: ObjWrap, token: TokenWrap) -> NodeWrap {
         let node = NodeV2 {
             kind: NodeKind::VAR,
             next: NodeWrap::empty(),
@@ -510,76 +510,123 @@ impl NodeWrap {
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub struct Obj {
-    pub next: Option<*mut Obj>,
+    pub next: ObjWrap,
     pub name: &'static str,
     pub offset: i64,
     pub ty: TyWrap,
 }
 
-#[allow(dead_code)]
-impl Obj {
-    pub fn new(name: &'static str, ty: TyWrap) -> *mut Obj {
-        let mut var = Self {
-            next: None,
-            name: name,
-            offset: 0,
-            ty: ty,
-        };
-        var.next = unsafe { LOCALS };
-        let var: *mut Obj = Box::leak(Box::new(var));
-        unsafe { LOCALS = Some(var) };
-        var
-    }
-}
+// #[allow(dead_code)]
+// impl Obj {
+//     pub fn new(name: &'static str, ty: TyWrap) -> *mut Obj {
+//         let mut var = Self {
+//             next: ObjWrap::empty(),
+//             name: name,
+//             offset: 0,
+//             ty: ty,
+//         };
+//         var.next = unsafe { LOCALS };
+//         let var: *mut Obj = Box::leak(Box::new(var));
+//         unsafe { LOCALS = Some(var) };
+//         var
+//     }
+// }
 
-impl ToString for Obj {
-    fn to_string(&self) -> String {
-        let mut _s = "".to_string();
-        if self.next.is_none() {
-            _s = "{".to_string()
-                + "\"name\":\""
-                + self.name
-                + "\","
-                + "\"offset\":\""
-                + &self.offset.to_string()
-                + "\","
-                + "\"next\": \"None\"}";
-        } else {
-            _s = "{".to_string()
-                + "\"name\":\""
-                + self.name
-                + "\","
-                + "\"offset\":\""
-                + &self.offset.to_string()
-                + "\","
-                + "\"next\":"
-                + unsafe { &self.next.unwrap().as_ref().unwrap().to_string() }
-                + "}";
-        }
-        _s
-    }
-}
+// impl ToString for Obj {
+//     fn to_string(&self) -> String {
+//         let mut _s = "".to_string();
+//         if self.next.is_none() {
+//             _s = "{".to_string()
+//                 + "\"name\":\""
+//                 + self.name
+//                 + "\","
+//                 + "\"offset\":\""
+//                 + &self.offset.to_string()
+//                 + "\","
+//                 + "\"next\": \"None\"}";
+//         } else {
+//             _s = "{".to_string()
+//                 + "\"name\":\""
+//                 + self.name
+//                 + "\","
+//                 + "\"offset\":\""
+//                 + &self.offset.to_string()
+//                 + "\","
+//                 + "\"next\":"
+//                 + unsafe { &self.next.unwrap().as_ref().unwrap().to_string() }
+//                 + "}";
+//         }
+//         _s
+//     }
+// }
 
 #[allow(dead_code)]
-pub struct ObjIter {
+#[derive(Clone, Copy, Debug)]
+pub struct ObjWrap {
     pub ptr: Option<*mut Obj>,
 }
 
 #[allow(dead_code)]
-impl ObjIter {
-    pub fn new(ptr: Option<*mut Obj>) -> Self {
-        Self { ptr: ptr }
+impl ObjWrap {
+    pub fn new(name: &'static str, ty: TyWrap) -> Self {
+        let var = Obj {
+            next: ObjWrap::empty(),
+            name: name,
+            offset: 0,
+            ty: ty,
+        };
+        let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
+        let var = Self{ptr: var};
+        var.set_nxt(unsafe { LOCALS });
+        unsafe { LOCALS = var };
+        var
+    }
+
+    pub const fn empty() -> Self {
+        Self { ptr: None }
+    }
+
+    pub fn nxt(&self) -> ObjWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().next }
+    }
+
+    pub fn name(&self) -> &'static str {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().name }
+    }
+
+    pub fn offset(&self) -> i64 {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().offset }
+    }
+
+    pub fn ty(&self) -> TyWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().ty }
+    }
+
+    pub fn set_nxt(&self, next: ObjWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().next = next }
+    }
+
+    pub fn set_name(&self, name: &'static str) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().name  =name}
+    }
+
+    pub fn set_offset(&self, offset: i64){
+        unsafe { self.ptr.unwrap().as_mut().unwrap().offset =offset }
+    }
+
+    pub fn set_ty(&self, ty: TyWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().ty = ty}
     }
 }
 
 #[allow(dead_code)]
-impl Iterator for ObjIter {
-    type Item = Option<*mut Obj>;
+impl Iterator for ObjWrap {
+    type Item = ObjWrap;
 
     fn next(&mut self) -> Option<Self::Item> {
-        let now = self.ptr;
-        if !now.is_none() {
-            self.ptr = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
+        let now = *self;
+        if !now.ptr.is_none() {
+            self.ptr = self.nxt().ptr;
             return Some(now);
         } else {
             return None;
@@ -593,21 +640,21 @@ pub struct Function {
     pub next: Option<*mut Function>,
     pub name: &'static str,
     pub body: NodeWrap,
-    pub locals: Option<*mut Obj>,
+    pub locals: ObjWrap,
     pub stack_size: i64,
-    pub params: Option<*mut Obj>,
+    pub params: ObjWrap,
 }
 
 #[allow(dead_code)]
 impl Function {
-    pub fn new(body: NodeWrap, locals: Option<*mut Obj>) -> Self {
+    pub fn new(body: NodeWrap, locals: ObjWrap) -> Self {
         Self {
             next: None,
             name: "",
             body: body,
             locals: locals,
             stack_size: 0,
-            params: None,
+            params: ObjWrap::empty(),
         }
     }
 
@@ -616,9 +663,9 @@ impl Function {
             next: None,
             name: "",
             body: NodeWrap::empty(),
-            locals: None,
+            locals: ObjWrap::empty(),
             stack_size: 0,
-            params: None,
+            params: ObjWrap::empty(),
         }
     }
 }
@@ -892,7 +939,7 @@ pub fn get_token_ref(token: *mut Token) -> &'static Token {
 }
 
 #[allow(dead_code)]
-pub fn get_obj_next(obj: Option<*mut Obj>) -> Option<*mut Obj> {
+pub fn get_obj_next(obj: Option<*mut Obj>) -> ObjWrap {
     unsafe { obj.unwrap().as_ref().unwrap().next }
 }
 
@@ -917,7 +964,7 @@ pub fn get_obj_ty(obj: Option<*mut Obj>) -> TyWrap {
 }
 
 #[allow(dead_code)]
-pub fn get_function_locals(func: Option<*mut Function>) -> Option<*mut Obj> {
+pub fn get_function_locals(func: Option<*mut Function>) -> ObjWrap {
     unsafe { func.unwrap().as_ref().unwrap().locals }
 }
 
@@ -952,7 +999,7 @@ pub fn set_function_next(func: Option<*mut Function>, next: Option<*mut Function
 }
 
 #[allow(dead_code)]
-pub fn get_function_params(func: Option<*mut Function>) -> Option<*mut Obj> {
+pub fn get_function_params(func: Option<*mut Function>) -> ObjWrap {
     unsafe { func.unwrap().as_ref().unwrap().params }
 }
 
