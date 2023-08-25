@@ -1,5 +1,4 @@
 use crate::{
-    function::FunctionWrap,
     node::{NodeKind::*, NodeWrap},
     obj::ObjWrap,
     token::{consume, equal, skip, TokenKind, TokenWrap},
@@ -7,7 +6,10 @@ use crate::{
     utils::error_token,
 };
 
+#[allow(dead_code)]
 pub static mut LOCALS: ObjWrap = ObjWrap::empty();
+#[allow(dead_code)]
+pub static mut GLOBALS: ObjWrap = ObjWrap::empty();
 
 #[allow(dead_code)]
 pub fn expr_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
@@ -523,14 +525,13 @@ pub fn ty_suffix(mut token: TokenWrap, ty: TyWrap) -> (TyWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn function(token: TokenWrap) -> (FunctionWrap, TokenWrap) {
-    let (typ, token) = declspec(token);
-    let (typ, mut token) = declarator(typ, token);
+pub fn function(token: TokenWrap, base_ty: TyWrap) -> (ObjWrap, TokenWrap) {
+    let (typ, mut token) = declarator(token, base_ty);
+
+    let func = ObjWrap::new_global(get_ident(typ.token()), typ);
+    func.set_is_function(true);
 
     unsafe { LOCALS = ObjWrap::empty() };
-
-    let func = FunctionWrap::init();
-    func.set_name(get_ident(typ.token()));
 
     create_param_l_vars(typ.params());
     func.set_params(unsafe { LOCALS });
@@ -545,18 +546,16 @@ pub fn function(token: TokenWrap) -> (FunctionWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn parse(mut token: TokenWrap) -> FunctionWrap {
-    let head = FunctionWrap::init();
-    let mut cur = head;
+pub fn parse(mut token: TokenWrap) -> ObjWrap {
+    unsafe { GLOBALS = ObjWrap::empty() };
 
     while token.kind() != TokenKind::EOF {
-        let (f, tk) = function(token);
-        cur.set_nxt(f);
-        cur = cur.nxt();
+        let (tk, base_ty) = declspec(token);
+        let (_, tk) = function(tk, base_ty);
         token = tk;
     }
 
-    return head.nxt();
+    return unsafe { GLOBALS };
 }
 
 #[allow(dead_code)]

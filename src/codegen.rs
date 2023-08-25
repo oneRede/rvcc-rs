@@ -1,15 +1,14 @@
 use crate::{
-    function::FunctionWrap,
     node::{NodeKind, NodeWrap},
     ty::{TyWrap, TypeKind},
-    utils::error_token,
+    utils::error_token, obj::ObjWrap,
 };
 
 pub static mut DEPTH: usize = 0;
 pub static mut I: i64 = 1;
 
 pub static ARG_REG: [&str; 6] = ["a0", "a1", "a2", "a3", "a4", "a5"];
-pub static mut FUNCTION: FunctionWrap = FunctionWrap::empty();
+pub static mut FUNCTION: ObjWrap =ObjWrap::empty();
 
 #[allow(dead_code)]
 pub fn count() -> i64 {
@@ -259,9 +258,12 @@ fn gen_stmt(node: NodeWrap) {
 }
 
 #[allow(dead_code)]
-pub fn assign_l_var_offsets(prog: FunctionWrap) {
+pub fn assign_l_var_offsets(prog: ObjWrap) {
     let funcs = prog;
     for func in funcs {
+        if !func.is_function(){
+            return;
+        }
         let mut offset = 0;
         let var = func.locals();
         for obj in var {
@@ -273,12 +275,16 @@ pub fn assign_l_var_offsets(prog: FunctionWrap) {
 }
 
 #[allow(dead_code)]
-pub fn codegen(prog: FunctionWrap) {
+pub fn codegen(prog: ObjWrap) {
     assign_l_var_offsets(prog);
     let funcs = prog;
     for func in funcs {
+        if !func.is_function(){
+            return;
+        }
         println!("\n  # 定义全局{}段", func.name());
         println!("  .globl {}", func.name());
+        println!("  .text");
         println!("# ====={}段开始===============", func.name());
         println!("# {}段标签", func.name());
         println!("{}:", func.name());

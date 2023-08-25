@@ -1,7 +1,6 @@
 use std::{env, process::exit};
 
 mod codegen;
-mod function;
 mod node;
 mod obj;
 mod parse;
@@ -9,8 +8,8 @@ mod token;
 mod ty;
 mod utils;
 
-use crate::parse::parse;
 use codegen::codegen;
+use parse::parse;
 use token::{tokenize, CURRENT_INPUT, CURRENT_STR};
 
 fn main() {
