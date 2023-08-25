@@ -89,16 +89,6 @@ impl TokenWrap {
         Self { ptr: None }
     }
 
-    pub fn reset_by_next(&mut self) -> Self {
-        *self = unsafe { self.ptr.unwrap().as_ref().unwrap().next };
-        *self
-    }
-
-    pub fn set(&mut self, ptr: Option<*mut Token>) -> Self {
-        self.ptr = ptr;
-        *self
-    }
-
     pub fn set_next(self, next: TokenWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().next = next };
     }
@@ -186,7 +176,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
         if chars.len() == 0 {
             cur.set_next(TokenWrap::new(EOF, chars, 0));
 
-            head.reset_by_next();
+            head = head.nxt();
             convert_keyword(head);
             return head;
         }
@@ -202,7 +192,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
             cur.set_next(TokenWrap::new(Num, chars, num.to_string().len()));
 
             chars = cs;
-            cur.reset_by_next();
+            cur = cur.nxt();
             cur.set_val(num);
             cur.set_len(num.to_string().len());
             continue;
@@ -220,7 +210,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
             }
 
             cur.set_next(TokenWrap::new(IDENT, chars, len_ident));
-            cur.reset_by_next();
+            cur = cur.nxt();
             chars = &chars[len_ident..];
             continue;
         }
@@ -238,7 +228,7 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
         let len_punct = read_punct(chars);
         if len_punct > 0 {
             cur.set_next(TokenWrap::new(Punct, chars, len_punct));
-            cur.reset_by_next();
+            cur = cur.nxt();
             chars = &chars[len_punct..];
             continue;
         }
