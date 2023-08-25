@@ -100,7 +100,7 @@ pub fn gen_expr(node: NodeWrap) {
             gen_addr(node.lhs());
             push();
             gen_expr(node.rhs());
-            store();
+            store(node.ty());
             return;
         }
         NodeKind::FUNCALL => {
@@ -283,7 +283,6 @@ pub fn assign_l_var_offsets(prog: ObjWrap) {
 
 #[allow(dead_code)]
 pub fn emit_text(prog: ObjWrap) {
-    
     for func in prog {
         if !func.is_function() {
             return;
@@ -314,8 +313,13 @@ pub fn emit_text(prog: ObjWrap) {
         let vars = func.params();
         for var in vars {
             println!("  # 将{}寄存器的值存入{}的栈地址", ARG_REG[i], var.name());
-            println!("  sd {}, {}(fp)", ARG_REG[i], var.offset());
-            i += 1;
+            if var.ty().size() == 1 {
+                println!("  sb {}, {}(fp)", ARG_REG[i], var.offset());
+                i += 1;
+            } else {
+                println!("  sd {}, {}(fp)", ARG_REG[i], var.offset());
+                i += 1;
+            }
         }
 
         println!("\n# =====段主体===============");
@@ -346,14 +350,22 @@ pub fn load(ty: TyWrap) {
         return;
     }
     println!("  # 读取a0中存放的地址,得到的值存入a0");
-    println!("  ld a0, 0(a0)");
+    if ty.size() == 1 {
+        println!("  lb a0, 0(a0)");
+    } else {
+        println!("  ld a0, 0(a0)");
+    }
 }
 
 #[allow(dead_code)]
-pub fn store() {
+pub fn store(ty: TyWrap) {
     pop("a1");
     println!("  # 将a0的值,写入到a1中存放的地址");
-    println!("  sd a0, 0(a1)");
+    if ty.size() == 1 {
+        println!("  sb a0, 0(a1)");
+    } else {
+        println!("  sd a0, 0(a1)");
+    }
 }
 
 #[allow(dead_code)]

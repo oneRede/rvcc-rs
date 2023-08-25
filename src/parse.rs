@@ -251,7 +251,7 @@ pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let mut cur = head;
 
     while !equal(token, "}") {
-        if equal(token, "int") {
+        if is_type_name(token) {
             let (nd, tk) = declaration_v2(token);
             token = tk;
             cur.set_nxt(nd)
@@ -397,6 +397,10 @@ pub fn get_ident(token: TokenWrap) -> &'static str {
 
 #[allow(dead_code)]
 pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
+    if equal(token, "char") {
+        token = token.nxt();
+        return (token, TyWrap::new_with_kind(Some(TypeKind::CHAR)))
+    }
     token = skip(token, "int");
     return (token, TyWrap::new_with_kind(Some(TypeKind::INT)));
 }
@@ -623,4 +627,9 @@ pub fn is_function(token: TokenWrap) -> bool{
     let dummy = TyWrap::new();
     let (ty,_) = declarator(token, dummy);
     return ty.kind() == Some(TypeKind::FUNC)
+}
+
+#[allow(dead_code)]
+pub fn is_type_name(token: TokenWrap) -> bool {
+    return equal(token, "char") || equal(token, "int")
 }

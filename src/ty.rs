@@ -11,6 +11,7 @@ pub static mut TYPE_INT: TyWrap = TyWrap::empty();
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub enum TypeKind {
     INT,
+    CHAR,
     PTR,
     FUNC,
     ARRAY,
@@ -62,7 +63,13 @@ impl TyWrap {
     }
 
     pub fn new_with_kind(kind: Option<TypeKind>) -> Self {
+        
         let ty = TyWrap::new();
+        if kind ==Some(TypeKind::INT) {
+            ty.set_size(8);
+        } else{
+            ty.set_size(1)
+        }
         ty.set_kind(kind);
         ty
     }
@@ -168,7 +175,7 @@ impl TyWrap {
 
 #[allow(dead_code)]
 pub fn is_int(ty: TyWrap) -> bool {
-    return ty.kind() == Some(TypeKind::INT);
+    return ty.kind() == Some(TypeKind::INT) || ty.kind() == Some(TypeKind::CHAR);
 }
 
 #[allow(dead_code)]
