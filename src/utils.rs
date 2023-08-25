@@ -1,9 +1,6 @@
 use std::{num::ParseIntError, process::exit};
 
-use crate::{
-    rvcc::TokenWrap,
-    tokenize::{CURRENT_INPUT, CURRENT_STR},
-};
+use crate::token::{TokenWrap,CURRENT_INPUT, CURRENT_STR};
 
 #[allow(dead_code)]
 pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {

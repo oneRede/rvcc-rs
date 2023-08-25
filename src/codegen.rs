@@ -1,5 +1,7 @@
 use crate::{
-    rvcc::{FunctionWrap, NodeKind, NodeWrap, TyWrap, TypeKind},
+    function::FunctionWrap,
+    node::{NodeKind, NodeWrap},
+    ty::{TyWrap, TypeKind},
     utils::error_token,
 };
 
@@ -234,11 +236,10 @@ fn gen_stmt(node: NodeWrap) {
         }
 
         NodeKind::BLOCK => {
-            for nd in node.body(){
+            for nd in node.body() {
                 gen_stmt(nd);
             }
             return;
-
         }
 
         NodeKind::RETURN => {
@@ -260,7 +261,7 @@ fn gen_stmt(node: NodeWrap) {
 #[allow(dead_code)]
 pub fn assign_l_var_offsets(prog: FunctionWrap) {
     let funcs = prog;
-    for func in funcs{
+    for func in funcs {
         let mut offset = 0;
         let var = func.locals();
         for obj in var {

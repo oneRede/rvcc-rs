@@ -1,7 +1,9 @@
 use crate::{
-    rvcc::{FunctionWrap, NodeKind::*, NodeWrap, ObjWrap, TokenKind, TokenWrap, TyWrap, TypeKind},
-    tokenize::{consume, equal, skip},
-    ty::{add_ty, is_int},
+    function::FunctionWrap,
+    node::{NodeKind::*, NodeWrap},
+    obj::ObjWrap,
+    token::{consume, equal, skip, TokenKind, TokenWrap},
+    ty::{add_ty, is_int, TyWrap, TypeKind},
     utils::error_token,
 };
 
@@ -268,7 +270,7 @@ pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "return") {
         let node = NodeWrap::new(RETURN, token);
-        let (n, t) = expr_v2(token.reset_by_next());
+        let (n, t) = expr_v2(token.nxt());
         node.set_lhs(n);
 
         token = skip(t, ";");
@@ -328,7 +330,7 @@ fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "while") {
         let node = NodeWrap::new(FOR, token);
 
-        token.reset_by_next();
+        token = token.nxt();
         token = skip(token, "(");
 
         let (n, mut token) = expr_v2(token);
@@ -342,7 +344,7 @@ fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     }
 
     if equal(token, "{") {
-        return compound_stmt_v2(token.reset_by_next());
+        return compound_stmt_v2(token.nxt());
     }
     expr_stmt_v2(token)
 }
@@ -405,7 +407,7 @@ pub fn declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
 
     let start = token;
 
-    let (typ, tk) = ty_suffix(token.reset_by_next(), ty);
+    let (typ, tk) = ty_suffix(token.nxt(), ty);
     ty = typ;
     ty.set_token(start);
 
@@ -436,7 +438,7 @@ pub fn declaration_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         }
 
         let lhs = NodeWrap::new_var_node(var, ty.token());
-        let rhs = assign_v2(token.reset_by_next());
+        let rhs = assign_v2(token.nxt());
         token = rhs.1;
         let node = NodeWrap::new_binary(ASSIGN, lhs, rhs.0, token);
 
@@ -582,7 +584,6 @@ pub fn postfix_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         let start = token;
         let (idx, tk) = expr_v2(token.reset_by_next());
         token = skip(tk, "]");
-        
 
         let (nd, _) = new_add_v2(node, idx, start);
         let nd = NodeWrap::new_unary(DEREF, nd, start);

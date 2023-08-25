@@ -1,15 +1,17 @@
 use std::{env, process::exit};
 
 mod codegen;
+mod function;
+mod node;
+mod obj;
 mod parse;
-mod rvcc;
-mod tokenize;
+mod token;
 mod ty;
 mod utils;
 
 use crate::parse::parse;
 use codegen::codegen;
-use tokenize::{tokenize, CURRENT_INPUT, CURRENT_STR};
+use token::{tokenize, CURRENT_INPUT, CURRENT_STR};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
