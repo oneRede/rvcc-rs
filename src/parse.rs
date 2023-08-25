@@ -502,7 +502,7 @@ pub fn func_params(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) 
         let (tk, base_ty) = declspec(token);
         let (declar_ty, tk) = declarator(tk, base_ty);
 
-        cur.set_next(TyWrap::copy(declar_ty));
+        cur.set_next(declar_ty);
         cur = cur.next();
         token = tk;
     }

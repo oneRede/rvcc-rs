@@ -63,11 +63,10 @@ impl TyWrap {
     }
 
     pub fn new_with_kind(kind: Option<TypeKind>) -> Self {
-        
         let ty = TyWrap::new();
-        if kind ==Some(TypeKind::INT) {
+        if kind == Some(TypeKind::INT) {
             ty.set_size(8);
-        } else{
+        } else {
             ty.set_size(1)
         }
         ty.set_kind(kind);
@@ -95,17 +94,6 @@ impl TyWrap {
         ty.set_kind(Some(TypeKind::PTR));
         ty.set_base(base);
         ty
-    }
-
-    pub fn copy(ty: TyWrap) -> Self {
-        let tmp = TyWrap::new();
-        tmp.set_kind(ty.kind());
-        tmp.set_base(ty.base());
-        tmp.set_token(ty.token());
-        tmp.set_return_ty(ty.return_ty());
-        tmp.set_params(ty.params());
-        tmp.set_next(ty.next());
-        tmp
     }
 
     pub fn kind(&self) -> Option<TypeKind> {
