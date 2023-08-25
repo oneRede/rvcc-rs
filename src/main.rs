@@ -8,7 +8,7 @@ mod token;
 mod ty;
 mod utils;
 
-use codegen::codegen;
+use codegen::code_gen;
 use parse::parse;
 use token::{tokenize, CURRENT_INPUT, CURRENT_STR};
 
@@ -29,6 +29,6 @@ fn main() {
     let token = tokenize(chars);
     let prog = parse(token);
 
-    codegen(prog);
+    code_gen(prog);
     return;
 }

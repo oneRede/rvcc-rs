@@ -1,4 +1,8 @@
-use crate::{node::NodeWrap, parse::{LOCALS, GLOBALS}, ty::TyWrap};
+use crate::{
+    node::NodeWrap,
+    parse::{GLOBALS, LOCALS},
+    ty::TyWrap,
+};
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
@@ -15,6 +19,7 @@ pub struct Obj {
     pub stack_size: i64,
     pub params: ObjWrap,
 }
+
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub struct ObjWrap {
@@ -29,7 +34,7 @@ impl ObjWrap {
             name: name,
             offset: 0,
             ty: ty,
-            is_local: false,
+            is_local: true,
             is_function: false,
             body: NodeWrap::empty(),
             locals: ObjWrap::empty(),
@@ -49,7 +54,7 @@ impl ObjWrap {
             name: name,
             offset: 0,
             ty: ty,
-            is_local: false,
+            is_local: true,
             is_function: false,
             body: NodeWrap::empty(),
             locals: ObjWrap::empty(),
@@ -58,7 +63,6 @@ impl ObjWrap {
         };
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
-        var.set_is_local(true);
         var.set_nxt(unsafe { LOCALS });
         unsafe { LOCALS = var };
         var

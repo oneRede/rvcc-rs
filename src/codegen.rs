@@ -1,14 +1,15 @@
 use crate::{
     node::{NodeKind, NodeWrap},
+    obj::ObjWrap,
     ty::{TyWrap, TypeKind},
-    utils::error_token, obj::ObjWrap,
+    utils::error_token,
 };
 
 pub static mut DEPTH: usize = 0;
 pub static mut I: i64 = 1;
 
 pub static ARG_REG: [&str; 6] = ["a0", "a1", "a2", "a3", "a4", "a5"];
-pub static mut FUNCTION: ObjWrap =ObjWrap::empty();
+pub static mut FUNCTION: ObjWrap = ObjWrap::empty();
 
 #[allow(dead_code)]
 pub fn count() -> i64 {
@@ -43,13 +44,19 @@ pub fn align_to(n: i64, align: i64) -> i64 {
 pub fn gen_addr(node: NodeWrap) {
     match node.kind() {
         NodeKind::VAR => {
-            let offset = node.var().offset();
-            println!(
-                "  # 获取变量{}的栈内地址为{}(fp)",
-                node.var().name(),
-                node.var().offset()
-            );
-            println!("  addi a0, fp, {}", offset);
+            if node.var().is_local() {
+                let offset = node.var().offset();
+                println!(
+                    "  # 获取变量{}的栈内地址为{}(fp)",
+                    node.var().name(),
+                    offset
+                );
+                println!("  addi a0, fp, {}", offset);
+            } else {
+                let name = node.var().name();
+                println!("  # 获取全局变量{}的地址", name);
+                println!("  la a0, {}", name);
+            }
             return;
         }
         NodeKind::DEREF => {
@@ -261,7 +268,7 @@ fn gen_stmt(node: NodeWrap) {
 pub fn assign_l_var_offsets(prog: ObjWrap) {
     let funcs = prog;
     for func in funcs {
-        if !func.is_function(){
+        if !func.is_function() {
             return;
         }
         let mut offset = 0;
@@ -275,15 +282,16 @@ pub fn assign_l_var_offsets(prog: ObjWrap) {
 }
 
 #[allow(dead_code)]
-pub fn codegen(prog: ObjWrap) {
-    assign_l_var_offsets(prog);
-    let funcs = prog;
-    for func in funcs {
-        if !func.is_function(){
+pub fn emit_text(prog: ObjWrap) {
+    
+    for func in prog {
+        if !func.is_function() {
             return;
         }
         println!("\n  # 定义全局{}段", func.name());
         println!("  .globl {}", func.name());
+
+        println!("  # 代码段标签");
         println!("  .text");
         println!("# ====={}段开始===============", func.name());
         println!("# {}段标签", func.name());
@@ -346,4 +354,29 @@ pub fn store() {
     pop("a1");
     println!("  # 将a0的值,写入到a1中存放的地址");
     println!("  sd a0, 0(a1)");
+}
+
+#[allow(dead_code)]
+pub fn emit_data(prog: ObjWrap) {
+    for var in prog {
+        if var.is_function() {
+            continue;
+        }
+        let name = var.name();
+        let size = var.ty().size();
+        println!("  # 数据段标签");
+        println!("  .data");
+        println!("  .globl {}", name);
+        println!("  # 全局变量{}", name);
+        println!("{}:", name);
+        println!("  # 零填充{}位", size);
+        println!("  .zero {}", size);
+    }
+}
+
+#[allow(dead_code)]
+pub(crate) fn code_gen(prog: ObjWrap) {
+    assign_l_var_offsets(prog);
+    emit_data(prog);
+    emit_text(prog);
 }

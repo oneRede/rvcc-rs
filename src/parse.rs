@@ -368,11 +368,14 @@ fn expr_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn find_var(token: TokenWrap) -> ObjWrap {
-    if unsafe { LOCALS.ptr.is_none() } {
-        return ObjWrap::empty();
+    for var in unsafe { LOCALS } {
+        let name = var.name();
+        if var.name().len() == token.get_len() && equal(token, name) {
+            return var;
+        }
     }
-    let vars = unsafe { LOCALS };
-    for var in vars {
+
+    for var in unsafe { GLOBALS } {
         let name = var.name();
         if var.name().len() == token.get_len() && equal(token, name) {
             return var;
@@ -551,8 +554,12 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
 
     while token.kind() != TokenKind::EOF {
         let (tk, base_ty) = declspec(token);
-        let (_, tk) = function(tk, base_ty);
-        token = tk;
+        if is_function(tk){
+            let (_, tk) = function(tk, base_ty);
+            token = tk;
+            continue;
+        }
+        token = global_variable(token, base_ty);
     }
 
     return unsafe { GLOBALS };
@@ -588,4 +595,32 @@ pub fn postfix_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         token = tk
     }
     return (node, token);
+}
+
+#[allow(dead_code)]
+pub fn global_variable(mut token: TokenWrap, base_ty: TyWrap) -> TokenWrap{
+    let mut first = true;
+
+    while !consume(token, ";").0 {
+        token = consume(token, ";").1;
+        if !first {
+            token = skip(token, ",");
+        }
+        first = false;
+        let (ty, tk) = declarator(token, base_ty);
+        ObjWrap::new_global(get_ident(ty.token()), ty);
+        token = tk;
+    }
+    return token;
+}
+
+#[allow(dead_code)]
+pub fn is_function(token: TokenWrap) -> bool{
+    if equal(token, ";"){
+        return false;
+    }
+
+    let dummy = TyWrap::new();
+    let (ty,_) = declarator(token, dummy);
+    return ty.kind() == Some(TypeKind::FUNC)
 }
