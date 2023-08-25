@@ -214,6 +214,12 @@ fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         return (nd, token);
     }
 
+    if equal(token, "sizeof") {
+        let (nd,tk)= unary_v2(token.nxt());
+        add_ty(nd);
+        return (NodeWrap::new_num(nd.ty().size() as i64, tk), tk);
+    }
+
     if token.kind() == TokenKind::IDENT {
         if equal(token.nxt(), "(") {
             return func_call_v2(token);
