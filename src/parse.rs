@@ -10,6 +10,8 @@ use crate::{
 pub static mut LOCALS: ObjWrap = ObjWrap::empty();
 #[allow(dead_code)]
 pub static mut GLOBALS: ObjWrap = ObjWrap::empty();
+#[allow(dead_code)]
+pub static mut VAR_IDXS: usize = 0;
 
 #[allow(dead_code)]
 pub fn expr_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
@@ -217,7 +219,7 @@ fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     }
 
     if equal(token, "sizeof") {
-        let (nd,tk)= unary_v2(token.nxt());
+        let (nd, tk) = unary_v2(token.nxt());
         add_ty(nd);
         return (NodeWrap::new_num(nd.ty().size() as i64, tk), tk);
     }
@@ -233,6 +235,12 @@ fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         }
         let node = NodeWrap::new_var_node(var, token);
         return (node, token.nxt());
+    }
+
+    if token.kind() == TokenKind::STR {
+        let var = new_string_literal(Some(token.stri()), token.ty());
+        token = token.nxt();
+        return (NodeWrap::new_var_node(var, token), token);
     }
 
     if token.kind() == TokenKind::Num {
@@ -370,14 +378,14 @@ fn expr_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 pub fn find_var(token: TokenWrap) -> ObjWrap {
     for var in unsafe { LOCALS } {
         let name = var.name();
-        if var.name().len() == token.get_len() && equal(token, name) {
+        if var.name().len() == token.len() && equal(token, name) {
             return var;
         }
     }
 
     for var in unsafe { GLOBALS } {
         let name = var.name();
-        if var.name().len() == token.get_len() && equal(token, name) {
+        if var.name().len() == token.len() && equal(token, name) {
             return var;
         }
     }
@@ -390,7 +398,7 @@ pub fn get_ident(token: TokenWrap) -> &'static str {
         error_token(token, "expected an identifier");
     }
 
-    let len = token.get_len();
+    let len = token.len();
     let name: String = token.get_loc().unwrap()[..len].iter().collect();
     Box::leak(Box::new(name))
 }
@@ -399,7 +407,7 @@ pub fn get_ident(token: TokenWrap) -> &'static str {
 pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
     if equal(token, "char") {
         token = token.nxt();
-        return (token, TyWrap::new_with_kind(Some(TypeKind::CHAR)))
+        return (token, TyWrap::new_with_kind(Some(TypeKind::CHAR)));
     }
     token = skip(token, "int");
     return (token, TyWrap::new_with_kind(Some(TypeKind::INT)));
@@ -481,7 +489,7 @@ pub fn func_call_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     token = skip(token, ")");
 
     let node = NodeWrap::new(FUNCALL, start);
-    let len = start.get_len();
+    let len = start.len();
     let func_name: String = start.get_loc().unwrap()[..len].iter().collect();
     node.set_func_name(Box::leak(Box::new(func_name)));
 
@@ -558,7 +566,7 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
 
     while token.kind() != TokenKind::EOF {
         let (tk, base_ty) = declspec(token);
-        if is_function(tk){
+        if is_function(tk) {
             let (_, tk) = function(tk, base_ty);
             token = tk;
             continue;
@@ -602,7 +610,7 @@ pub fn postfix_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn global_variable(mut token: TokenWrap, base_ty: TyWrap) -> TokenWrap{
+pub fn global_variable(mut token: TokenWrap, base_ty: TyWrap) -> TokenWrap {
     let mut first = true;
 
     while !consume(token, ";").0 {
@@ -619,17 +627,36 @@ pub fn global_variable(mut token: TokenWrap, base_ty: TyWrap) -> TokenWrap{
 }
 
 #[allow(dead_code)]
-pub fn is_function(token: TokenWrap) -> bool{
-    if equal(token, ";"){
+pub fn is_function(token: TokenWrap) -> bool {
+    if equal(token, ";") {
         return false;
     }
 
     let dummy = TyWrap::new();
-    let (ty,_) = declarator(token, dummy);
-    return ty.kind() == Some(TypeKind::FUNC)
+    let (ty, _) = declarator(token, dummy);
+    return ty.kind() == Some(TypeKind::FUNC);
 }
 
 #[allow(dead_code)]
 pub fn is_type_name(token: TokenWrap) -> bool {
-    return equal(token, "char") || equal(token, "int")
+    return equal(token, "char") || equal(token, "int");
+}
+
+#[allow(dead_code)]
+pub fn new_unique_name() -> &'static str {
+    let s =  Box::leak(Box::new(format!(".L..{}", unsafe { VAR_IDXS })));
+    unsafe { VAR_IDXS += 1 };
+    return s;
+}
+
+#[allow(dead_code)]
+pub fn new_anon_g_var(ty: TyWrap) -> ObjWrap {
+    ObjWrap::new_global(new_unique_name(), ty)
+}
+
+#[allow(dead_code)]
+pub fn new_string_literal(stri: Option<&'static str>, ty: TyWrap) -> ObjWrap {
+    let var = new_anon_g_var(ty);
+    var.set_init_data(stri);
+    return var;
 }

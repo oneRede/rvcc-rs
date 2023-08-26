@@ -15,6 +15,7 @@ pub enum TypeKind {
     PTR,
     FUNC,
     ARRAY,
+    STR,
 }
 
 #[allow(dead_code)]

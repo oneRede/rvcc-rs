@@ -1,7 +1,10 @@
 use std::{slice, str};
 
 use self::TokenKind::*;
-use crate::utils::{error_at, error_token, get_num_from_chars, read_punct};
+use crate::{
+    ty::{TyWrap, TypeKind},
+    utils::{error_at, error_token, get_num_from_chars, read_punct},
+};
 
 pub static mut CURRENT_INPUT: Option<&[char]> = None;
 pub static mut CURRENT_STR: Option<&str> = None;
@@ -14,6 +17,7 @@ pub enum TokenKind {
     Num,
     EOF,
     KEYWORD,
+    STR,
 }
 
 impl ToString for TokenKind {
@@ -24,6 +28,7 @@ impl ToString for TokenKind {
             TokenKind::Num => "Num".to_string(),
             TokenKind::EOF => "EOF".to_string(),
             TokenKind::KEYWORD => "KEYWORD".to_string(),
+            TokenKind::STR => "STR".to_string(),
         }
     }
 }
@@ -36,6 +41,8 @@ pub struct Token {
     pub val: i32,
     pub loc: Option<&'static [char]>,
     pub len: usize,
+    pub ty: TyWrap,
+    pub stri: &'static str,
 }
 
 #[allow(dead_code)]
@@ -68,6 +75,8 @@ impl TokenWrap {
             val: 0,
             loc: Some(loc),
             len: len,
+            ty: TyWrap::empty(),
+            stri: "",
         };
         let tk: Option<*mut Token> = Some(Box::leak(Box::new(tk)));
         Self { ptr: tk }
@@ -80,6 +89,8 @@ impl TokenWrap {
             val: 0,
             loc: None,
             len: 0,
+            ty: TyWrap::empty(),
+            stri: "",
         };
         let tk: Option<*mut Token> = Some(Box::leak(Box::new(tk)));
         Self { ptr: tk }
@@ -105,6 +116,18 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().len = len };
     }
 
+    pub fn set_ty(self, ty: TyWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().ty= ty };
+    }
+
+    pub fn set_stri(self, stri: &'static str) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().stri = stri };
+    }
+
+    pub fn set_nxt(self, next: TokenWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().next = next };
+    }
+
     pub fn nxt(&self) -> TokenWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().next }
     }
@@ -113,7 +136,7 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().kind }
     }
 
-    pub fn get_len(&self) -> usize {
+    pub fn len(&self) -> usize {
         unsafe { self.ptr.unwrap().as_ref().unwrap().len }
     }
 
@@ -123,6 +146,14 @@ impl TokenWrap {
 
     pub fn get_loc(&self) -> Option<&[char]> {
         unsafe { self.ptr.unwrap().as_ref().unwrap().loc }
+    }
+
+    pub fn stri(&self) -> &'static str {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().stri }
+    }
+
+    pub fn ty(&self) -> TyWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().ty }
     }
 
     pub fn get_ref(&self) -> &Token {
@@ -198,6 +229,13 @@ pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
             continue;
         }
 
+        if chars[0] == '\"' {
+            cur.set_nxt(read_string_literal(chars));
+            cur = cur.nxt();
+            chars = &chars[cur.len()..];
+            continue;
+        }
+
         if is_ident_v1(chars[0]) {
             let mut len_ident = 1;
 
@@ -267,7 +305,9 @@ pub fn convert_keyword(token: TokenWrap) {
 
 #[allow(dead_code)]
 fn is_keyword(token: TokenWrap) -> bool {
-    let keywords = ["return", "if", "else", "for", "while", "int", "sizeof", "char"];
+    let keywords = [
+        "return", "if", "else", "for", "while", "int", "sizeof", "char",
+    ];
 
     for kw in keywords {
         if equal(token, kw) {
@@ -283,4 +323,25 @@ pub fn consume(token: TokenWrap, s: &str) -> (bool, TokenWrap) {
         return (true, token.nxt());
     }
     return (false, token);
+}
+
+#[allow(dead_code)]
+pub fn read_string_literal(start: &'static [char]) -> TokenWrap {
+    let mut i = 1;
+    for c in &start[1..]{
+        i += 1;
+        if *c == '\"' {
+            break;
+        }
+        if *c == '\n' || *c == '\0' {
+            error_at(c as *const char, "unclosed string literal");
+        }
+    }
+
+    let token = TokenWrap::new(TokenKind::STR, start, i);
+    token.set_ty(TyWrap::new_array_ty(TyWrap::new_with_kind(Some(TypeKind::CHAR)), i-1));
+    let s: String = start[1..(i-1)].iter().collect();
+    token.set_stri(Box::leak(Box::new(s)));
+
+    return token;
 }

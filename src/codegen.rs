@@ -282,7 +282,7 @@ pub fn assign_l_var_offsets(prog: ObjWrap) {
 pub fn emit_text(prog: ObjWrap) {
     for func in prog {
         if !func.is_function() {
-            return;
+            continue;
         }
         println!("\n  # 定义全局{}段", func.name());
         println!("  .globl {}", func.name());
@@ -375,11 +375,26 @@ pub fn emit_data(prog: ObjWrap) {
         let size = var.ty().size();
         println!("  # 数据段标签");
         println!("  .data");
-        println!("  .globl {}", name);
-        println!("  # 全局变量{}", name);
-        println!("{}:", name);
-        println!("  # 零填充{}位", size);
-        println!("  .zero {}", size);
+
+        if !var.init_data().is_none() {
+            println!("{}:", var.name());
+            for c in var.init_data().unwrap().chars() {
+                let n = c as usize;
+                if !c.is_control() {
+                    println!("  .byte {}\t# 字符：{}", n, n);
+                } else {
+                    println!("  .byte {}", n);
+                }
+            }
+            println!("  .byte {}", 0);
+
+        } else {
+            println!("  # 全局段{}", name);
+            println!("  .globl {}", name);
+            println!("{}:", name);
+            println!("  # 全局变量零填充{}位", size);
+            println!("  .zero {}", size);
+        }
     }
 }
 

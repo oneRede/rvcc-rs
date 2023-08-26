@@ -18,6 +18,7 @@ pub struct Obj {
     pub locals: ObjWrap,
     pub stack_size: i64,
     pub params: ObjWrap,
+    pub init_data: Option<&'static str>,
 }
 
 #[allow(dead_code)]
@@ -40,6 +41,7 @@ impl ObjWrap {
             locals: ObjWrap::empty(),
             stack_size: 0,
             params: ObjWrap::empty(),
+            init_data: None,
         };
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
@@ -60,6 +62,7 @@ impl ObjWrap {
             locals: ObjWrap::empty(),
             stack_size: 0,
             params: ObjWrap::empty(),
+            init_data: None
         };
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
@@ -80,6 +83,7 @@ impl ObjWrap {
             locals: ObjWrap::empty(),
             stack_size: 0,
             params: ObjWrap::empty(),
+            init_data:  None
         };
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
@@ -122,6 +126,10 @@ impl ObjWrap {
 
     pub fn params(&self) -> ObjWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().params }
+    }
+
+    pub fn init_data(&self) -> Option<&str> {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().init_data }
     }
 
     pub fn is_local(&self) -> bool {
@@ -170,6 +178,10 @@ impl ObjWrap {
 
     pub fn set_is_function(&self, is_function: bool) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().is_function = is_function }
+    }
+
+    pub fn set_init_data(&self, init_data: Option<&'static str>) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().init_data = init_data }
     }
 }
 
