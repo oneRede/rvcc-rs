@@ -399,7 +399,7 @@ pub fn get_ident(token: TokenWrap) -> &'static str {
     }
 
     let len = token.len();
-    let name: String = token.get_loc().unwrap()[..len].iter().collect();
+    let name: String = token.loc().unwrap()[..len].iter().collect();
     Box::leak(Box::new(name))
 }
 
@@ -490,7 +490,7 @@ pub fn func_call_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
     let node = NodeWrap::new(FUNCALL, start);
     let len = start.len();
-    let func_name: String = start.get_loc().unwrap()[..len].iter().collect();
+    let func_name: String = start.loc().unwrap()[..len].iter().collect();
     node.set_func_name(Box::leak(Box::new(func_name)));
 
     node.set_args(head.nxt());

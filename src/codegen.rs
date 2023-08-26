@@ -263,8 +263,7 @@ fn gen_stmt(node: NodeWrap) {
 
 #[allow(dead_code)]
 pub fn assign_l_var_offsets(prog: ObjWrap) {
-    let funcs = prog;
-    for func in funcs {
+    for func in prog {
         if !func.is_function() {
             return;
         }

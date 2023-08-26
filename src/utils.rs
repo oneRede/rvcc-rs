@@ -1,6 +1,6 @@
 use std::{num::ParseIntError, process::exit};
 
-use crate::token::{TokenWrap,CURRENT_INPUT, CURRENT_STR};
+use crate::token::{TokenWrap, CURRENT_INPUT, CURRENT_STR};
 
 #[allow(dead_code)]
 pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
@@ -12,19 +12,8 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
                 i += 1;
                 num_string += c.to_string().as_ref();
             }
-            '-' | '+' | '/' | '*' | ' ' | '(' | ')' | '=' | '<' | '>' | '!' | ';' | '&' | ','
-            | '[' | ']' | '\"'=> {
-                break;
-            }
-            'a'..='z' => {
-                break;
-            }
-            '{' | '}' => {
-                break;
-            }
             _ => {
-                println!("# unexcept character: {}", c);
-                exit(1)
+                break;
             }
         }
     }
@@ -98,7 +87,7 @@ pub fn error_at(loc: *const char, msg: &str) {
 
 #[allow(dead_code)]
 pub fn error_token(token: TokenWrap, msg: &str) {
-    let loc = token.get_ref().loc.unwrap().as_ptr();
+    let loc = token.loc().unwrap().as_ptr();
     v_error_at(loc, msg);
     exit(1);
 }
