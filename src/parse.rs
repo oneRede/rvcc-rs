@@ -563,7 +563,7 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
             token = tk;
             continue;
         }
-        token = global_variable(token, base_ty);
+        token = global_variable(tk, base_ty);
     }
 
     return unsafe { GLOBALS };
@@ -606,7 +606,6 @@ pub fn global_variable(mut token: TokenWrap, base_ty: TyWrap) -> TokenWrap{
     let mut first = true;
 
     while !consume(token, ";").0 {
-        token = consume(token, ";").1;
         if !first {
             token = skip(token, ",");
         }
@@ -615,6 +614,7 @@ pub fn global_variable(mut token: TokenWrap, base_ty: TyWrap) -> TokenWrap{
         ObjWrap::new_global(get_ident(ty.token()), ty);
         token = tk;
     }
+    token = consume(token, ";").1;
     return token;
 }
 

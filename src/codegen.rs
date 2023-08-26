@@ -46,11 +46,8 @@ pub fn gen_addr(node: NodeWrap) {
         NodeKind::VAR => {
             if node.var().is_local() {
                 let offset = node.var().offset();
-                println!(
-                    "  # 获取变量{}的栈内地址为{}(fp)",
-                    node.var().name(),
-                    offset
-                );
+                let name = node.var().name();
+                println!("  # 获取变量{}的栈内地址为{}(fp)", name, offset);
                 println!("  addi a0, fp, {}", offset);
             } else {
                 let name = node.var().name();
@@ -387,7 +384,7 @@ pub fn emit_data(prog: ObjWrap) {
 }
 
 #[allow(dead_code)]
-pub(crate) fn code_gen(prog: ObjWrap) {
+pub(crate) fn codegen(prog: ObjWrap) {
     assign_l_var_offsets(prog);
     emit_data(prog);
     emit_text(prog);
