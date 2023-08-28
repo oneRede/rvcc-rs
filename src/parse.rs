@@ -238,7 +238,7 @@ fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     }
 
     if token.kind() == TokenKind::STR {
-        let var = new_string_literal(Some(token.stri()), token.ty());
+        let var = new_string_literal(token.stri(), token.ty());
         token = token.nxt();
         return (NodeWrap::new_var_node(var, token), token);
     }
@@ -655,7 +655,7 @@ pub fn new_anon_g_var(ty: TyWrap) -> ObjWrap {
 }
 
 #[allow(dead_code)]
-pub fn new_string_literal(stri: Option<&'static str>, ty: TyWrap) -> ObjWrap {
+pub fn new_string_literal(stri: Vec<char>, ty: TyWrap) -> ObjWrap {
     let var = new_anon_g_var(ty);
     var.set_init_data(stri);
     return var;
