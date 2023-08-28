@@ -1,4 +1,4 @@
-use std::str;
+use std::{str, vec};
 
 use self::TokenKind::*;
 use crate::{
@@ -42,7 +42,7 @@ pub struct Token {
     pub loc: Option<&'static [char]>,
     pub len: usize,
     pub ty: TyWrap,
-    pub stri: &'static str,
+    pub stri: Vec<char>,
 }
 
 #[allow(dead_code)]
@@ -76,7 +76,7 @@ impl TokenWrap {
             loc: Some(loc),
             len: len,
             ty: TyWrap::empty(),
-            stri: "",
+            stri: vec![],
         };
         let tk: Option<*mut Token> = Some(Box::leak(Box::new(tk)));
         Self { ptr: tk }
@@ -90,7 +90,7 @@ impl TokenWrap {
             loc: None,
             len: 0,
             ty: TyWrap::empty(),
-            stri: "",
+            stri: vec![],
         };
         let tk: Option<*mut Token> = Some(Box::leak(Box::new(tk)));
         Self { ptr: tk }
@@ -120,7 +120,7 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().ty = ty };
     }
 
-    pub fn set_stri(self, stri: &'static str) {
+    pub fn set_stri(self, stri: Vec<char>) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().stri = stri };
     }
 
@@ -148,8 +148,12 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().loc }
     }
 
-    pub fn stri(&self) -> &'static str {
-        unsafe { self.ptr.unwrap().as_ref().unwrap().stri }
+    pub fn stri(&self) -> Vec<char> {
+        let mut  v = vec![];
+        for c in unsafe { &self.ptr.unwrap().as_ref().unwrap().stri }{
+            v.push(*c);
+        }
+        v
     }
 
     pub fn ty(&self) -> TyWrap {
@@ -163,9 +167,9 @@ pub fn equal(token: TokenWrap, s: &str) -> bool {
     for c in &token.loc().unwrap()[..token.len()] {
         loc += &c.to_string();
     }
-    if &loc == s{
+    if &loc == s {
         return true;
-    } else{
+    } else {
         return false;
     }
 }
@@ -322,22 +326,54 @@ pub fn consume(token: TokenWrap, s: &str) -> (bool, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn read_string_literal(start: &'static [char]) -> TokenWrap {
+    let end = string_literal_end(&start[1..]);
+    let mut buf: Vec<char> = vec![];
+    let n_chars = start.len() - end.len();
     let mut i = 1;
-    for c in &start[1..] {
-        i += 1;
+    while i < n_chars {
+        if start.get(i) == Some(&'\\') {
+            buf.push(read_escaped_char(start.get(i + 1)).unwrap());
+            i += 2;
+        } else {
+            buf.push(*start.get(i).unwrap());
+            i += 1;
+        }
+    }
+
+    let token = TokenWrap::new(TokenKind::STR, start, n_chars+1);
+    let ty = TyWrap::new_array_ty(TyWrap::new_with_kind(Some(TypeKind::CHAR)), n_chars);
+    token.set_ty(ty);
+    token.set_stri(buf);
+
+    return token;
+}
+
+#[allow(dead_code)]
+pub fn read_escaped_char(c: Option<&char>) -> Option<char> {
+    match c.unwrap() {
+        'a' => return Some('\u{7}'),
+        'b' => return Some('\u{8}'),
+        't' => return Some('\u{9}'),
+        'n' => return Some('\u{a}'),
+        'v' => return Some('\u{b}'),
+        'f' => return Some('\u{c}'),
+        'r' => return Some('\u{d}'),
+        'e' => return Some('\u{1b}'),
+        _ => return Some(*c.unwrap()),
+    }
+}
+
+#[allow(dead_code)]
+pub fn string_literal_end(start: &'static [char]) -> &'static [char] {
+    let mut i = 0;
+    for c in start {
         if *c == '\"' {
             break;
         }
         if *c == '\n' || *c == '\0' {
             error_at(c as *const char, "unclosed string literal");
         }
+        i += 1;
     }
-
-    let token = TokenWrap::new(TokenKind::STR, start, i);
-    let ty = TyWrap::new_array_ty(TyWrap::new_with_kind(Some(TypeKind::CHAR)), i - 1);
-    token.set_ty(ty);
-    let s: String = start[1..(i - 1)].iter().collect();
-    token.set_stri(Box::leak(Box::new(s)));
-
-    return token;
+    return &start[i..];
 }
