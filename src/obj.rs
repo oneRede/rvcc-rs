@@ -5,7 +5,7 @@ use crate::{
 };
 
 #[allow(dead_code)]
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 pub struct Obj {
     pub next: ObjWrap,
     pub name: &'static str,
@@ -18,7 +18,7 @@ pub struct Obj {
     pub locals: ObjWrap,
     pub stack_size: i64,
     pub params: ObjWrap,
-    pub init_data: Option<&'static str>,
+    pub init_data: Vec<char>,
 }
 
 #[allow(dead_code)]
@@ -41,7 +41,7 @@ impl ObjWrap {
             locals: ObjWrap::empty(),
             stack_size: 0,
             params: ObjWrap::empty(),
-            init_data: None,
+            init_data: vec![],
         };
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
@@ -62,7 +62,7 @@ impl ObjWrap {
             locals: ObjWrap::empty(),
             stack_size: 0,
             params: ObjWrap::empty(),
-            init_data: None
+            init_data: vec![]
         };
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
@@ -83,7 +83,7 @@ impl ObjWrap {
             locals: ObjWrap::empty(),
             stack_size: 0,
             params: ObjWrap::empty(),
-            init_data:  None
+            init_data:  vec![]
         };
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
@@ -128,8 +128,12 @@ impl ObjWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().params }
     }
 
-    pub fn init_data(&self) -> Option<&str> {
-        unsafe { self.ptr.unwrap().as_ref().unwrap().init_data }
+    pub fn init_data(&self) -> Vec<char> {
+        let mut  v = vec![];
+        for c in unsafe { &self.ptr.unwrap().as_ref().unwrap().init_data }{
+            v.push(*c);
+        }
+        v
     }
 
     pub fn is_local(&self) -> bool {
@@ -180,7 +184,7 @@ impl ObjWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().is_function = is_function }
     }
 
-    pub fn set_init_data(&self, init_data: Option<&'static str>) {
+    pub fn set_init_data(&self, init_data: Vec<char>) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().init_data = init_data }
     }
 }
