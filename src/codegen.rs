@@ -375,11 +375,11 @@ pub fn emit_data(prog: ObjWrap) {
         println!("  # 数据段标签");
         println!("  .data");
 
-        if !var.init_data().is_none() {
+        if !var.init_data().is_empty(){
             println!("{}:", var.name());
-            for c in var.init_data().unwrap().chars() {
+            for c in var.init_data() {
                 let n = c as usize;
-                if !c.is_control() {
+                if (c as usize) >=  32 {
                     println!("  .byte {}\t# 字符：{}", n, n);
                 } else {
                     println!("  .byte {}", n);
