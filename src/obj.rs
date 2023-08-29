@@ -18,7 +18,7 @@ pub struct Obj {
     pub locals: ObjWrap,
     pub stack_size: i64,
     pub params: ObjWrap,
-    pub init_data: Vec<char>,
+    pub init_data: Vec<usize>,
 }
 
 #[allow(dead_code)]
@@ -128,7 +128,7 @@ impl ObjWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().params }
     }
 
-    pub fn init_data(&self) -> Vec<char> {
+    pub fn init_data(&self) -> Vec<usize> {
         let mut  v = vec![];
         for c in unsafe { &self.ptr.unwrap().as_ref().unwrap().init_data }{
             v.push(*c);
@@ -184,7 +184,7 @@ impl ObjWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().is_function = is_function }
     }
 
-    pub fn set_init_data(&self, init_data: Vec<char>) {
+    pub fn set_init_data(&self, init_data: Vec<usize>) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().init_data = init_data }
     }
 }

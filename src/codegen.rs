@@ -378,8 +378,8 @@ pub fn emit_data(prog: ObjWrap) {
         if !var.init_data().is_empty(){
             println!("{}:", var.name());
             for c in var.init_data() {
-                let n = c as usize;
-                if (c as usize) >=  32 {
+                let n = c;
+                if c >=  32 {
                     println!("  .byte {}\t# 字符：{}", n, n);
                 } else {
                     println!("  .byte {}", n);

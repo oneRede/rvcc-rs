@@ -42,7 +42,7 @@ pub struct Token {
     pub loc: Option<&'static [char]>,
     pub len: usize,
     pub ty: TyWrap,
-    pub stri: Vec<char>,
+    pub stri: Vec<usize>,
 }
 
 #[allow(dead_code)]
@@ -120,7 +120,7 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().ty = ty };
     }
 
-    pub fn set_stri(self, stri: Vec<char>) {
+    pub fn set_stri(self, stri: Vec<usize>) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().stri = stri };
     }
 
@@ -148,9 +148,9 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().loc }
     }
 
-    pub fn stri(&self) -> Vec<char> {
-        let mut  v = vec![];
-        for c in unsafe { &self.ptr.unwrap().as_ref().unwrap().stri }{
+    pub fn stri(&self) -> Vec<usize> {
+        let mut v = vec![];
+        for c in unsafe { &self.ptr.unwrap().as_ref().unwrap().stri } {
             v.push(*c);
         }
         v
@@ -325,22 +325,25 @@ pub fn consume(token: TokenWrap, s: &str) -> (bool, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn read_string_literal(start: &'static [char]) -> TokenWrap {
-    let end = string_literal_end(&start[1..]);
-    let mut buf: Vec<char> = vec![];
-    let n_chars = start.len() - end.len();
-    let mut i = 1;
-    while i < n_chars {
-        if start.get(i) == Some(&'\\') {
-            buf.push(read_escaped_char(start.get(i + 1)).unwrap());
-            i += 2;
+pub fn read_string_literal(chars: &'static [char]) -> TokenWrap {
+    let mut start = chars;
+    start = &start[1..];
+    let mut buf: Vec<usize> = vec![];
+    while start[0] != '\"' {
+        if start[0] == '\\'{
+            start = &start[1..];
+            let (c, cs) = read_escaped_char_v2(start);
+            let l = start.len() - cs.len();
+            buf.push(c);
+            start = &start[l..];
         } else {
-            buf.push(*start.get(i).unwrap());
-            i += 1;
+            buf.push(*start.get(0).unwrap() as usize);
+            start = &start[1..];
         }
     }
-
-    let token = TokenWrap::new(TokenKind::STR, start, n_chars+1);
+    let n_chars = chars.len() -start.len();
+ 
+    let token = TokenWrap::new(TokenKind::STR, chars, n_chars + 1);
     let ty = TyWrap::new_array_ty(TyWrap::new_with_kind(Some(TypeKind::CHAR)), n_chars);
     token.set_ty(ty);
     token.set_stri(buf);
@@ -360,6 +363,34 @@ pub fn read_escaped_char(c: Option<&char>) -> Option<char> {
         'r' => return Some('\u{d}'),
         'e' => return Some('\u{1b}'),
         _ => return Some(*c.unwrap()),
+    }
+}
+
+#[allow(dead_code)]
+pub fn read_escaped_char_v2(chars: &'static [char]) -> (usize, &[char]) {
+    if chars[0] >= '0' && chars[0] <= '7' {
+        let mut c = chars[0] as usize - '0' as usize;
+        if chars[1] >= '0' && chars[1] <= '7' {
+            c = (c << 3) + chars[1] as usize - '0' as usize;
+            if chars[2] >= '0' && chars[2] <= '7' {
+                c = (c << 3) + chars[2] as usize - '0' as usize;
+                return (c, &chars[3..])
+            }
+            return (c, &chars[2..])
+        }
+        return (c, &chars[1..])
+    }
+
+    match chars[0] {
+        'a' => return ('\u{7}' as usize, &chars[1..]),
+        'b' => return ('\u{8}' as usize, &chars[1..]),
+        't' => return ('\u{9}' as usize, &chars[1..]),
+        'n' => return ('\u{a}' as usize, &chars[1..]),
+        'v' => return ('\u{b}' as usize, &chars[1..]),
+        'f' => return ('\u{c}' as usize, &chars[1..]),
+        'r' => return ('\u{d}' as usize, &chars[1..]),
+        'e' => return ('\u{1b}' as usize, &chars[1..]),
+        _ => return (chars[0] as usize, &chars[1..]),
     }
 }
 

@@ -655,7 +655,7 @@ pub fn new_anon_g_var(ty: TyWrap) -> ObjWrap {
 }
 
 #[allow(dead_code)]
-pub fn new_string_literal(stri: Vec<char>, ty: TyWrap) -> ObjWrap {
+pub fn new_string_literal(stri: Vec<usize>, ty: TyWrap) -> ObjWrap {
     let var = new_anon_g_var(ty);
     var.set_init_data(stri);
     return var;
