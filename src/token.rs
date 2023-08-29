@@ -332,7 +332,7 @@ pub fn read_string_literal(chars: &'static [char]) -> TokenWrap {
     while start[0] != '\"' {
         if start[0] == '\\'{
             start = &start[1..];
-            let (c, cs) = read_escaped_char_v2(start);
+            let (c, cs) = read_escaped_char(start);
             let l = start.len() - cs.len();
             buf.push(c);
             start = &start[l..];
@@ -352,22 +352,7 @@ pub fn read_string_literal(chars: &'static [char]) -> TokenWrap {
 }
 
 #[allow(dead_code)]
-pub fn read_escaped_char(c: Option<&char>) -> Option<char> {
-    match c.unwrap() {
-        'a' => return Some('\u{7}'),
-        'b' => return Some('\u{8}'),
-        't' => return Some('\u{9}'),
-        'n' => return Some('\u{a}'),
-        'v' => return Some('\u{b}'),
-        'f' => return Some('\u{c}'),
-        'r' => return Some('\u{d}'),
-        'e' => return Some('\u{1b}'),
-        _ => return Some(*c.unwrap()),
-    }
-}
-
-#[allow(dead_code)]
-pub fn read_escaped_char_v2(chars: &'static [char]) -> (usize, &[char]) {
+pub fn read_escaped_char(mut chars: &'static [char]) -> (usize, &[char]) {
     if chars[0] >= '0' && chars[0] <= '7' {
         let mut c = chars[0] as usize - '0' as usize;
         if chars[1] >= '0' && chars[1] <= '7' {
@@ -379,6 +364,20 @@ pub fn read_escaped_char_v2(chars: &'static [char]) -> (usize, &[char]) {
             return (c, &chars[2..])
         }
         return (c, &chars[1..])
+    }
+
+    if chars[0] == 'x' {
+        chars = &chars[1..];
+        if !chars[0].is_ascii_hexdigit(){
+            error_at(&chars[0] as *const char, "invalid hex escape sequence");
+        }
+
+        let mut c = 0;
+        while chars[0].is_ascii_hexdigit() {
+            c = (c << 4) + from_hex(chars[0]);
+            chars = &chars[1..];
+        }
+        return (c, chars)
     }
 
     match chars[0] {
@@ -407,4 +406,15 @@ pub fn string_literal_end(start: &'static [char]) -> &'static [char] {
         i += 1;
     }
     return &start[i..];
+}
+
+#[allow(dead_code)]
+pub fn from_hex(c: char) -> usize{
+    if c>='0' && c <= '9' {
+        return c as usize - '0' as usize
+    }
+    if c>='a' && c <= 'f' {
+        return c as usize - 'a' as usize + 10
+    }
+    return c as usize - 'A' as usize + 10 
 }
