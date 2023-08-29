@@ -644,7 +644,7 @@ pub fn is_type_name(token: TokenWrap) -> bool {
 
 #[allow(dead_code)]
 pub fn new_unique_name() -> &'static str {
-    let s =  Box::leak(Box::new(format!(".L..{}", unsafe { VAR_IDXS })));
+    let s = Box::leak(Box::new(format!(".L..{}", unsafe { VAR_IDXS })));
     unsafe { VAR_IDXS += 1 };
     return s;
 }

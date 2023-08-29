@@ -330,7 +330,7 @@ pub fn read_string_literal(chars: &'static [char]) -> TokenWrap {
     start = &start[1..];
     let mut buf: Vec<usize> = vec![];
     while start[0] != '\"' {
-        if start[0] == '\\'{
+        if start[0] == '\\' {
             start = &start[1..];
             let (c, cs) = read_escaped_char(start);
             let l = start.len() - cs.len();
@@ -341,8 +341,8 @@ pub fn read_string_literal(chars: &'static [char]) -> TokenWrap {
             start = &start[1..];
         }
     }
-    let n_chars = chars.len() -start.len();
- 
+    let n_chars = chars.len() - start.len();
+
     let token = TokenWrap::new(TokenKind::STR, chars, n_chars + 1);
     let ty = TyWrap::new_array_ty(TyWrap::new_with_kind(Some(TypeKind::CHAR)), n_chars);
     token.set_ty(ty);
@@ -359,16 +359,16 @@ pub fn read_escaped_char(mut chars: &'static [char]) -> (usize, &[char]) {
             c = (c << 3) + chars[1] as usize - '0' as usize;
             if chars[2] >= '0' && chars[2] <= '7' {
                 c = (c << 3) + chars[2] as usize - '0' as usize;
-                return (c, &chars[3..])
+                return (c, &chars[3..]);
             }
-            return (c, &chars[2..])
+            return (c, &chars[2..]);
         }
-        return (c, &chars[1..])
+        return (c, &chars[1..]);
     }
 
     if chars[0] == 'x' {
         chars = &chars[1..];
-        if !chars[0].is_ascii_hexdigit(){
+        if !chars[0].is_ascii_hexdigit() {
             error_at(&chars[0] as *const char, "invalid hex escape sequence");
         }
 
@@ -377,7 +377,7 @@ pub fn read_escaped_char(mut chars: &'static [char]) -> (usize, &[char]) {
             c = (c << 4) + from_hex(chars[0]);
             chars = &chars[1..];
         }
-        return (c, chars)
+        return (c, chars);
     }
 
     match chars[0] {
@@ -409,12 +409,12 @@ pub fn string_literal_end(start: &'static [char]) -> &'static [char] {
 }
 
 #[allow(dead_code)]
-pub fn from_hex(c: char) -> usize{
-    if c>='0' && c <= '9' {
-        return c as usize - '0' as usize
+pub fn from_hex(c: char) -> usize {
+    if c >= '0' && c <= '9' {
+        return c as usize - '0' as usize;
     }
-    if c>='a' && c <= 'f' {
-        return c as usize - 'a' as usize + 10
+    if c >= 'a' && c <= 'f' {
+        return c as usize - 'a' as usize + 10;
     }
-    return c as usize - 'A' as usize + 10 
+    return c as usize - 'A' as usize + 10;
 }

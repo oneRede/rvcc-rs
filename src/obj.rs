@@ -62,7 +62,7 @@ impl ObjWrap {
             locals: ObjWrap::empty(),
             stack_size: 0,
             params: ObjWrap::empty(),
-            init_data: vec![]
+            init_data: vec![],
         };
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
@@ -83,7 +83,7 @@ impl ObjWrap {
             locals: ObjWrap::empty(),
             stack_size: 0,
             params: ObjWrap::empty(),
-            init_data:  vec![]
+            init_data: vec![],
         };
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
@@ -129,8 +129,8 @@ impl ObjWrap {
     }
 
     pub fn init_data(&self) -> Vec<usize> {
-        let mut  v = vec![];
-        for c in unsafe { &self.ptr.unwrap().as_ref().unwrap().init_data }{
+        let mut v = vec![];
+        for c in unsafe { &self.ptr.unwrap().as_ref().unwrap().init_data } {
             v.push(*c);
         }
         v
