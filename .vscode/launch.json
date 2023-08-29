@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["int main() { return \"\"[0]; }"],
+            "args": ["int main() { return ({ 0; 1; 2; }); }"],
             "cwd": "${workspaceFolder}"
         },
         {

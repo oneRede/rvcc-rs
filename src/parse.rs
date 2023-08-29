@@ -1,5 +1,5 @@
 use crate::{
-    node::{NodeKind::*, NodeWrap},
+    node::{NodeKind::{*, self}, NodeWrap},
     obj::ObjWrap,
     token::{consume, equal, skip, TokenKind, TokenWrap},
     ty::{add_ty, is_int, TyWrap, TypeKind},
@@ -212,6 +212,14 @@ fn unary_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    if equal(token, "(") && equal(token.nxt(), "{"){
+        let node = NodeWrap::new(NodeKind::STMTEXPR, token);
+        let (nd, tk) = compound_stmt_v2(token.nxt().nxt());
+        node.set_body(nd.body());
+        token = skip(tk, ")");
+        return (node, token)
+    }
+
     if equal(token, "(") {
         let (nd, tk) = expr_v2(token.nxt());
         token = skip(tk, ")");
@@ -369,7 +377,7 @@ fn expr_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     }
 
     let (nd, t) = expr_v2(token);
-    let node = NodeWrap::new_unary(ExprStmt, nd, token);
+    let node = NodeWrap::new_unary(EXPRSTMT, nd, token);
     token = skip(t, ";");
     return (node, token);
 }
@@ -459,7 +467,7 @@ pub fn declaration_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         token = rhs.1;
         let node = NodeWrap::new_binary(ASSIGN, lhs, rhs.0, token);
 
-        cur.set_nxt(NodeWrap::new_unary(ExprStmt, node, token));
+        cur.set_nxt(NodeWrap::new_unary(EXPRSTMT, node, token));
         cur = cur.nxt();
     }
 

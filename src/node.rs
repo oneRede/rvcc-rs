@@ -17,7 +17,7 @@ pub enum NodeKind {
     NE,
     LT,
     LE,
-    ExprStmt,
+    EXPRSTMT,
     ASSIGN,
     VAR,
     RETURN,
@@ -27,6 +27,7 @@ pub enum NodeKind {
     ADDR,
     DEREF,
     FUNCALL,
+    STMTEXPR,
 }
 
 impl ToString for NodeKind {
@@ -42,7 +43,7 @@ impl ToString for NodeKind {
             NodeKind::NE => "NE".to_string(),
             NodeKind::LT => "LT".to_string(),
             NodeKind::LE => "LE".to_string(),
-            NodeKind::ExprStmt => "ExprStmt".to_string(),
+            NodeKind::EXPRSTMT => "ExprStmt".to_string(),
             NodeKind::ASSIGN => "ASSIGN".to_string(),
             NodeKind::VAR => "VAR".to_string(),
             NodeKind::RETURN => "RETURN".to_string(),
@@ -52,6 +53,7 @@ impl ToString for NodeKind {
             NodeKind::ADDR => "ADDR".to_string(),
             NodeKind::DEREF => "DEREF".to_string(),
             NodeKind::FUNCALL => "FUNCALL".to_string(),
+            NodeKind::STMTEXPR => "STMTEXPR".to_string(),
         }
     }
 }
@@ -81,21 +83,6 @@ pub struct NodeV2 {
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct NodeWrap {
     pub ptr: Option<*mut NodeV2>,
-}
-
-#[allow(dead_code)]
-impl Iterator for NodeWrap {
-    type Item = NodeWrap;
-
-    fn next(&mut self) -> Option<Self::Item> {
-        let now = *self;
-        if !now.ptr.is_none() {
-            self.ptr = self.nxt().ptr;
-            return Some(now);
-        } else {
-            return None;
-        }
-    }
 }
 
 #[allow(dead_code)]
@@ -235,10 +222,7 @@ impl NodeWrap {
     pub fn set_args(&self, args: NodeWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().args = args }
     }
-}
 
-#[allow(dead_code)]
-impl NodeWrap {
     pub fn new(kind: NodeKind, token: TokenWrap) -> NodeWrap {
         let node = NodeV2 {
             kind: kind,
@@ -336,4 +320,120 @@ impl NodeWrap {
         let node: Option<*mut NodeV2> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
     }
+}
+
+#[allow(dead_code)]
+impl Iterator for NodeWrap {
+    type Item = NodeWrap;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let now = *self;
+        if !now.ptr.is_none() {
+            self.ptr = self.nxt().ptr;
+            return Some(now);
+        } else {
+            return None;
+        }
+    }
+}
+
+#[allow(dead_code)]
+impl ToString for NodeWrap {
+    fn to_string(&self) -> String {
+        if self.ptr.is_none() {
+            return "None".to_string();
+        }
+
+        let s_next: String;
+        if self.nxt().ptr.is_none() {
+            s_next = "\"None\"".to_string();
+        } else {
+            s_next = self.nxt().to_string()
+        }
+
+        let s_lhs: String;
+        if self.lhs().ptr.is_none() {
+            s_lhs ="\"None\"".to_string();
+        } else {
+            s_lhs = self.lhs().to_string()
+        }
+
+        let s_rhs: String;
+        if self.rhs().ptr.is_none() {
+            s_rhs = "\"None\"".to_string();
+        } else {
+            s_rhs = self.rhs().to_string()
+        }
+
+        let s_body: String;
+        if self.body().ptr.is_none() {
+            s_body = "\"None\"".to_string();
+        } else {
+            s_body = self.body().to_string()
+        }
+
+        let s_cond: String;
+        if self.cond().ptr.is_none() {
+            s_cond = "\"None\"".to_string();
+        } else {
+            s_cond = self.cond().to_string()
+        }
+
+        let s_then: String;
+        if self.then().ptr.is_none() {
+            s_then = "\"None\"".to_string();
+        } else {
+            s_then = self.then().to_string()
+        }
+
+        let s_els: String;
+        if self.els().ptr.is_none() {
+            s_els = "\"None\"".to_string();
+        } else {
+            s_els = self.els().to_string()
+        }
+
+        let s_init: String;
+        if self.init().ptr.is_none() {
+            s_init = "\"None\"".to_string();
+        } else {
+            s_init = self.init().to_string()
+        }
+
+        let s_inc: String;
+        if self.inc().ptr.is_none() {
+            s_inc = "\"None\"".to_string();
+        } else {
+            s_inc = self.inc().to_string()
+        }
+
+        let s_args: String;
+        if self.args().ptr.is_none() {
+            s_args = "\"None\"".to_string();
+        } else {
+            s_args = self.args().to_string()
+        }
+        
+        let s = "{".to_string()
+        + "\"kind\":" + "\"" + &self.kind().to_string() + "\","
+        + "\"next\":"  + &s_next + ","
+        + "\"lhs\":"  + &s_lhs + ","
+        + "\"rhs\":"  + &s_rhs + ","
+        + "\"body\":"  + &s_body + ","
+        + "\"cond\":"  + &s_cond + ","
+        + "\"then\":"  + &s_then + ","
+        + "\"els\":"  + &s_els + ","
+        + "\"val\":"  + &self.val().to_string() + ","
+        + "\"init\":"  + &s_init + ","
+        + "\"inc\":"  + &s_inc + ","
+        + "\"args\":"  + &s_args + ","
+        + "}";
+        return s;
+    }
+}
+
+#[test]
+fn test_node_string(){
+    let node = NodeWrap::empty();
+    println!("# {}", node.to_string());
 }

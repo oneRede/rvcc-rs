@@ -161,6 +161,32 @@ impl TokenWrap {
     }
 }
 
+impl ToString for TokenWrap {
+    fn to_string(&self) -> String {
+        if self.ptr.is_none() {
+            return "None".to_string();
+        }
+
+        let s_next: String;
+        if self.nxt().ptr.is_none() {
+            s_next = "\"None\"".to_string();
+        } else {
+            s_next = self.nxt().to_string()
+        }
+
+        let loc: String = self.loc().unwrap()[..self.len()].iter().collect();
+
+        let s = "{".to_string()
+        + "\"kind\":" + "\"" + &self.kind().to_string() + "\","
+        + "\"next\":"  + &s_next + ","
+        + "\"val\":"  + &self.val().to_string() + ","
+        + "\"loc\":"  + &loc + ","
+        + "\"len\":"  + &self.len().to_string() + ","
+        + "}";
+        return s;
+    }
+}
+
 #[allow(dead_code)]
 pub fn equal(token: TokenWrap, s: &str) -> bool {
     let mut loc = "".to_string();
@@ -297,7 +323,6 @@ pub fn convert_keyword(token: TokenWrap) {
     for tk in token {
         if is_keyword(tk) {
             tk.set_kind(KEYWORD);
-            return;
         }
     }
 }

@@ -232,6 +232,23 @@ pub fn add_ty(node: NodeWrap) {
             node.set_ty(node.lhs().ty().base());
             return;
         }
+
+        NodeKind::STMTEXPR => {
+            if !node.body().ptr.is_none() {
+                let mut stmt = node.body();
+                while !stmt.nxt().ptr.is_none() {
+                    stmt = stmt.nxt();
+                }
+                if stmt.kind() == NodeKind::EXPRSTMT {
+                    node.set_ty(stmt.lhs().ty());
+                    return;
+                }
+            }
+            error_token(node.token(), "statement expression returning void is not supported");
+            return;
+        }
+
+
         _ => {}
     }
     return;

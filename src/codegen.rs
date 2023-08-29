@@ -100,6 +100,12 @@ pub fn gen_expr(node: NodeWrap) {
             store(node.ty());
             return;
         }
+        NodeKind::STMTEXPR => {
+            for nd in node.body() {
+                gen_stmt(nd);
+                return;
+            }
+        }
         NodeKind::FUNCALL => {
             let mut n_args = 0;
 
@@ -252,7 +258,7 @@ fn gen_stmt(node: NodeWrap) {
             println!("  j .L.return.{}", unsafe { FUNCTION }.name());
             return;
         }
-        NodeKind::ExprStmt => {
+        NodeKind::EXPRSTMT => {
             gen_expr(node.lhs());
             return;
         }
