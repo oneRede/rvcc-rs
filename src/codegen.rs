@@ -101,10 +101,10 @@ pub fn gen_expr(node: NodeWrap) {
             return;
         }
         NodeKind::STMTEXPR => {
-            for nd in node.body() {
+            for nd in node.body().into_iter() {
                 gen_stmt(nd);
-                return;
             }
+            return;
         }
         NodeKind::FUNCALL => {
             let mut n_args = 0;

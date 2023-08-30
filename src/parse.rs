@@ -1,5 +1,8 @@
 use crate::{
-    node::{NodeKind::{*, self}, NodeWrap},
+    node::{
+        NodeKind::{self, *},
+        NodeWrap,
+    },
     obj::ObjWrap,
     token::{consume, equal, skip, TokenKind, TokenWrap},
     ty::{add_ty, is_int, TyWrap, TypeKind},
@@ -212,12 +215,12 @@ fn unary_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    if equal(token, "(") && equal(token.nxt(), "{"){
+    if equal(token, "(") && equal(token.nxt(), "{") {
         let node = NodeWrap::new(NodeKind::STMTEXPR, token);
         let (nd, tk) = compound_stmt_v2(token.nxt().nxt());
         node.set_body(nd.body());
         token = skip(tk, ")");
-        return (node, token)
+        return (node, token);
     }
 
     if equal(token, "(") {
@@ -263,6 +266,7 @@ fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let node = NodeWrap::new(BLOCK, token);
     let head = NodeWrap::new(Num, token);
     let mut cur = head;
 
@@ -274,14 +278,13 @@ pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         } else {
             let (nd, tk) = stmt_v2(token);
             token = tk;
-            cur.set_nxt(nd)
+            cur.set_nxt(nd);
         }
 
         cur = cur.nxt();
         add_ty(cur);
     }
 
-    let node = NodeWrap::new(BLOCK, token);
     node.set_body(head.nxt());
     return (node, token.nxt());
 }
@@ -372,12 +375,13 @@ fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 #[allow(dead_code)]
 fn expr_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, ";") {
-        token = token.nxt();
-        return (NodeWrap::new(BLOCK, token), token);
+        return (NodeWrap::new(BLOCK, token.nxt()), token.nxt());
     }
 
+    let node = NodeWrap::new(EXPRSTMT, token);
     let (nd, t) = expr_v2(token);
-    let node = NodeWrap::new_unary(EXPRSTMT, nd, token);
+    node.set_lhs(nd);
+
     token = skip(t, ";");
     return (node, token);
 }

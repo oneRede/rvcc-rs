@@ -353,7 +353,7 @@ impl ToString for NodeWrap {
 
         let s_lhs: String;
         if self.lhs().ptr.is_none() {
-            s_lhs ="\"None\"".to_string();
+            s_lhs = "\"None\"".to_string();
         } else {
             s_lhs = self.lhs().to_string()
         }
@@ -413,27 +413,56 @@ impl ToString for NodeWrap {
         } else {
             s_args = self.args().to_string()
         }
-        
+
         let s = "{".to_string()
-        + "\"kind\":" + "\"" + &self.kind().to_string() + "\","
-        + "\"next\":"  + &s_next + ","
-        + "\"lhs\":"  + &s_lhs + ","
-        + "\"rhs\":"  + &s_rhs + ","
-        + "\"body\":"  + &s_body + ","
-        + "\"cond\":"  + &s_cond + ","
-        + "\"then\":"  + &s_then + ","
-        + "\"els\":"  + &s_els + ","
-        + "\"val\":"  + &self.val().to_string() + ","
-        + "\"init\":"  + &s_init + ","
-        + "\"inc\":"  + &s_inc + ","
-        + "\"args\":"  + &s_args + ","
-        + "}";
+            + "\"kind\":"
+            + "\""
+            + &self.kind().to_string()
+            + "\","
+            + "\"token\":"
+            + ""
+            + &self.token().to_string()
+            + ","
+            + "\"next\":"
+            + &s_next
+            + ","
+            + "\"lhs\":"
+            + &s_lhs
+            + ","
+            + "\"rhs\":"
+            + &s_rhs
+            + ","
+            + "\"body\":"
+            + &s_body
+            + ","
+            + "\"cond\":"
+            + &s_cond
+            + ","
+            + "\"then\":"
+            + &s_then
+            + ","
+            + "\"els\":"
+            + &s_els
+            + ","
+            + "\"val\":"
+            + &self.val().to_string()
+            + ","
+            + "\"init\":"
+            + &s_init
+            + ","
+            + "\"inc\":"
+            + &s_inc
+            + ","
+            + "\"args\":"
+            + &s_args
+            + ""
+            + "}";
         return s;
     }
 }
 
 #[test]
-fn test_node_string(){
+fn test_node_string() {
     let node = NodeWrap::empty();
     println!("# {}", node.to_string());
 }

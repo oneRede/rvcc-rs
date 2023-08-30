@@ -244,10 +244,12 @@ pub fn add_ty(node: NodeWrap) {
                     return;
                 }
             }
-            error_token(node.token(), "statement expression returning void is not supported");
+            error_token(
+                node.token(),
+                "statement expression returning void is not supported",
+            );
             return;
         }
-
 
         _ => {}
     }

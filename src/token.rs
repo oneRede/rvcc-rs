@@ -167,21 +167,13 @@ impl ToString for TokenWrap {
             return "None".to_string();
         }
 
-        let s_next: String;
-        if self.nxt().ptr.is_none() {
-            s_next = "\"None\"".to_string();
-        } else {
-            s_next = self.nxt().to_string()
-        }
-
         let loc: String = self.loc().unwrap()[..self.len()].iter().collect();
 
         let s = "{".to_string()
         + "\"kind\":" + "\"" + &self.kind().to_string() + "\","
-        + "\"next\":"  + &s_next + ","
-        + "\"val\":"  + &self.val().to_string() + ","
-        + "\"loc\":"  + &loc + ","
-        + "\"len\":"  + &self.len().to_string() + ","
+        + "\"val\":"  + "\"" + &self.val().to_string() + "\","
+        + "\"loc\":"  + "\"" + &loc + "\","
+        + "\"len\":"  + "\"" + &self.len().to_string() + "\""
         + "}";
         return s;
     }
