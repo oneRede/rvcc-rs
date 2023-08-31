@@ -1,3 +1,5 @@
+use std::{fs::File, io::Write};
+
 use crate::{
     node::{NodeKind, NodeWrap},
     obj::ObjWrap,
@@ -10,6 +12,15 @@ pub static mut I: i64 = 1;
 
 pub static ARG_REG: [&str; 6] = ["a0", "a1", "a2", "a3", "a4", "a5"];
 pub static mut FUNCTION: ObjWrap = ObjWrap::empty();
+
+pub static mut OUTPUT_FILE: Option<File> = None;
+
+#[allow(dead_code)]
+pub fn write_to_file(code: &str){
+    let _ = unsafe { OUTPUT_FILE.as_ref().unwrap().write_all(code.as_bytes()) };
+    let _ = unsafe { OUTPUT_FILE.as_ref().unwrap().write_all("\n".as_bytes()) };
+}
+
 
 #[allow(dead_code)]
 pub fn count() -> i64 {
