@@ -10,7 +10,7 @@ mod utils;
 
 use codegen::codegen;
 use parse::parse;
-use token::{tokenize, CURRENT_INPUT, CURRENT_STR};
+use token::tokenize_file;
 
 fn main() {
     let args: Vec<String> = env::args().collect();
@@ -20,13 +20,8 @@ fn main() {
     }
 
     let input: &str = Box::leak(Box::new(String::from(&args[1])));
-    let chars: Vec<char> = input.chars().collect();
-    let chars: &[char] = Box::leak(Box::new(chars));
 
-    unsafe { CURRENT_STR = Some(input) };
-    unsafe { CURRENT_INPUT = Some(chars) };
-
-    let token = tokenize(chars);
+    let token = tokenize_file(input);
     let prog = parse(token);
 
     codegen(prog);

@@ -1,4 +1,4 @@
-use std::{str, vec};
+use std::{str, vec, io::{self, Read}, fs::File};
 
 use self::TokenKind::*;
 use crate::{
@@ -7,7 +7,7 @@ use crate::{
 };
 
 pub static mut CURRENT_INPUT: Option<&[char]> = None;
-pub static mut CURRENT_STR: Option<&str> = None;
+pub static mut CURRENT_FILENAEM: Option<&'static str> = None;
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -216,7 +216,8 @@ pub fn get_num(token: TokenWrap) -> i32 {
 }
 
 #[allow(dead_code)]
-pub fn tokenize(mut chars: &'static [char]) -> TokenWrap {
+pub fn tokenize(file_name: &'static str, mut chars: &'static [char]) -> TokenWrap {
+    unsafe{CURRENT_FILENAEM = Some(file_name)};
     let mut head: TokenWrap = TokenWrap::init();
     let mut cur = head;
 
@@ -434,4 +435,32 @@ pub fn from_hex(c: char) -> usize {
         return c as usize - 'a' as usize + 10;
     }
     return c as usize - 'A' as usize + 10;
+}
+
+#[allow(dead_code)]
+pub fn read_file(path: &str) -> String {
+    let mut buf = String::new();
+
+    if path.starts_with("-") {
+        for line in io::stdin().lines(){
+            buf += &line.unwrap();
+        }
+    } else {
+        let mut f = File::open(path).expect("a file path and exist file");
+        let _ = f.read_to_string(&mut buf);
+    }
+    return buf;
+}
+
+#[allow(dead_code)]
+pub fn tokenize_file(file_path: &'static str) -> TokenWrap{
+    let input_string = read_file(file_path);
+    let input: &str = Box::leak(Box::new(String::from(input_string)));
+    let chars: Vec<char> = input.chars().collect();
+    let chars: &[char] = Box::leak(Box::new(chars));
+
+    unsafe { CURRENT_FILENAEM = Some(input) };
+    unsafe { CURRENT_INPUT = Some(chars) };
+
+    return tokenize(file_path, chars);
 }
