@@ -20,7 +20,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["int main() { return ({ 0; 1; 2; }); }"],
+            "args": ["-otmp.s", "./code.c"],
             "cwd": "${workspaceFolder}"
         },
         {
