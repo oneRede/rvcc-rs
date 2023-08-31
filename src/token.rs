@@ -246,6 +246,29 @@ pub fn tokenize(file_name: &'static str, mut chars: &'static [char]) -> TokenWra
             return head;
         }
 
+        if chars[0] == '/' && chars[1] == '/' {
+            chars = &chars[2..];
+            while chars[0] != '\n' {
+                chars = &chars[1..];
+            }
+            continue;
+        }
+
+        if chars[0] == '/' && chars[1] == '*' {
+            chars = &chars[2..];
+            loop {
+                if chars[0] == '*' && chars[1] == '/' {
+                    chars = &chars[2..];
+                    break;
+                }
+                if chars.len() == 0 {
+                    error_at(chars.as_ptr(), "unclosed block comment");
+                }
+                chars = &chars[1..];
+            }
+            continue;
+        }
+
         let c: char = chars[0];
         if c.is_whitespace() {
             chars = &chars[1..];
