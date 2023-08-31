@@ -1,4 +1,8 @@
-use std::{str, vec, io::{self, Read}, fs::File};
+use std::{
+    fs::File,
+    io::{self, Read},
+    str, vec,
+};
 
 use self::TokenKind::*;
 use crate::{
@@ -170,11 +174,23 @@ impl ToString for TokenWrap {
         let loc: String = self.loc().unwrap()[..self.len()].iter().collect();
 
         let s = "{".to_string()
-        + "\"kind\":" + "\"" + &self.kind().to_string() + "\","
-        + "\"val\":"  + "\"" + &self.val().to_string() + "\","
-        + "\"loc\":"  + "\"" + &loc + "\","
-        + "\"len\":"  + "\"" + &self.len().to_string() + "\""
-        + "}";
+            + "\"kind\":"
+            + "\""
+            + &self.kind().to_string()
+            + "\","
+            + "\"val\":"
+            + "\""
+            + &self.val().to_string()
+            + "\","
+            + "\"loc\":"
+            + "\""
+            + &loc
+            + "\","
+            + "\"len\":"
+            + "\""
+            + &self.len().to_string()
+            + "\""
+            + "}";
         return s;
     }
 }
@@ -217,7 +233,7 @@ pub fn get_num(token: TokenWrap) -> i32 {
 
 #[allow(dead_code)]
 pub fn tokenize(file_name: &'static str, mut chars: &'static [char]) -> TokenWrap {
-    unsafe{CURRENT_FILENAEM = Some(file_name)};
+    unsafe { CURRENT_FILENAEM = Some(file_name) };
     let mut head: TokenWrap = TokenWrap::init();
     let mut cur = head;
 
@@ -442,7 +458,7 @@ pub fn read_file(path: &str) -> String {
     let mut buf = String::new();
 
     if path.starts_with("-") {
-        for line in io::stdin().lines(){
+        for line in io::stdin().lines() {
             buf += &line.unwrap();
         }
     } else {
@@ -453,7 +469,7 @@ pub fn read_file(path: &str) -> String {
 }
 
 #[allow(dead_code)]
-pub fn tokenize_file(file_path: &'static str) -> TokenWrap{
+pub fn tokenize_file(file_path: &'static str) -> TokenWrap {
     let input_string = read_file(file_path);
     let input: &str = Box::leak(Box::new(String::from(input_string)));
     let chars: Vec<char> = input.chars().collect();
