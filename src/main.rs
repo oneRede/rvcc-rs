@@ -1,4 +1,4 @@
-use std::{env, process::exit, fs::File};
+use std::{env, fs::File, process::exit};
 
 mod codegen;
 mod node;
@@ -15,7 +15,6 @@ use token::tokenize_file;
 pub static mut OPT_O: Option<String> = None;
 pub static mut INPUT_PATH: Option<String> = None;
 
-
 #[allow(dead_code)]
 pub fn usage(status: i32) {
     println!("rvcc [ -o <path> ] <file>\n");
@@ -25,7 +24,7 @@ pub fn usage(status: i32) {
 #[allow(dead_code)]
 pub fn parse_args(argc: usize, argv: Vec<String>) {
     let mut i = 1;
-    while i< argc {
+    while i < argc {
         if argv.get(i).unwrap().starts_with("--help") {
             usage(0);
         }
@@ -55,16 +54,20 @@ pub fn parse_args(argc: usize, argv: Vec<String>) {
 
         unsafe { INPUT_PATH = Some(String::from(argv.get(i).unwrap())) };
         i += 1;
-
     }
     if unsafe { INPUT_PATH.is_none() } {
         panic!("no input files");
     }
 }
 
+#[allow(dead_code)]
+pub fn open_file(file_path: &str) -> Result<File, std::io::Error> {
+    File::create(file_path)
+}
+
 fn main() {
     let argv: Vec<String> = env::args().collect();
-    
+
     let argc = argv.len();
     parse_args(argc, argv);
 
@@ -73,8 +76,7 @@ fn main() {
     let token = tokenize_file(input);
     let prog = parse(token);
 
-    let out = Some(File::create(unsafe { OPT_O.as_ref().unwrap() }).unwrap());
+    let out = open_file(unsafe { OPT_O.as_ref().unwrap() }).unwrap();
     codegen(prog, out);
     return;
 }
-

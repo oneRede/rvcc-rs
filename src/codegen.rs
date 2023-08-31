@@ -414,8 +414,8 @@ pub fn emit_data(prog: ObjWrap) {
 }
 
 #[allow(dead_code)]
-pub(crate) fn codegen(prog: ObjWrap, out: Option<File>) {
-    unsafe { OUTPUT_FILE = out };
+pub(crate) fn codegen(prog: ObjWrap, out: File) {
+    unsafe { OUTPUT_FILE = Some(out) };
     assign_l_var_offsets(prog);
     emit_data(prog);
     emit_text(prog);
