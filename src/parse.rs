@@ -459,7 +459,7 @@ pub fn declaration_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
         let ty = declarator(token, base_ty).0;
         token = declarator(token, base_ty).1;
-        let var = ObjWrap::new(get_ident(ty.token()), ty);
+        let var = ObjWrap::new_local(get_ident(ty.token()), ty);
 
         if !equal(token, "=") {
             continue;
@@ -597,7 +597,7 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
 pub fn create_param_l_vars(params: TyWrap) {
     if !params.ptr.is_none() {
         create_param_l_vars(params.next());
-        ObjWrap::new(get_ident(params.token()), params);
+        ObjWrap::new_local(get_ident(params.token()), params);
     }
 }
 

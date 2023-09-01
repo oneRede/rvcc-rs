@@ -45,49 +45,21 @@ impl ObjWrap {
         };
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
-        var.set_nxt(unsafe { LOCALS });
-        unsafe { LOCALS = var };
+
         unsafe{SCOPE.push(name, var)};
         var
     }
 
     pub fn new_local(name: &'static str, ty: TyWrap) -> Self {
-        let var = Obj {
-            next: ObjWrap::empty(),
-            name: name,
-            offset: 0,
-            ty: ty,
-            is_local: true,
-            is_function: false,
-            body: NodeWrap::empty(),
-            locals: ObjWrap::empty(),
-            stack_size: 0,
-            params: ObjWrap::empty(),
-            init_data: vec![],
-        };
-        let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
-        let var = Self { ptr: var };
+        let var = Self::new(name, ty);
         var.set_nxt(unsafe { LOCALS });
         unsafe { LOCALS = var };
         var
     }
 
     pub fn new_global(name: &'static str, ty: TyWrap) -> Self {
-        let var = Obj {
-            next: ObjWrap::empty(),
-            name: name,
-            offset: 0,
-            ty: ty,
-            is_local: false,
-            is_function: false,
-            body: NodeWrap::empty(),
-            locals: ObjWrap::empty(),
-            stack_size: 0,
-            params: ObjWrap::empty(),
-            init_data: vec![],
-        };
-        let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
-        let var = Self { ptr: var };
+        let var = Self::new(name, ty);
+        var.set_is_local(false);
         var.set_nxt(unsafe { GLOBALS });
         unsafe { GLOBALS = var };
         unsafe{SCOPE.push(name, var)};
