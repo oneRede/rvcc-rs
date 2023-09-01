@@ -488,7 +488,7 @@ pub fn read_file(path: &str) -> String {
         let mut f = File::open(path).expect("a file path and exist file");
         let _ = f.read_to_string(&mut buf);
     }
-    return buf;
+    return buf.replace("\\n", &'\n'.to_string());
 }
 
 #[allow(dead_code)]

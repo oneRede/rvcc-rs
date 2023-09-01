@@ -57,7 +57,7 @@ pub fn gen_addr(node: NodeWrap) {
             if node.var().is_local() {
                 let offset = node.var().offset();
                 let name = node.var().name();
-                write_to_file(&format!("  # 获取变量{}的栈内地址为{}(fp)", name, offset));
+                write_to_file(&format!("  # 获取局部变量{}的栈内地址为{}(fp)", name, offset));
                 write_to_file(&format!("  addi a0, fp, {}", offset));
             } else {
                 let name = node.var().name();
@@ -286,6 +286,7 @@ pub fn assign_l_var_offsets(prog: ObjWrap) {
         if !func.is_function() {
             return;
         }
+        
         let mut offset = 0;
         let var = func.locals();
         for obj in var {
@@ -405,7 +406,7 @@ pub fn emit_data(prog: ObjWrap) {
             for c in var.init_data() {
                 let n = c;
                 if c >= 32 {
-                    write_to_file(&format!("  .byte {}\t# 字符：{}", n, n));
+                    write_to_file(&format!("  .byte {}\t# 字符：{}", n, n as u8 as char));
                 } else {
                     write_to_file(&format!("  .byte {}", n));
                 }
