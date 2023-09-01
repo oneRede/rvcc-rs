@@ -1452,7 +1452,7 @@ main:
   # 将sp的值写入fp
   mv fp, sp
   # sp腾出StackSize大小的栈空间
-  addi sp, sp, -0
+  addi sp, sp, -1056
 
 # =====段主体===============
   # 将3加载到a0中
@@ -1460,8 +1460,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-1056(fp)
+  addi a0, fp, -1056
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1472,8 +1472,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-1056(fp)
+  addi a0, fp, -1056
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
@@ -1501,8 +1501,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-1048(fp)
+  addi a0, fp, -1048
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1513,32 +1513,32 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-1040(fp)
+  addi a0, fp, -1040
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-1048(fp)
+  addi a0, fp, -1048
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量z的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量z的栈内地址为-1032(fp)
+  addi a0, fp, -1032
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-1040(fp)
+  addi a0, fp, -1040
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量z的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量z的栈内地址为-1032(fp)
+  addi a0, fp, -1032
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 读取a0中存放的地址,得到的值存入a0
@@ -1570,8 +1570,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-1024(fp)
+  addi a0, fp, -1024
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1582,8 +1582,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-1016(fp)
+  addi a0, fp, -1016
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1609,8 +1609,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-1024(fp)
+  addi a0, fp, -1024
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -1643,8 +1643,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-1008(fp)
+  addi a0, fp, -1008
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1655,8 +1655,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-1000(fp)
+  addi a0, fp, -1000
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1682,8 +1682,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-1000(fp)
+  addi a0, fp, -1000
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -1716,8 +1716,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-992(fp)
+  addi a0, fp, -992
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1728,8 +1728,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-984(fp)
+  addi a0, fp, -984
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1757,8 +1757,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-992(fp)
+  addi a0, fp, -992
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -1791,8 +1791,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-976(fp)
+  addi a0, fp, -976
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1803,20 +1803,20 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-968(fp)
+  addi a0, fp, -968
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-976(fp)
+  addi a0, fp, -976
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-968(fp)
+  addi a0, fp, -968
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
@@ -1829,8 +1829,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-976(fp)
+  addi a0, fp, -976
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
@@ -1858,8 +1858,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-960(fp)
+  addi a0, fp, -960
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1870,8 +1870,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-952(fp)
+  addi a0, fp, -952
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1897,8 +1897,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-960(fp)
+  addi a0, fp, -960
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -1914,8 +1914,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-952(fp)
+  addi a0, fp, -952
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
@@ -1943,8 +1943,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-944(fp)
+  addi a0, fp, -944
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1955,8 +1955,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-936(fp)
+  addi a0, fp, -936
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -1997,8 +1997,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-936(fp)
+  addi a0, fp, -936
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2019,8 +2019,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-944(fp)
+  addi a0, fp, -944
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
@@ -2048,8 +2048,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-928(fp)
+  addi a0, fp, -928
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -2070,8 +2070,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-928(fp)
+  addi a0, fp, -928
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -2090,8 +2090,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-928(fp)
+  addi a0, fp, -928
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2137,8 +2137,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-920(fp)
+  addi a0, fp, -920
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -2149,8 +2149,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-912(fp)
+  addi a0, fp, -912
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -2161,15 +2161,15 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-912(fp)
+  addi a0, fp, -912
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-920(fp)
+  addi a0, fp, -920
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -2202,8 +2202,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-904(fp)
+  addi a0, fp, -904
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -2214,8 +2214,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-896(fp)
+  addi a0, fp, -896
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -2226,15 +2226,15 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-896(fp)
+  addi a0, fp, -896
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-904(fp)
+  addi a0, fp, -904
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -2267,20 +2267,20 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-872(fp)
+  addi a0, fp, -872
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-888(fp)
+  addi a0, fp, -888
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-872(fp)
+  addi a0, fp, -872
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
@@ -2293,8 +2293,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-888(fp)
+  addi a0, fp, -888
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
@@ -2322,8 +2322,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-864(fp)
+  addi a0, fp, -864
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -2349,8 +2349,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-864(fp)
+  addi a0, fp, -864
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2381,8 +2381,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-864(fp)
+  addi a0, fp, -864
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2398,8 +2398,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-864(fp)
+  addi a0, fp, -864
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
@@ -2427,8 +2427,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-840(fp)
+  addi a0, fp, -840
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -2454,8 +2454,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-840(fp)
+  addi a0, fp, -840
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2486,8 +2486,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-840(fp)
+  addi a0, fp, -840
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2518,8 +2518,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-840(fp)
+  addi a0, fp, -840
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2552,8 +2552,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-816(fp)
+  addi a0, fp, -816
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -2579,8 +2579,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-816(fp)
+  addi a0, fp, -816
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2611,8 +2611,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-816(fp)
+  addi a0, fp, -816
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2643,8 +2643,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-816(fp)
+  addi a0, fp, -816
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2677,20 +2677,20 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-744(fp)
+  addi a0, fp, -744
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-792(fp)
+  addi a0, fp, -792
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-744(fp)
+  addi a0, fp, -744
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
@@ -2703,8 +2703,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-792(fp)
+  addi a0, fp, -792
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
@@ -2732,13 +2732,13 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-688(fp)
+  addi a0, fp, -688
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-736(fp)
+  addi a0, fp, -736
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2759,8 +2759,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-688(fp)
+  addi a0, fp, -688
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -2793,8 +2793,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-736(fp)
+  addi a0, fp, -736
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2827,13 +2827,13 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-632(fp)
+  addi a0, fp, -632
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-680(fp)
+  addi a0, fp, -680
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2854,8 +2854,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-632(fp)
+  addi a0, fp, -632
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -2888,8 +2888,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-680(fp)
+  addi a0, fp, -680
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2922,13 +2922,13 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-576(fp)
+  addi a0, fp, -576
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-624(fp)
+  addi a0, fp, -624
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -2949,8 +2949,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-576(fp)
+  addi a0, fp, -576
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -2983,8 +2983,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-624(fp)
+  addi a0, fp, -624
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3017,13 +3017,13 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-520(fp)
+  addi a0, fp, -520
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-568(fp)
+  addi a0, fp, -568
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3044,8 +3044,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-520(fp)
+  addi a0, fp, -520
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -3093,8 +3093,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-568(fp)
+  addi a0, fp, -568
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3132,13 +3132,13 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-464(fp)
+  addi a0, fp, -464
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-512(fp)
+  addi a0, fp, -512
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3159,8 +3159,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-464(fp)
+  addi a0, fp, -464
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -3208,8 +3208,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-512(fp)
+  addi a0, fp, -512
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3247,8 +3247,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-456(fp)
+  addi a0, fp, -456
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -3274,8 +3274,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-456(fp)
+  addi a0, fp, -456
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3306,8 +3306,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-456(fp)
+  addi a0, fp, -456
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3323,8 +3323,8 @@ main:
   addi sp, sp, 8
   # 将a0的值,写入到a1中存放的地址
   sd a0, 0(a1)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-456(fp)
+  addi a0, fp, -456
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 压栈,将a0的值存入栈顶
@@ -3352,8 +3352,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-432(fp)
+  addi a0, fp, -432
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -3379,8 +3379,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-432(fp)
+  addi a0, fp, -432
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3411,8 +3411,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-432(fp)
+  addi a0, fp, -432
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3443,8 +3443,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-432(fp)
+  addi a0, fp, -432
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3477,8 +3477,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-408(fp)
+  addi a0, fp, -408
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -3504,8 +3504,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-408(fp)
+  addi a0, fp, -408
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3536,8 +3536,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-408(fp)
+  addi a0, fp, -408
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3568,8 +3568,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-408(fp)
+  addi a0, fp, -408
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3602,8 +3602,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-384(fp)
+  addi a0, fp, -384
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -3629,8 +3629,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-384(fp)
+  addi a0, fp, -384
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3661,8 +3661,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-384(fp)
+  addi a0, fp, -384
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3693,8 +3693,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-384(fp)
+  addi a0, fp, -384
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3727,8 +3727,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-360(fp)
+  addi a0, fp, -360
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
@@ -3754,8 +3754,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-360(fp)
+  addi a0, fp, -360
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3786,8 +3786,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-360(fp)
+  addi a0, fp, -360
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3818,8 +3818,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-360(fp)
+  addi a0, fp, -360
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3852,13 +3852,13 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-288(fp)
+  addi a0, fp, -288
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-336(fp)
+  addi a0, fp, -336
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3879,8 +3879,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-288(fp)
+  addi a0, fp, -288
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -3928,8 +3928,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-336(fp)
+  addi a0, fp, -336
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3967,13 +3967,13 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-232(fp)
+  addi a0, fp, -232
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-280(fp)
+  addi a0, fp, -280
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -3994,8 +3994,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-232(fp)
+  addi a0, fp, -232
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -4043,8 +4043,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-280(fp)
+  addi a0, fp, -280
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -4082,13 +4082,13 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-176(fp)
+  addi a0, fp, -176
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-224(fp)
+  addi a0, fp, -224
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -4109,8 +4109,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-176(fp)
+  addi a0, fp, -176
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -4158,8 +4158,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-224(fp)
+  addi a0, fp, -224
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -4197,13 +4197,13 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-120(fp)
+  addi a0, fp, -120
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-168(fp)
+  addi a0, fp, -168
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -4224,8 +4224,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-120(fp)
+  addi a0, fp, -120
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -4273,8 +4273,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-168(fp)
+  addi a0, fp, -168
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -4312,13 +4312,13 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-64(fp)
+  addi a0, fp, -64
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-112(fp)
+  addi a0, fp, -112
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -4339,8 +4339,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-64(fp)
+  addi a0, fp, -64
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -4388,8 +4388,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-112(fp)
+  addi a0, fp, -112
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -4427,13 +4427,13 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-8(fp)
+  addi a0, fp, -8
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-56(fp)
+  addi a0, fp, -56
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8
@@ -4454,8 +4454,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量y的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量y的栈内地址为-8(fp)
+  addi a0, fp, -8
   # 读取a0中存放的地址,得到的值存入a0
   ld a0, 0(a0)
   # 弹栈，将栈顶的值存入a1
@@ -4503,8 +4503,8 @@ main:
   # 压栈,将a0的值存入栈顶
   addi sp, sp, -8
   sd a0, 0(sp)
-  # 获取局部变量x的栈内地址为0(fp)
-  addi a0, fp, 0
+  # 获取局部变量x的栈内地址为-56(fp)
+  addi a0, fp, -56
   # 弹栈，将栈顶的值存入a1
   ld a1, 0(sp)
   addi sp, sp, 8

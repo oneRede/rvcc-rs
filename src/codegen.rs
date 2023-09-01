@@ -284,7 +284,7 @@ fn gen_stmt(node: NodeWrap) {
 pub fn assign_l_var_offsets(prog: ObjWrap) {
     for func in prog {
         if !func.is_function() {
-            return;
+            continue;
         }
         
         let mut offset = 0;
