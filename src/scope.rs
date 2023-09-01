@@ -1,7 +1,7 @@
 use crate::obj::ObjWrap;
 
 #[allow(dead_code)]
-pub static mut  SCOPE: ScopeWrap = ScopeWrap::empty();
+pub static mut SCOPE: ScopeWrap = ScopeWrap::empty();
 
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy)]

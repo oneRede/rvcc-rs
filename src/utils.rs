@@ -105,7 +105,7 @@ pub fn v_error_at(loc: *const char, msg: &str) {
     let fmt = format!("{}:{}: ", unsafe { CURRENT_FILENAEM.unwrap() }, line_no);
     println!("{}", fmt);
     let indent = fmt.len();
-    println!("{}.{:?}", unsafe{end.offset_from(line)}, line);
+    println!("{}.{:?}", unsafe { end.offset_from(line) }, line);
     let pos = unsafe { loc.offset_from(line) } + indent as isize;
     eprint!("{:?}", " ".repeat(pos as usize));
     eprint!("{}", "^");

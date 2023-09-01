@@ -1,7 +1,8 @@
 use crate::{
     node::NodeWrap,
     parse::{GLOBALS, LOCALS},
-    ty::TyWrap, scope::SCOPE,
+    scope::SCOPE,
+    ty::TyWrap,
 };
 
 #[allow(dead_code)]
@@ -46,7 +47,7 @@ impl ObjWrap {
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
 
-        unsafe{SCOPE.push(name, var)};
+        unsafe { SCOPE.push(name, var) };
         var
     }
 
@@ -62,7 +63,7 @@ impl ObjWrap {
         var.set_is_local(false);
         var.set_nxt(unsafe { GLOBALS });
         unsafe { GLOBALS = var };
-        unsafe{SCOPE.push(name, var)};
+        unsafe { SCOPE.push(name, var) };
         var
     }
 

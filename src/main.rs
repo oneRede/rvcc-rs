@@ -4,10 +4,10 @@ mod codegen;
 mod node;
 mod obj;
 mod parse;
+mod scope;
 mod token;
 mod ty;
 mod utils;
-mod scope;
 
 use codegen::codegen;
 use parse::parse;

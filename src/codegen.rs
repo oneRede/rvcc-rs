@@ -16,11 +16,10 @@ pub static mut FUNCTION: ObjWrap = ObjWrap::empty();
 pub static mut OUTPUT_FILE: Option<File> = None;
 
 #[allow(dead_code)]
-pub fn write_to_file(code: &str){
+pub fn write_to_file(code: &str) {
     let _ = unsafe { OUTPUT_FILE.as_ref().unwrap().write_all(code.as_bytes()) };
     let _ = unsafe { OUTPUT_FILE.as_ref().unwrap().write_all("\n".as_bytes()) };
 }
-
 
 #[allow(dead_code)]
 pub fn count() -> i64 {
@@ -33,7 +32,7 @@ pub fn count() -> i64 {
 #[allow(dead_code)]
 pub fn push() {
     write_to_file(&format!("  # 压栈,将a0的值存入栈顶"));
-    write_to_file(&format!("  addi sp, sp, -8") );
+    write_to_file(&format!("  addi sp, sp, -8"));
     write_to_file(&format!("  sd a0, 0(sp)"));
     unsafe { DEPTH += 1 };
 }
@@ -265,7 +264,10 @@ fn gen_stmt(node: NodeWrap) {
         NodeKind::RETURN => {
             write_to_file(&format!("# 返回语句"));
             gen_expr(node.lhs());
-            write_to_file(&format!("  # 跳转到.L.return.{}段", unsafe { FUNCTION }.name()));
+            write_to_file(&format!(
+                "  # 跳转到.L.return.{}段",
+                unsafe { FUNCTION }.name()
+            ));
             write_to_file(&format!("  j .L.return.{}", unsafe { FUNCTION }.name()));
             return;
         }
@@ -314,7 +316,9 @@ pub fn emit_text(prog: ObjWrap) {
         write_to_file(&format!("  addi sp, sp, -16"));
         write_to_file(&format!("  sd ra, 8(sp)"));
 
-        write_to_file(&format!("  # 将fp压栈,fp属于“被调用者保存”的寄存器,需要恢复原值"));
+        write_to_file(&format!(
+            "  # 将fp压栈,fp属于“被调用者保存”的寄存器,需要恢复原值"
+        ));
         write_to_file(&format!("  sd fp, 0(sp)"));
         write_to_file(&format!("  # 将sp的值写入fp"));
         write_to_file(&format!("  mv fp, sp"));
@@ -325,7 +329,11 @@ pub fn emit_text(prog: ObjWrap) {
         let mut i = 0;
         let vars = func.params();
         for var in vars {
-            write_to_file(&format!("  # 将{}寄存器的值存入{}的栈地址", ARG_REG[i], var.name()));
+            write_to_file(&format!(
+                "  # 将{}寄存器的值存入{}的栈地址",
+                ARG_REG[i],
+                var.name()
+            ));
             if var.ty().size() == 1 {
                 write_to_file(&format!("  sb {}, {}(fp)", ARG_REG[i], var.offset()));
                 i += 1;
