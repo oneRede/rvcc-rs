@@ -4,6 +4,7 @@ use crate::{
         NodeWrap,
     },
     obj::ObjWrap,
+    scope::{ScopeWrap, SCOPE},
     token::{consume, equal, skip, TokenKind, TokenWrap},
     ty::{add_ty, is_int, TyWrap, TypeKind},
     utils::error_token,
@@ -270,6 +271,9 @@ pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let head = NodeWrap::new(Num, token);
     let mut cur = head;
 
+    let sc = ScopeWrap::new();
+    sc.enter();
+
     while !equal(token, "}") {
         if is_type_name(token) {
             let (nd, tk) = declaration_v2(token);
@@ -284,6 +288,7 @@ pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         cur = cur.nxt();
         add_ty(cur);
     }
+    unsafe { SCOPE.leave() };
 
     node.set_body(head.nxt());
     return (node, token.nxt());
@@ -388,20 +393,14 @@ fn expr_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn find_var(token: TokenWrap) -> ObjWrap {
-    for var in unsafe { LOCALS } {
-        let name = var.name();
-        if var.name().len() == token.len() && equal(token, name) {
-            return var;
+    for sc in unsafe { SCOPE } {
+        for vs in sc.vars() {
+            if equal(token, vs.name()) {
+                return vs.var();
+            }
         }
     }
-
-    for var in unsafe { GLOBALS } {
-        let name = var.name();
-        if var.name().len() == token.len() && equal(token, name) {
-            return var;
-        }
-    }
-    ObjWrap::empty()
+    return ObjWrap::empty();
 }
 
 #[allow(dead_code)]
@@ -557,8 +556,10 @@ pub fn function(token: TokenWrap, base_ty: TyWrap) -> (ObjWrap, TokenWrap) {
 
     let func = ObjWrap::new_global(get_ident(typ.token()), typ);
     func.set_is_function(true);
-
     unsafe { LOCALS = ObjWrap::empty() };
+
+    let sc = ScopeWrap::new();
+    sc.enter();
 
     create_param_l_vars(typ.params());
     func.set_params(unsafe { LOCALS });
@@ -569,11 +570,14 @@ pub fn function(token: TokenWrap, base_ty: TyWrap) -> (ObjWrap, TokenWrap) {
     func.set_body(nd);
     func.set_locals(unsafe { LOCALS });
 
+    unsafe { SCOPE.leave() };
+
     return (func, token);
 }
 
 #[allow(dead_code)]
 pub fn parse(mut token: TokenWrap) -> ObjWrap {
+    unsafe { SCOPE = ScopeWrap::new() }
     unsafe { GLOBALS = ObjWrap::empty() };
 
     while token.kind() != TokenKind::EOF {

@@ -7,6 +7,7 @@ mod parse;
 mod token;
 mod ty;
 mod utils;
+mod scope;
 
 use codegen::codegen;
 use parse::parse;

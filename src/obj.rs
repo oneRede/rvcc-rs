@@ -1,7 +1,7 @@
 use crate::{
     node::NodeWrap,
     parse::{GLOBALS, LOCALS},
-    ty::TyWrap,
+    ty::TyWrap, scope::SCOPE,
 };
 
 #[allow(dead_code)]
@@ -47,6 +47,7 @@ impl ObjWrap {
         let var = Self { ptr: var };
         var.set_nxt(unsafe { LOCALS });
         unsafe { LOCALS = var };
+        unsafe{SCOPE.push(name, var)};
         var
     }
 
@@ -89,6 +90,7 @@ impl ObjWrap {
         let var = Self { ptr: var };
         var.set_nxt(unsafe { GLOBALS });
         unsafe { GLOBALS = var };
+        unsafe{SCOPE.push(name, var)};
         var
     }
 
