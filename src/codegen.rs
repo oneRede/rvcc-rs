@@ -4,7 +4,7 @@ use crate::{
     node::{NodeKind, NodeWrap},
     obj::ObjWrap,
     ty::{TyWrap, TypeKind},
-    utils::error_token,
+    utils::error_token, INPUT_PATH,
 };
 
 pub static mut DEPTH: usize = 0;
@@ -52,6 +52,7 @@ pub fn align_to(n: i64, align: i64) -> i64 {
 
 #[allow(dead_code)]
 pub fn gen_addr(node: NodeWrap) {
+    write_to_file(&format!("  .loc 1 {}", node.token().line_no()));
     match node.kind() {
         NodeKind::VAR => {
             if node.var().is_local() {
@@ -77,6 +78,7 @@ pub fn gen_addr(node: NodeWrap) {
 
 #[allow(dead_code)]
 pub fn gen_expr(node: NodeWrap) {
+    write_to_file(&format!("  .loc 1 {}", node.token().line_no()));
     match node.kind() {
         NodeKind::Num => {
             write_to_file(&format!("  # 将{}加载到a0中", node.val()));
@@ -425,6 +427,9 @@ pub fn emit_data(prog: ObjWrap) {
 #[allow(dead_code)]
 pub(crate) fn codegen(prog: ObjWrap, out: File) {
     unsafe { OUTPUT_FILE = Some(out) };
+
+    write_to_file(&format!(".file 1 \"{}\"\n", unsafe{INPUT_PATH.as_ref().unwrap()}));
+    
     assign_l_var_offsets(prog);
     emit_data(prog);
     emit_text(prog);
