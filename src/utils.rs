@@ -70,19 +70,28 @@ fn starts_with(s_str: &[char], sub_str: &[char]) -> bool {
 
 #[allow(dead_code)]
 pub fn error_at(loc: *const char, msg: &str) {
-    v_error_at(loc, msg);
+    let mut line_no = 1;
+    let mut start = unsafe { CURRENT_INPUT.unwrap().as_ptr() };
+    while start.lt(&loc) {
+        if unsafe { *start.as_ref().unwrap() } == '\n' {
+            line_no += 1;
+        }
+        start = unsafe { start.add(1) };
+    }
+
+    v_error_at(line_no, loc, msg);
     exit(1);
 }
 
 #[allow(dead_code)]
 pub fn error_token(token: TokenWrap, msg: &str) {
     let loc = token.loc().unwrap().as_ptr();
-    v_error_at(loc, msg);
+    v_error_at(token.line_no(), loc, msg);
     exit(1);
 }
 
 #[allow(dead_code)]
-pub fn v_error_at(loc: *const char, msg: &str) {
+pub fn v_error_at(line_no: usize, loc: *const char, msg: &str) {
     let mut line = loc;
     let start = unsafe { CURRENT_INPUT.unwrap().as_ptr() };
 
@@ -95,13 +104,6 @@ pub fn v_error_at(loc: *const char, msg: &str) {
         end = unsafe { end.sub(1) }
     }
 
-    let mut line_no = 1;
-    let p = start;
-    while p.lt(&line) {
-        if unsafe { *p.as_ref().unwrap() } == '\n' {
-            line_no += 1;
-        }
-    }
     let fmt = format!("{}:{}: ", unsafe { CURRENT_FILENAEM.unwrap() }, line_no);
     println!("{}", fmt);
     let indent = fmt.len();
@@ -110,4 +112,22 @@ pub fn v_error_at(loc: *const char, msg: &str) {
     eprint!("{:?}", " ".repeat(pos as usize));
     eprint!("{}", "^");
     eprintln!("{}", msg);
+}
+
+#[allow(dead_code)]
+pub fn add_line_numbers(token: TokenWrap) {
+    if token.ptr.is_none(){
+        return;
+    }
+    let start = unsafe { CURRENT_INPUT.unwrap().as_ptr() };
+    let mut n = 1;
+
+    for c in unsafe { CURRENT_INPUT.unwrap() }{
+        if start == token.loc().unwrap().as_ptr() {
+            token.set_line_no(n);
+        }
+        if *c == '\n' {
+            n += 1;
+        }
+    }
 }

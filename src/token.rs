@@ -7,7 +7,7 @@ use std::{
 use self::TokenKind::*;
 use crate::{
     ty::{TyWrap, TypeKind},
-    utils::{error_at, error_token, get_num_from_chars, read_punct},
+    utils::{error_at, error_token, get_num_from_chars, read_punct, add_line_numbers},
 };
 
 pub static mut CURRENT_INPUT: Option<&[char]> = None;
@@ -47,6 +47,7 @@ pub struct Token {
     pub len: usize,
     pub ty: TyWrap,
     pub stri: Vec<usize>,
+    pub line_no: usize
 }
 
 #[allow(dead_code)]
@@ -81,6 +82,7 @@ impl TokenWrap {
             len: len,
             ty: TyWrap::empty(),
             stri: vec![],
+            line_no: 0,
         };
         let tk: Option<*mut Token> = Some(Box::leak(Box::new(tk)));
         Self { ptr: tk }
@@ -95,6 +97,7 @@ impl TokenWrap {
             len: 0,
             ty: TyWrap::empty(),
             stri: vec![],
+            line_no: 0,
         };
         let tk: Option<*mut Token> = Some(Box::leak(Box::new(tk)));
         Self { ptr: tk }
@@ -150,6 +153,14 @@ impl TokenWrap {
 
     pub fn loc(&self) -> Option<&[char]> {
         unsafe { self.ptr.unwrap().as_ref().unwrap().loc }
+    }
+
+    pub fn line_no(&self) -> usize{
+        unsafe { self.ptr.unwrap().as_ref().unwrap().line_no }
+    }
+
+    pub fn set_line_no(self, line_no: usize) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().line_no = line_no };
     }
 
     pub fn stri(&self) -> Vec<usize> {
@@ -242,6 +253,7 @@ pub fn tokenize(file_name: &'static str, mut chars: &'static [char]) -> TokenWra
             cur.set_next(TokenWrap::new(EOF, chars, 0));
 
             head = head.nxt();
+            add_line_numbers(head.nxt());
             convert_keyword(head);
             return head;
         }
