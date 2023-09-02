@@ -28,6 +28,7 @@ pub enum NodeKind {
     DEREF,
     FUNCALL,
     STMTEXPR,
+    COMMA
 }
 
 impl ToString for NodeKind {
@@ -54,6 +55,7 @@ impl ToString for NodeKind {
             NodeKind::DEREF => "DEREF".to_string(),
             NodeKind::FUNCALL => "FUNCALL".to_string(),
             NodeKind::STMTEXPR => "STMTEXPR".to_string(),
+            NodeKind::COMMA => "COMMA".to_string(),
         }
     }
 }

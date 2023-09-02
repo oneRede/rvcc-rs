@@ -4,7 +4,8 @@ use crate::{
     node::{NodeKind, NodeWrap},
     obj::ObjWrap,
     ty::{TyWrap, TypeKind},
-    utils::error_token, INPUT_PATH,
+    utils::error_token,
+    INPUT_PATH,
 };
 
 pub static mut DEPTH: usize = 0;
@@ -58,7 +59,10 @@ pub fn gen_addr(node: NodeWrap) {
             if node.var().is_local() {
                 let offset = node.var().offset();
                 let name = node.var().name();
-                write_to_file(&format!("  # 获取局部变量{}的栈内地址为{}(fp)", name, offset));
+                write_to_file(&format!(
+                    "  # 获取局部变量{}的栈内地址为{}(fp)",
+                    name, offset
+                ));
                 write_to_file(&format!("  addi a0, fp, {}", offset));
             } else {
                 let name = node.var().name();
@@ -69,6 +73,11 @@ pub fn gen_addr(node: NodeWrap) {
         }
         NodeKind::DEREF => {
             gen_expr(node.lhs());
+            return;
+        }
+        NodeKind::COMMA => {
+            gen_expr(node.lhs());
+            gen_addr(node.rhs());
             return;
         }
         _ => {}
@@ -116,6 +125,11 @@ pub fn gen_expr(node: NodeWrap) {
             for nd in node.body().into_iter() {
                 gen_stmt(nd);
             }
+            return;
+        }
+        NodeKind::COMMA => {
+            gen_expr(node.lhs());
+            gen_expr(node.rhs());
             return;
         }
         NodeKind::FUNCALL => {
@@ -288,7 +302,7 @@ pub fn assign_l_var_offsets(prog: ObjWrap) {
         if !func.is_function() {
             continue;
         }
-        
+
         let mut offset = 0;
         let var = func.locals();
         for obj in var {
@@ -428,8 +442,10 @@ pub fn emit_data(prog: ObjWrap) {
 pub(crate) fn codegen(prog: ObjWrap, out: File) {
     unsafe { OUTPUT_FILE = Some(out) };
 
-    write_to_file(&format!(".file 1 \"{}\"\n", unsafe{INPUT_PATH.as_ref().unwrap()}));
-    
+    write_to_file(&format!(".file 1 \"{}\"\n", unsafe {
+        INPUT_PATH.as_ref().unwrap()
+    }));
+
     assign_l_var_offsets(prog);
     emit_data(prog);
     emit_text(prog);

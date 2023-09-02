@@ -216,6 +216,11 @@ pub fn add_ty(node: NodeWrap) {
             node.set_ty(ty);
             return;
         }
+        NodeKind::COMMA => {
+            node.set_ty(node.rhs().ty());
+            return;
+        }
+
         NodeKind::ADDR => {
             let ty = node.lhs().ty();
             if ty.kind() == Some(TypeKind::ARRAY) {

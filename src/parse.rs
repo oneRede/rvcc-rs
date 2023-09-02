@@ -17,9 +17,31 @@ pub static mut GLOBALS: ObjWrap = ObjWrap::empty();
 #[allow(dead_code)]
 pub static mut VAR_IDXS: usize = 0;
 
+// #[allow(dead_code)]
+// pub fn expr_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+//     return assign_v2(token);
+// }
+
+// static Node *expr(Token **Rest, Token *Tok) {
+//     Node *Nd = assign(&Tok, Tok);
+  
+//     if (equal(Tok, ","))
+//       return newBinary(ND_COMMA, Nd, expr(Rest, Tok->Next), Tok);
+  
+//     *Rest = Tok;
+//     return Nd;
+//   }
+
 #[allow(dead_code)]
 pub fn expr_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    return assign_v2(token);
+    let (nd, token) = assign_v2(token);
+
+    if equal(token, ","){
+        let (rhs, token) = expr_v2(token.nxt());
+        let nd = NodeWrap::new_binary(NodeKind::COMMA, nd, rhs, token);
+        return (nd, token)
+    }
+    return (nd, token);
 }
 
 #[allow(dead_code)]
