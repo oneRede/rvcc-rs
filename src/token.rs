@@ -374,7 +374,7 @@ pub fn convert_keyword(token: TokenWrap) {
 #[allow(dead_code)]
 fn is_keyword(token: TokenWrap) -> bool {
     let keywords = [
-        "return", "if", "else", "for", "while", "int", "sizeof", "char",
+        "return", "if", "else", "for", "while", "int", "sizeof", "char", "struct"
     ];
 
     for kw in keywords {
@@ -386,11 +386,12 @@ fn is_keyword(token: TokenWrap) -> bool {
 }
 
 #[allow(dead_code)]
-pub fn consume(token: TokenWrap, s: &str) -> (bool, TokenWrap) {
-    if equal(token, s) {
-        return (true, token.nxt());
+pub fn consume(token: &mut TokenWrap, s: &str) -> bool {
+    if equal(*token, s) {
+        token.ptr = token.nxt().ptr;
+        return true;
     }
-    return (false, token);
+    return false;
 }
 
 #[allow(dead_code)]

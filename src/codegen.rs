@@ -80,6 +80,13 @@ pub fn gen_addr(node: NodeWrap) {
             gen_addr(node.rhs());
             return;
         }
+        NodeKind::MEMBER => {
+            gen_addr(node.lhs());
+            write_to_file(&format!("  # 计算成员变量的地址偏移量"));
+            write_to_file(&format!("  li t0, {}", node.mem().offset()));
+            write_to_file(&format!("  add a0, a0, t0"));
+            return;
+        }
         _ => {}
     }
     error_token(node.token(), "not an lvalue");
@@ -100,7 +107,7 @@ pub fn gen_expr(node: NodeWrap) {
             write_to_file(&format!("  neg a0, a0"));
             return;
         }
-        NodeKind::VAR => {
+        NodeKind::VAR | NodeKind::MEMBER => {
             gen_addr(node);
             load(node.ty());
             return;

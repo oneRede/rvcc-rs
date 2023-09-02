@@ -1,5 +1,6 @@
 use crate::{
     node::{
+        MemberWrap,
         NodeKind::{self, *},
         NodeWrap,
     },
@@ -17,38 +18,35 @@ pub static mut GLOBALS: ObjWrap = ObjWrap::empty();
 #[allow(dead_code)]
 pub static mut VAR_IDXS: usize = 0;
 
-// #[allow(dead_code)]
-// pub fn expr_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-//     return assign_v2(token);
-// }
-
-// static Node *expr(Token **Rest, Token *Tok) {
-//     Node *Nd = assign(&Tok, Tok);
-  
-//     if (equal(Tok, ","))
-//       return newBinary(ND_COMMA, Nd, expr(Rest, Tok->Next), Tok);
-  
-//     *Rest = Tok;
-//     return Nd;
-//   }
-
 #[allow(dead_code)]
-pub fn expr_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (nd, token) = assign_v2(token);
+pub fn expr(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (nd, token) = assign(token);
 
-    if equal(token, ","){
-        let (rhs, token) = expr_v2(token.nxt());
+    if equal(token, ",") {
+        let (rhs, token) = expr(token.nxt());
         let nd = NodeWrap::new_binary(NodeKind::COMMA, nd, rhs, token);
-        return (nd, token)
+        return (nd, token);
     }
     return (nd, token);
 }
 
 #[allow(dead_code)]
-pub fn assign_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (mut node, mut token) = equality_v2(token);
+pub fn expr_v2(token: &mut TokenWrap) -> NodeWrap {
+    let (nd, token) = assign(*token);
+
+    if equal(token, ",") {
+        let rhs = expr_v2(&mut token.nxt());
+        let nd = NodeWrap::new_binary(NodeKind::COMMA, nd, rhs, token);
+        return nd;
+    }
+    return nd;
+}
+
+#[allow(dead_code)]
+pub fn assign(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (mut node, mut token) = equality(token);
     if equal(token, "=") {
-        let (n, t) = assign_v2(token.nxt());
+        let (n, t) = assign(token.nxt());
         node = NodeWrap::new_binary(ASSIGN, node, n, token);
         token = t;
     }
@@ -57,18 +55,18 @@ pub fn assign_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-fn equality_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (mut node, mut token) = relational_v2(token);
+fn equality(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (mut node, mut token) = relational(token);
 
     loop {
         if equal(token, "==") {
-            let (nd, tk) = relational_v2(token.nxt());
+            let (nd, tk) = relational(token.nxt());
             node = NodeWrap::new_binary(EQ, node, nd, tk);
             token = tk;
             continue;
         }
         if equal(token, "!=") {
-            let (nd, tk) = relational_v2(token.nxt());
+            let (nd, tk) = relational(token.nxt());
             node = NodeWrap::new_binary(NE, node, nd, tk);
             token = tk;
             continue;
@@ -79,33 +77,33 @@ fn equality_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-fn relational_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (mut node, mut token) = add_v2(token);
+fn relational(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (mut node, mut token) = add(token);
 
     loop {
         if equal(token, "<") {
-            let (nd, tk) = add_v2(token.nxt());
+            let (nd, tk) = add(token.nxt());
             node = NodeWrap::new_binary(LT, node, nd, tk);
             token = tk;
             continue;
         }
 
         if equal(token, "<=") {
-            let (nd, tk) = add_v2(token.nxt());
+            let (nd, tk) = add(token.nxt());
             node = NodeWrap::new_binary(LE, node, nd, tk);
             token = tk;
             continue;
         }
 
         if equal(token, ">") {
-            let (nd, tk) = add_v2(token.nxt());
+            let (nd, tk) = add(token.nxt());
             node = NodeWrap::new_binary(LT, nd, node, tk);
             token = tk;
             continue;
         }
 
         if equal(token, ">=") {
-            let (nd, tk) = add_v2(token.nxt());
+            let (nd, tk) = add(token.nxt());
             node = NodeWrap::new_binary(LE, nd, node, tk);
             token = tk;
             continue;
@@ -116,7 +114,7 @@ fn relational_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn new_add_v2(mut lhs: NodeWrap, mut rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, TokenWrap) {
+pub fn new_add(mut lhs: NodeWrap, mut rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, TokenWrap) {
     add_ty(lhs);
     add_ty(rhs);
 
@@ -140,7 +138,7 @@ pub fn new_add_v2(mut lhs: NodeWrap, mut rhs: NodeWrap, token: TokenWrap) -> (No
 }
 
 #[allow(dead_code)]
-pub fn new_sub_v2(lhs: NodeWrap, rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, TokenWrap) {
+pub fn new_sub(lhs: NodeWrap, rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, TokenWrap) {
     add_ty(lhs);
     add_ty(rhs);
 
@@ -172,20 +170,20 @@ pub fn new_sub_v2(lhs: NodeWrap, rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, 
 }
 
 #[allow(dead_code)]
-fn add_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (mut node, mut token) = mul_v2(token);
+fn add(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (mut node, mut token) = mul(token);
 
     loop {
         if equal(token, "+") {
-            let (nd, tk) = mul_v2(token.nxt());
-            let (nd, _t) = new_add_v2(node, nd, token);
+            let (nd, tk) = mul(token.nxt());
+            let (nd, _t) = new_add(node, nd, token);
             node = nd;
             token = tk;
             continue;
         }
         if equal(token, "-") {
-            let (nd, tk) = mul_v2(token.nxt());
-            let (nd, _t) = new_sub_v2(node, nd, token);
+            let (nd, tk) = mul(token.nxt());
+            let (nd, _t) = new_sub(node, nd, token);
             node = nd;
             token = tk;
             continue;
@@ -195,18 +193,18 @@ fn add_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-fn mul_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (mut node, mut token) = unary_v2(token);
+fn mul(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (mut node, mut token) = unary(token);
 
     loop {
         if equal(token, "*") {
-            let (nd, tk) = unary_v2(token.nxt());
+            let (nd, tk) = unary(token.nxt());
             node = NodeWrap::new_binary(Mul, node, nd, token);
             token = tk;
             continue;
         }
         if equal(token, "/") {
-            let (nd, tk) = unary_v2(token.nxt());
+            let (nd, tk) = unary(token.nxt());
             node = NodeWrap::new_binary(Div, node, nd, token);
             token = tk;
             continue;
@@ -216,51 +214,51 @@ fn mul_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-fn unary_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+fn unary(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "+") {
-        return unary_v2(token.nxt());
+        return unary(token.nxt());
     }
     if equal(token, "-") {
-        let (nd, tk) = unary_v2(token.nxt());
+        let (nd, tk) = unary(token.nxt());
         return (NodeWrap::new_unary(NEG, nd, tk), tk);
     }
     if equal(token, "&") {
-        let (nd, tk) = unary_v2(token.nxt());
+        let (nd, tk) = unary(token.nxt());
         return (NodeWrap::new_unary(ADDR, nd, tk), tk);
     }
     if equal(token, "*") {
-        let (nd, tk) = unary_v2(token.nxt());
+        let (nd, tk) = unary(token.nxt());
         return (NodeWrap::new_unary(DEREF, nd, tk), tk);
     }
 
-    postfix_v2(token)
+    postfix(token)
 }
 
 #[allow(dead_code)]
-fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
+fn primary(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "(") && equal(token.nxt(), "{") {
         let node = NodeWrap::new(NodeKind::STMTEXPR, token);
-        let (nd, tk) = compound_stmt_v2(token.nxt().nxt());
+        let (nd, tk) = compound_stmt(token.nxt().nxt());
         node.set_body(nd.body());
         token = skip(tk, ")");
         return (node, token);
     }
 
     if equal(token, "(") {
-        let (nd, tk) = expr_v2(token.nxt());
+        let (nd, tk) = expr(token.nxt());
         token = skip(tk, ")");
         return (nd, token);
     }
 
     if equal(token, "sizeof") {
-        let (nd, tk) = unary_v2(token.nxt());
+        let (nd, tk) = unary(token.nxt());
         add_ty(nd);
         return (NodeWrap::new_num(nd.ty().size() as i64, tk), tk);
     }
 
     if token.kind() == TokenKind::IDENT {
         if equal(token.nxt(), "(") {
-            return func_call_v2(token);
+            return func_call(token);
         }
 
         let var = find_var(token);
@@ -288,7 +286,7 @@ fn primary_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
+pub fn compound_stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let node = NodeWrap::new(BLOCK, token);
     let head = NodeWrap::new(Num, token);
     let mut cur = head;
@@ -298,11 +296,11 @@ pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
     while !equal(token, "}") {
         if is_type_name(token) {
-            let (nd, tk) = declaration_v2(token);
+            let (nd, tk) = declaration(token);
             token = tk;
             cur.set_nxt(nd)
         } else {
-            let (nd, tk) = stmt_v2(token);
+            let (nd, tk) = stmt(token);
             token = tk;
             cur.set_nxt(nd);
         }
@@ -317,10 +315,10 @@ pub fn compound_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
+fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "return") {
         let node = NodeWrap::new(RETURN, token);
-        let (nd, tk) = expr_v2(token.nxt());
+        let (nd, tk) = expr(token.nxt());
         node.set_lhs(nd);
 
         token = skip(tk, ";");
@@ -332,16 +330,16 @@ fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
         token = skip(token.nxt(), "(");
 
-        let (nd, mut token) = expr_v2(token);
+        let (nd, mut token) = expr(token);
         node.set_cond(nd);
 
         token = skip(token, ")");
-        let (nd, mut token) = stmt_v2(token);
+        let (nd, mut token) = stmt(token);
         node.set_then(nd);
 
         if equal(token, "else") {
             token = token.nxt();
-            let (nd, tk) = stmt_v2(token);
+            let (nd, tk) = stmt(token);
             node.set_els(nd);
             token = tk;
         }
@@ -354,24 +352,24 @@ fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         token = token.nxt();
         token = skip(token, "(");
 
-        let (nd, mut token) = expr_stmt_v2(token);
+        let (nd, mut token) = expr_stmt(token);
         node.set_init(nd);
 
         if !equal(token, ";") {
-            let (nd, tk) = expr_v2(token);
+            let (nd, tk) = expr(token);
             node.set_cond(nd);
             token = tk;
         }
         token = skip(token, ";");
 
         if !equal(token, ")") {
-            let (nd, tk) = expr_v2(token);
+            let (nd, tk) = expr(token);
             node.set_inc(nd);
             token = tk;
         }
         token = skip(token, ")");
 
-        let (nd, token) = stmt_v2(token);
+        let (nd, token) = stmt(token);
         node.set_then(nd);
 
         return (node, token);
@@ -383,30 +381,30 @@ fn stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         token = token.nxt();
         token = skip(token, "(");
 
-        let (nd, mut token) = expr_v2(token);
+        let (nd, mut token) = expr(token);
         node.set_cond(nd);
         token = skip(token, ")");
 
-        let (nd, token) = stmt_v2(token);
+        let (nd, token) = stmt(token);
         node.set_then(nd);
 
         return (node, token);
     }
 
     if equal(token, "{") {
-        return compound_stmt_v2(token.nxt());
+        return compound_stmt(token.nxt());
     }
-    expr_stmt_v2(token)
+    expr_stmt(token)
 }
 
 #[allow(dead_code)]
-fn expr_stmt_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
+fn expr_stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, ";") {
         return (NodeWrap::new(BLOCK, token.nxt()), token.nxt());
     }
 
     let node = NodeWrap::new(EXPRSTMT, token);
-    let (nd, t) = expr_v2(token);
+    let (nd, t) = expr(token);
     node.set_lhs(nd);
 
     token = skip(t, ";");
@@ -442,14 +440,23 @@ pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
         token = token.nxt();
         return (token, TyWrap::new_with_kind(Some(TypeKind::CHAR)));
     }
-    token = skip(token, "int");
-    return (token, TyWrap::new_with_kind(Some(TypeKind::INT)));
+
+    if equal(token, "int") {
+        token = token.nxt();
+        return (token, TyWrap::new_with_kind(Some(TypeKind::INT)));
+    }
+
+    if equal(token, "struct") {
+        return struct_decl(token.nxt());
+    }
+
+    error_token(token, "typename expected");
+    return (TokenWrap::empty(), TyWrap::empty());
 }
 
 #[allow(dead_code)]
 pub fn declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
-    while consume(token, "*").0 {
-        token = consume(token, "*").1;
+    while consume(&mut token, "*") {
         ty = TyWrap::point_to(ty);
     }
 
@@ -465,7 +472,7 @@ pub fn declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn declaration_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
+pub fn declaration(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let base_ty = declspec(token).1;
     token = declspec(token).0;
 
@@ -488,7 +495,7 @@ pub fn declaration_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         }
 
         let lhs = NodeWrap::new_var_node(var, ty.token());
-        let rhs = assign_v2(token.nxt());
+        let rhs = assign(token.nxt());
         token = rhs.1;
         let node = NodeWrap::new_binary(ASSIGN, lhs, rhs.0, token);
 
@@ -503,7 +510,7 @@ pub fn declaration_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn func_call_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
+pub fn func_call(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let start = token;
     token = token.nxt().nxt();
 
@@ -514,7 +521,7 @@ pub fn func_call_v2(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         if cur != head {
             token = skip(token, ",");
         }
-        let (n, t) = assign_v2(token);
+        let (n, t) = assign(token);
         cur.set_nxt(n);
         cur = cur.nxt();
         token = t;
@@ -587,7 +594,7 @@ pub fn function(token: TokenWrap, base_ty: TyWrap) -> (ObjWrap, TokenWrap) {
     func.set_params(unsafe { LOCALS });
 
     token = skip(token, "{");
-    let (nd, token) = compound_stmt_v2(token);
+    let (nd, token) = compound_stmt(token);
 
     func.set_body(nd);
     func.set_locals(unsafe { LOCALS });
@@ -632,26 +639,36 @@ pub fn get_number(token: TokenWrap) -> i32 {
 }
 
 #[allow(dead_code)]
-pub fn postfix_v2(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (mut node, mut token) = primary_v2(token);
+pub fn postfix(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (mut node, mut token) = primary(token);
 
-    while equal(token, "[") {
-        let (nd, mut tk) = expr_v2(token.nxt());
-        tk = skip(tk, "]");
+    loop {
+        if equal(token, "[") {
+            let (nd, mut tk) = expr(token.nxt());
+            tk = skip(tk, "]");
 
-        let (nd, _) = new_add_v2(node, nd, token);
-        let nd = NodeWrap::new_unary(DEREF, nd, token);
-        node = nd;
-        token = tk
+            let (nd, _) = new_add(node, nd, token);
+            let nd = NodeWrap::new_unary(DEREF, nd, token);
+            node = nd;
+            token = tk;
+            continue;
+        }
+
+        if equal(token, ".") {
+            node = struct_ref(node, token.nxt());
+            token = token.nxt().nxt();
+            continue;
+        }
+
+        return (node, token);
     }
-    return (node, token);
 }
 
 #[allow(dead_code)]
 pub fn global_variable(mut token: TokenWrap, base_ty: TyWrap) -> TokenWrap {
     let mut first = true;
 
-    while !consume(token, ";").0 {
+    while !consume(&mut token, ";") {
         if !first {
             token = skip(token, ",");
         }
@@ -660,7 +677,6 @@ pub fn global_variable(mut token: TokenWrap, base_ty: TyWrap) -> TokenWrap {
         ObjWrap::new_global(get_ident(ty.token()), ty);
         token = tk;
     }
-    token = consume(token, ";").1;
     return token;
 }
 
@@ -677,7 +693,7 @@ pub fn is_function(token: TokenWrap) -> bool {
 
 #[allow(dead_code)]
 pub fn is_type_name(token: TokenWrap) -> bool {
-    return equal(token, "char") || equal(token, "int");
+    return equal(token, "char") || equal(token, "int") || equal(token, "struct");
 }
 
 #[allow(dead_code)]
@@ -697,4 +713,81 @@ pub fn new_string_literal(stri: Vec<usize>, ty: TyWrap) -> ObjWrap {
     let var = new_anon_g_var(ty);
     var.set_init_data(stri);
     return var;
+}
+
+#[allow(dead_code)]
+pub fn struct_member(mut token: TokenWrap, ty: TyWrap) -> TokenWrap {
+    let head = MemberWrap::new();
+    let mut cur = head;
+
+    while equal(token, "}") {
+        let (mut tk, base_ty) = declspec(token);
+        let mut first = true;
+
+        while !consume(&mut tk, ";") {
+            if !first {
+                tk = skip(tk, ",");
+            }
+            first = false;
+
+            let mem = MemberWrap::new();
+
+            let (ty, t) = declarator(tk, base_ty);
+            mem.set_ty(ty);
+            mem.set_name(mem.ty().token());
+
+            cur.set_next(mem);
+            cur = cur.nxt();
+            tk = t;
+            token = t;
+        }
+    }
+    ty.set_mems(head.nxt());
+
+    return token.nxt();
+}
+
+#[allow(dead_code)]
+pub fn struct_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
+    token = skip(token, "{");
+
+    let ty = TyWrap::new();
+    ty.set_kind(Some(TypeKind::STRUCT));
+
+    token = struct_member(token, ty);
+
+    let mut offset = 0;
+    for mem in ty.mems() {
+        mem.set_offset(offset);
+        offset += mem.ty().size() as i32;
+    }
+
+    ty.set_size(offset as usize);
+
+    return (token, ty);
+}
+
+#[allow(dead_code)]
+pub fn get_struct_member(ty: TyWrap, token: TokenWrap) -> MemberWrap {
+    for mem in ty.mems() {
+        if mem.name().len() == token.len() && mem.name().loc() == token.loc() {
+            return mem;
+        }
+    }
+    error_token(token, "no such member");
+    return MemberWrap::empty();
+}
+
+#[allow(dead_code)]
+pub fn struct_ref(lhs: NodeWrap, token: TokenWrap) -> NodeWrap {
+    add_ty(lhs);
+
+    if lhs.ty().kind() != Some(TypeKind::STRUCT) {
+        error_token(lhs.token(), "not a struct");
+    }
+
+    let node = NodeWrap::new_unary(NodeKind::MEMBER, lhs, token);
+    node.set_mem(get_struct_member(lhs.ty(), token));
+
+    return node;
 }

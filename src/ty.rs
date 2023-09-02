@@ -1,5 +1,5 @@
 use crate::{
-    node::{NodeKind, NodeWrap},
+    node::{NodeKind, NodeWrap, MemberWrap},
     token::TokenWrap,
     utils::error_token,
 };
@@ -16,6 +16,7 @@ pub enum TypeKind {
     FUNC,
     ARRAY,
     STR,
+    STRUCT,
 }
 
 #[allow(dead_code)]
@@ -29,6 +30,7 @@ pub struct Ty {
     pub next: TyWrap,
     pub size: usize,
     pub array_len: usize,
+    pub mems: MemberWrap,
 }
 
 impl Ty {
@@ -42,6 +44,7 @@ impl Ty {
             next: TyWrap::empty(),
             size: 8,
             array_len: 0,
+            mems: MemberWrap::empty(),
         }
     }
 }
@@ -129,6 +132,10 @@ impl TyWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().array_len }
     }
 
+    pub fn mems(&self) -> MemberWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().mems }
+    }
+
     pub fn set_kind(&self, kind: Option<TypeKind>) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().kind = kind };
     }
@@ -159,6 +166,10 @@ impl TyWrap {
 
     pub fn set_array_len(&self, array_len: usize) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().array_len = array_len }
+    }
+
+    pub fn set_mems(&self, mems: MemberWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().mems = mems }
     }
 }
 
@@ -220,7 +231,10 @@ pub fn add_ty(node: NodeWrap) {
             node.set_ty(node.rhs().ty());
             return;
         }
-
+        NodeKind::MEMBER => {
+            node.set_ty(node.mem().ty());
+            return;
+        }
         NodeKind::ADDR => {
             let ty = node.lhs().ty();
             if ty.kind() == Some(TypeKind::ARRAY) {
