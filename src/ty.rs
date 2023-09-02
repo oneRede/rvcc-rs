@@ -20,7 +20,7 @@ pub enum TypeKind {
 
 #[allow(dead_code)]
 #[derive(PartialEq, Clone, Copy, Debug)]
-pub struct TyV2 {
+pub struct Ty {
     pub kind: Option<TypeKind>,
     pub base: TyWrap,
     pub token: TokenWrap,
@@ -31,7 +31,7 @@ pub struct TyV2 {
     pub array_len: usize,
 }
 
-impl TyV2 {
+impl Ty {
     pub fn new() -> Self {
         Self {
             kind: None,
@@ -49,13 +49,13 @@ impl TyV2 {
 #[allow(dead_code)]
 #[derive(PartialEq, Clone, Copy, Debug)]
 pub struct TyWrap {
-    pub ptr: Option<*mut TyV2>,
+    pub ptr: Option<*mut Ty>,
 }
 
 #[allow(dead_code)]
 impl TyWrap {
     pub fn new() -> Self {
-        let ty: Option<*mut TyV2> = Some(Box::leak(Box::new(TyV2::new())));
+        let ty: Option<*mut Ty> = Some(Box::leak(Box::new(Ty::new())));
         Self { ptr: ty }
     }
 
