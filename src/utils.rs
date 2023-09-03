@@ -117,19 +117,21 @@ pub fn v_error_at(line_no: usize, loc: *const char, msg: &str) {
 }
 
 #[allow(dead_code)]
-pub fn add_line_numbers(token: TokenWrap) {
+pub fn add_line_numbers(mut token: TokenWrap) {
     if token.ptr.is_none() {
         return;
     }
-    let start = unsafe { CURRENT_INPUT.unwrap().as_ptr() };
+    let mut start = unsafe { CURRENT_INPUT.unwrap().as_ptr() };
     let mut n = 1;
 
     for c in unsafe { CURRENT_INPUT.unwrap() } {
         if start == token.loc().unwrap().as_ptr() {
             token.set_line_no(n);
+            token = token.nxt();
         }
         if *c == '\n' {
             n += 1;
         }
+        start = unsafe { start.add(1) };
     }
 }

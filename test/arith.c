@@ -1,7 +1,7 @@
 #include "test.h"
 
 int main() {
-  // [1] 返回指定数值\n
+  // [1] 返回指定数值
   ASSERT(0, 0);
   ASSERT(42, 42);
   // [2] 支持 + - 运算符\n
