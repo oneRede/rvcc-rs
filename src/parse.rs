@@ -649,6 +649,14 @@ pub fn postfix(token: TokenWrap) -> (NodeWrap, TokenWrap) {
             continue;
         }
 
+        if equal(token, "->") {
+            let nd = NodeWrap::new_unary(NodeKind::DEREF, node, token);
+            let nd = struct_ref(nd, token.nxt());
+            node = nd;
+            token = token.nxt().nxt();
+            continue;
+        }
+
         return (node, token);
     }
 }
