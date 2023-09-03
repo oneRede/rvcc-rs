@@ -311,9 +311,9 @@ pub fn assign_l_var_offsets(prog: ObjWrap) {
         }
 
         let mut offset = 0;
-        let var = func.locals();
-        for obj in var {
+        for obj in func.locals() {
             offset += obj.ty().size();
+            offset = align_to(offset, obj.ty().align());
             obj.set_offset(-(offset as i64));
         }
         func.set_stack_size(align_to(offset, 16));
