@@ -1,4 +1,4 @@
-use crate::obj::ObjWrap;
+use crate::{obj::ObjWrap, ty::TyWrap, token::TokenWrap};
 
 #[allow(dead_code)]
 pub static mut SCOPE: ScopeWrap = ScopeWrap::empty();
@@ -84,6 +84,7 @@ impl VarScopeWrap {
 pub struct Scope {
     next: ScopeWrap,
     vars: VarScopeWrap,
+    tags: TagScopeWrap,
 }
 
 #[allow(dead_code)]
@@ -92,6 +93,7 @@ impl Scope {
         Self {
             next: ScopeWrap::empty(),
             vars: VarScopeWrap::empty(),
+            tags: TagScopeWrap::empty(),
         }
     }
 }
@@ -139,7 +141,7 @@ impl ScopeWrap {
         unsafe { SCOPE = SCOPE.nxt() }
     }
 
-    pub fn push(&self, name: &'static str, var: ObjWrap) -> VarScopeWrap {
+    pub fn push(name: &'static str, var: ObjWrap) -> VarScopeWrap {
         let var_scope = VarScopeWrap::new();
         var_scope.set_name(name);
         var_scope.set_var(var);
@@ -148,8 +150,13 @@ impl ScopeWrap {
 
         return var_scope;
     }
+
     pub fn nxt(&self) -> ScopeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().next }
+    }
+
+    pub fn tags(&self) -> TagScopeWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().tags }
     }
 
     pub fn set_next(&self, next: ScopeWrap) {
@@ -162,5 +169,96 @@ impl ScopeWrap {
 
     pub fn vars(&self) -> VarScopeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().vars }
+    }
+
+    pub fn set_tags(&self, tags: TagScopeWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().tags = tags }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub struct TagScope {
+    next: TagScopeWrap,
+    name: &'static str,
+    ty: TyWrap,
+}
+
+#[allow(dead_code)]
+impl TagScope {
+    pub fn new() -> Self {
+        Self {
+            next: TagScopeWrap::empty(),
+            name: "",
+            ty: TyWrap::empty(),
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub struct TagScopeWrap {
+    ptr: Option<*mut TagScope>,
+}
+
+#[allow(dead_code)]
+impl TagScopeWrap {
+    pub fn empty() -> Self {
+        Self { ptr: None }
+    }
+
+    pub fn new() -> Self {
+        let tag_scope: Option<*mut TagScope> = Some(Box::leak(Box::new(TagScope::new())));
+        Self { ptr: tag_scope }
+    }
+
+    pub fn nxt(&self) -> TagScopeWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().next }
+    }
+
+    pub fn name(&self) -> &'static str {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().name }
+    }
+
+    pub fn ty(&self) -> TyWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().ty }
+    }
+
+    pub fn set_name(&self, name: &'static str) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().name = name }
+    }
+
+    pub fn set_ty(&self, ty: TyWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().ty = ty }
+    }
+
+    pub fn set_next(&self, next: TagScopeWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().next = next }
+    }
+
+    pub fn push(token: TokenWrap, ty: TyWrap) {
+        let tag_scope = TagScopeWrap::new();
+        let name: String = token.loc().unwrap().into_iter().collect();
+        let name = Box::leak(Box::new(name));
+        tag_scope.set_name(name);
+        tag_scope.set_ty(ty);
+        tag_scope.set_next(unsafe { SCOPE.tags() });
+        
+        unsafe { SCOPE.set_tags(tag_scope) };
+    }
+}
+
+#[allow(dead_code)]
+impl Iterator for TagScopeWrap {
+    type Item = TagScopeWrap;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let now = *self;
+        if !now.ptr.is_none() {
+            self.ptr = self.nxt().ptr;
+            return Some(now);
+        } else {
+            return None;
+        }
     }
 }

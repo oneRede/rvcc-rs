@@ -6,7 +6,7 @@ use crate::{
         NodeWrap,
     },
     obj::ObjWrap,
-    scope::{ScopeWrap, SCOPE},
+    scope::{ScopeWrap, TagScopeWrap, SCOPE},
     token::{consume, equal, skip, TokenKind, TokenWrap},
     ty::{add_ty, is_int, TyWrap, TypeKind},
     utils::error_token,
@@ -67,6 +67,18 @@ pub fn new_string_literal(stri: Vec<usize>, ty: TyWrap) -> ObjWrap {
     let var = new_anon_g_var(ty);
     var.set_init_data(stri);
     return var;
+}
+
+#[allow(dead_code)]
+pub fn find_tag(token: TokenWrap) -> TyWrap {
+    for sc in unsafe { SCOPE } {
+        for s2 in sc.tags() {
+            if equal(token, &s2.name()[..token.len()]) {
+                return s2.ty();
+            }
+        }
+    }
+    return TyWrap::empty();
 }
 
 #[allow(dead_code)]
@@ -550,12 +562,24 @@ pub fn struct_members(mut token: TokenWrap, ty: TyWrap) -> TokenWrap {
 
 #[allow(dead_code)]
 pub fn struct_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
-    token = skip(token, "{");
+    let mut tag = TokenWrap::empty();
+    if token.kind() == TokenKind::IDENT {
+        tag = token;
+        token = token.nxt();
+    }
+
+    if !tag.ptr.is_none() && !equal(token, "{") {
+        let ty = find_tag(tag);
+        if ty.ptr.is_none() {
+            error_token(tag, "unknown struct type");
+        }
+        return (token, ty);
+    }
 
     let ty = TyWrap::new();
     ty.set_kind(Some(TypeKind::STRUCT));
 
-    token = struct_members(token, ty);
+    token = struct_members(token.nxt(), ty);
     ty.set_align(1);
 
     let mut offset = 0;
@@ -569,6 +593,9 @@ pub fn struct_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
     }
     ty.set_size(align_to(offset, ty.align()) as usize);
 
+    if !tag.ptr.is_none() {
+        TagScopeWrap::push(tag, ty);
+    }
     return (token, ty);
 }
 
