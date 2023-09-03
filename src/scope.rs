@@ -238,7 +238,7 @@ impl TagScopeWrap {
 
     pub fn push(token: TokenWrap, ty: TyWrap) {
         let tag_scope = TagScopeWrap::new();
-        let name: String = token.loc().unwrap().into_iter().collect();
+        let name: String = token.loc().unwrap()[..token.len()].into_iter().collect();
         let name = Box::leak(Box::new(name));
         tag_scope.set_name(name);
         tag_scope.set_ty(ty);

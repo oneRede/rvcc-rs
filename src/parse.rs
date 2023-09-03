@@ -73,7 +73,7 @@ pub fn new_string_literal(stri: Vec<usize>, ty: TyWrap) -> ObjWrap {
 pub fn find_tag(token: TokenWrap) -> TyWrap {
     for sc in unsafe { SCOPE } {
         for s2 in sc.tags() {
-            if equal(token, &s2.name()[..token.len()]) {
+            if equal(token, s2.name()) {
                 return s2.ty();
             }
         }
