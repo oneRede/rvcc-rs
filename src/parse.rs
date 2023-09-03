@@ -8,7 +8,7 @@ use crate::{
     scope::{ScopeWrap, SCOPE},
     token::{consume, equal, skip, TokenKind, TokenWrap},
     ty::{add_ty, is_int, TyWrap, TypeKind},
-    utils::error_token,
+    utils::error_token, codegen::align_to,
 };
 
 #[allow(dead_code)]
@@ -556,14 +556,18 @@ pub fn struct_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
     ty.set_kind(Some(TypeKind::STRUCT));
 
     token = struct_members(token, ty);
+    ty.set_align(1);
 
     let mut offset = 0;
     for mem in ty.mems() {
-        mem.set_offset(offset);
-        offset += mem.ty().size() as i32;
+        offset = align_to(offset, mem.ty().align() as i64);
+        mem.set_offset(offset as i32);
+        offset += mem.ty().size() as i64;
+        if ty.align() < mem.ty().align() {
+            ty.set_align(mem.ty().align());
+        }
     }
-
-    ty.set_size(offset as usize);
+    ty.set_size(align_to(offset , ty.align() as i64) as usize);
 
     return (token, ty);
 }

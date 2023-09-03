@@ -1,5 +1,5 @@
 use crate::{
-    node::{NodeKind, NodeWrap, MemberWrap},
+    node::{MemberWrap, NodeKind, NodeWrap},
     token::TokenWrap,
     utils::error_token,
 };
@@ -31,6 +31,7 @@ pub struct Ty {
     pub size: usize,
     pub array_len: usize,
     pub mems: MemberWrap,
+    pub align: usize,
 }
 
 impl Ty {
@@ -45,6 +46,7 @@ impl Ty {
             size: 8,
             array_len: 0,
             mems: MemberWrap::empty(),
+            align: 0,
         }
     }
 }
@@ -62,6 +64,14 @@ impl TyWrap {
         Self { ptr: ty }
     }
 
+    pub fn new_v2(kind: TypeKind, size: usize, align: usize) -> Self {
+        let ty = Self::new();
+        ty.set_kind(Some(kind));
+        ty.set_size(size);
+        ty.set_align(align);
+        ty
+    }
+
     pub const fn empty() -> Self {
         Self { ptr: None }
     }
@@ -70,8 +80,10 @@ impl TyWrap {
         let ty = TyWrap::new();
         if kind == Some(TypeKind::INT) {
             ty.set_size(8);
+            ty.set_align(8);
         } else {
-            ty.set_size(1)
+            ty.set_size(1);
+            ty.set_align(1);
         }
         ty.set_kind(kind);
         ty
@@ -85,17 +97,14 @@ impl TyWrap {
     }
 
     pub fn new_array_ty(base: TyWrap, len: usize) -> Self {
-        let ty = TyWrap::new();
+        let ty = TyWrap::new_v2(TypeKind::ARRAY, base.size() * len, base.align());
         ty.set_base(base);
-        ty.set_kind(Some(TypeKind::ARRAY));
-        ty.set_size(ty.base().size() * len);
         ty.set_array_len(len);
         ty
     }
 
     pub fn point_to(base: TyWrap) -> Self {
-        let ty = TyWrap::new();
-        ty.set_kind(Some(TypeKind::PTR));
+        let ty = TyWrap::new_v2(TypeKind::PTR, 8, 8);
         ty.set_base(base);
         ty
     }
@@ -136,6 +145,10 @@ impl TyWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().mems }
     }
 
+    pub fn align(&self) -> usize {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().align }
+    }
+
     pub fn set_kind(&self, kind: Option<TypeKind>) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().kind = kind };
     }
@@ -170,6 +183,10 @@ impl TyWrap {
 
     pub fn set_mems(&self, mems: MemberWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().mems = mems }
+    }
+
+    pub fn set_align(&self, align: usize) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().align = align }
     }
 }
 
