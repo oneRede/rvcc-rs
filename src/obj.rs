@@ -17,7 +17,7 @@ pub struct Obj {
     pub is_function: bool,
     pub body: NodeWrap,
     pub locals: ObjWrap,
-    pub stack_size: i64,
+    pub stack_size: usize,
     pub params: ObjWrap,
     pub init_data: Vec<usize>,
 }
@@ -95,7 +95,7 @@ impl ObjWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().locals }
     }
 
-    pub fn stack_size(&self) -> i64 {
+    pub fn stack_size(&self) -> usize {
         unsafe { self.ptr.unwrap().as_ref().unwrap().stack_size }
     }
 
@@ -143,7 +143,7 @@ impl ObjWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().locals = locals }
     }
 
-    pub fn set_stack_size(&self, stack_size: i64) {
+    pub fn set_stack_size(&self, stack_size: usize) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().stack_size = stack_size }
     }
 

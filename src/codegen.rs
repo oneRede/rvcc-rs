@@ -47,7 +47,7 @@ pub fn pop(reg: &str) {
 }
 
 #[allow(dead_code)]
-pub fn align_to(n: i64, align: i64) -> i64 {
+pub fn align_to(n: usize, align: usize) -> usize {
     return (n + align - 1) / align * align;
 }
 
@@ -313,8 +313,8 @@ pub fn assign_l_var_offsets(prog: ObjWrap) {
         let mut offset = 0;
         let var = func.locals();
         for obj in var {
-            offset += obj.ty().size() as i64;
-            obj.set_offset(-offset);
+            offset += obj.ty().size();
+            obj.set_offset(-(offset as i64));
         }
         func.set_stack_size(align_to(offset, 16));
     }

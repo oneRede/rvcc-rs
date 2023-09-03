@@ -3,7 +3,7 @@ use std::{num::ParseIntError, process::exit};
 use crate::token::{TokenWrap, CURRENT_FILENAEM, CURRENT_INPUT};
 
 #[allow(dead_code)]
-pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
+pub fn get_num_from_chars(s: &[char]) -> Result<(i64, &[char]), ParseIntError> {
     let mut i: usize = 0;
     let mut num_string = "".to_string();
     for c in s {
@@ -17,7 +17,7 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i32, &[char]), ParseIntError> {
             }
         }
     }
-    let rs: Result<i32, ParseIntError> = num_string.parse();
+    let rs: Result<i64, ParseIntError> = num_string.parse();
     match rs {
         Ok(num) => return Ok((num, &s[i..])),
         Err(e) => return Err(e),

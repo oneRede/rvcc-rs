@@ -42,7 +42,7 @@ impl ToString for TokenKind {
 pub struct Token {
     pub kind: TokenKind,
     pub next: TokenWrap,
-    pub val: i32,
+    pub val: i64,
     pub loc: Option<&'static [char]>,
     pub len: usize,
     pub ty: TyWrap,
@@ -115,7 +115,7 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().kind = kind };
     }
 
-    pub fn set_val(self, val: i32) {
+    pub fn set_val(self, val: i64) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().val = val };
     }
 
@@ -147,7 +147,7 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().len }
     }
 
-    pub fn val(&self) -> i32 {
+    pub fn val(&self) -> i64 {
         unsafe { self.ptr.unwrap().as_ref().unwrap().val }
     }
 
@@ -235,7 +235,7 @@ pub fn skip<'a>(token: TokenWrap, s: &str) -> TokenWrap {
 }
 
 #[allow(dead_code)]
-pub fn get_num(token: TokenWrap) -> i32 {
+pub fn get_num(token: TokenWrap) -> i64 {
     if token.kind() != Num {
         error_token(token, "expect a num");
     }

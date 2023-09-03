@@ -484,7 +484,7 @@ pub struct Member {
     next: MemberWrap,
     ty: TyWrap,
     name: TokenWrap,
-    offset: i32,
+    offset: i64,
 }
 
 #[allow(dead_code)]
@@ -543,7 +543,7 @@ impl MemberWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().next }
     }
 
-    pub fn offset(&self) -> i32 {
+    pub fn offset(&self) -> i64 {
         unsafe { self.ptr.unwrap().as_ref().unwrap().offset }
     }
 
@@ -559,7 +559,7 @@ impl MemberWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().next = next }
     }
 
-    pub fn set_offset(&self, offset: i32) {
+    pub fn set_offset(&self, offset: i64) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().offset = offset }
     }
 }

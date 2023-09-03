@@ -43,7 +43,7 @@ pub fn get_ident(token: TokenWrap) -> &'static str {
 }
 
 #[allow(dead_code)]
-pub fn get_number(token: TokenWrap) -> i32 {
+pub fn get_number(token: TokenWrap) -> i64 {
     if token.kind() != TokenKind::Num {
         error_token(token, "expected a number");
     }
@@ -560,14 +560,14 @@ pub fn struct_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
 
     let mut offset = 0;
     for mem in ty.mems() {
-        offset = align_to(offset, mem.ty().align() as i64);
-        mem.set_offset(offset as i32);
-        offset += mem.ty().size() as i64;
+        offset = align_to(offset, mem.ty().align());
+        mem.set_offset(offset as i64);
+        offset += mem.ty().size();
         if ty.align() < mem.ty().align() {
             ty.set_align(mem.ty().align());
         }
     }
-    ty.set_size(align_to(offset , ty.align() as i64) as usize);
+    ty.set_size(align_to(offset , ty.align()) as usize);
 
     return (token, ty);
 }
