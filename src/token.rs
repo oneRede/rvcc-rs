@@ -7,7 +7,7 @@ use std::{
 use self::TokenKind::*;
 use crate::{
     ty::{TyWrap, TypeKind},
-    utils::{error_at, error_token, get_num_from_chars, read_punct, add_line_numbers},
+    utils::{add_line_numbers, error_at, error_token, get_num_from_chars, read_punct},
 };
 
 pub static mut CURRENT_INPUT: Option<&[char]> = None;
@@ -47,7 +47,7 @@ pub struct Token {
     pub len: usize,
     pub ty: TyWrap,
     pub stri: Vec<usize>,
-    pub line_no: usize
+    pub line_no: usize,
 }
 
 #[allow(dead_code)]
@@ -155,7 +155,7 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().loc }
     }
 
-    pub fn line_no(&self) -> usize{
+    pub fn line_no(&self) -> usize {
         unsafe { self.ptr.unwrap().as_ref().unwrap().line_no }
     }
 
@@ -374,7 +374,7 @@ pub fn convert_keyword(token: TokenWrap) {
 #[allow(dead_code)]
 fn is_keyword(token: TokenWrap) -> bool {
     let keywords = [
-        "return", "if", "else", "for", "while", "int", "sizeof", "char", "struct"
+        "return", "if", "else", "for", "while", "int", "sizeof", "char", "struct",
     ];
 
     for kw in keywords {
@@ -501,7 +501,7 @@ pub fn read_file(path: &str) -> String {
         let mut f = File::open(path).expect("a file path and exist file");
         let _ = f.read_to_string(&mut buf);
     }
-    
+
     return buf.replace("\\n", &'\n'.to_string());
 }
 

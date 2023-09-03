@@ -1,4 +1,5 @@
 use crate::{
+    codegen::align_to,
     node::{
         MemberWrap,
         NodeKind::{self, *},
@@ -8,7 +9,7 @@ use crate::{
     scope::{ScopeWrap, SCOPE},
     token::{consume, equal, skip, TokenKind, TokenWrap},
     ty::{add_ty, is_int, TyWrap, TypeKind},
-    utils::error_token, codegen::align_to,
+    utils::error_token,
 };
 
 #[allow(dead_code)]
@@ -17,7 +18,6 @@ pub static mut LOCALS: ObjWrap = ObjWrap::empty();
 pub static mut GLOBALS: ObjWrap = ObjWrap::empty();
 #[allow(dead_code)]
 pub static mut VAR_IDXS: usize = 0;
-
 
 #[allow(dead_code)]
 pub fn find_var(token: TokenWrap) -> ObjWrap {
@@ -567,7 +567,7 @@ pub fn struct_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
             ty.set_align(mem.ty().align());
         }
     }
-    ty.set_size(align_to(offset , ty.align()) as usize);
+    ty.set_size(align_to(offset, ty.align()) as usize);
 
     return (token, ty);
 }
@@ -576,7 +576,9 @@ pub fn struct_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
 pub fn get_struct_member(ty: TyWrap, token: TokenWrap) -> MemberWrap {
     for mem in ty.mems() {
         let len = token.len();
-        if mem.name().len() == token.len() && (&mem.name().loc().unwrap()[..len] == &token.loc().unwrap()[..len]) {
+        if mem.name().len() == token.len()
+            && (&mem.name().loc().unwrap()[..len] == &token.loc().unwrap()[..len])
+        {
             return mem;
         }
     }
@@ -781,4 +783,3 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
 
     return unsafe { GLOBALS };
 }
-
