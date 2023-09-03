@@ -24,7 +24,7 @@ pub enum TypeKind {
 pub struct Ty {
     pub kind: Option<TypeKind>,
     pub base: TyWrap,
-    pub token: TokenWrap,
+    pub name: TokenWrap,
     pub return_ty: TyWrap,
     pub params: TyWrap,
     pub next: TyWrap,
@@ -38,7 +38,7 @@ impl Ty {
         Self {
             kind: None,
             base: TyWrap::empty(),
-            token: TokenWrap::empty(),
+            name: TokenWrap::empty(),
             return_ty: TyWrap::empty(),
             params: TyWrap::empty(),
             next: TyWrap::empty(),
@@ -108,8 +108,8 @@ impl TyWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().base }
     }
 
-    pub fn token(&self) -> TokenWrap {
-        unsafe { self.ptr.unwrap().as_ref().unwrap().token }
+    pub fn name(&self) -> TokenWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().name }
     }
 
     pub fn return_ty(&self) -> Self {
@@ -144,8 +144,8 @@ impl TyWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().base = base };
     }
 
-    pub fn set_token(&self, token: TokenWrap) {
-        unsafe { self.ptr.unwrap().as_mut().unwrap().token = token };
+    pub fn set_token(&self, name: TokenWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().name = name };
     }
 
     pub fn set_return_ty(&self, return_ty: TyWrap) {
