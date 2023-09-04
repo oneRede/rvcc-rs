@@ -95,6 +95,10 @@ pub fn declspec(token: TokenWrap) -> (TokenWrap, TyWrap) {
         return struct_decl(token.nxt());
     }
 
+    if equal(token, "union") {
+        return union_decl(token.nxt());
+    }
+
     error_token(token, "typename expected");
     return (TokenWrap::empty(), TyWrap::empty());
 }
@@ -195,7 +199,10 @@ pub fn declaration(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn is_type_name(token: TokenWrap) -> bool {
-    return equal(token, "char") || equal(token, "int") || equal(token, "struct");
+    return equal(token, "char")
+        || equal(token, "int")
+        || equal(token, "struct")
+        || equal(token, "union");
 }
 
 #[allow(dead_code)]
@@ -561,7 +568,7 @@ pub fn struct_members(mut token: TokenWrap, ty: TyWrap) -> TokenWrap {
 }
 
 #[allow(dead_code)]
-pub fn struct_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
+pub fn struct_union_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
     let mut tag = TokenWrap::empty();
     if token.kind() == TokenKind::IDENT {
         tag = token;
@@ -578,9 +585,20 @@ pub fn struct_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
 
     let ty = TyWrap::new();
     ty.set_kind(Some(TypeKind::STRUCT));
-
     token = struct_members(token.nxt(), ty);
     ty.set_align(1);
+
+    if !tag.ptr.is_none() {
+        TagScopeWrap::push(tag, ty);
+    }
+    return (token, ty);
+}
+
+#[allow(dead_code)]
+pub fn struct_decl(token: TokenWrap) -> (TokenWrap, TyWrap) {
+
+    let (tk, ty) = struct_union_decl(token);
+    ty.set_kind(Some(TypeKind::STRUCT));
 
     let mut offset = 0;
     for mem in ty.mems() {
@@ -593,9 +611,23 @@ pub fn struct_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
     }
     ty.set_size(align_to(offset, ty.align()) as usize);
 
-    if !tag.ptr.is_none() {
-        TagScopeWrap::push(tag, ty);
+    return (tk, ty);
+}
+
+#[allow(dead_code)]
+pub fn union_decl(token: TokenWrap) -> (TokenWrap, TyWrap) {
+    let (token, ty) = struct_union_decl(token);
+    ty.set_kind(Some(TypeKind::UNION));
+
+    for mem in ty.mems() {
+        if ty.align() < mem.ty().align() {
+            ty.set_align(mem.ty().align());
+        }
+        if ty.size() < mem.ty().size() {
+            ty.set_size(mem.ty().size());
+        }
     }
+    ty.set_size(align_to(ty.size(), ty.align()));
     return (token, ty);
 }
 
@@ -617,8 +649,8 @@ pub fn get_struct_member(ty: TyWrap, token: TokenWrap) -> MemberWrap {
 pub fn struct_ref(lhs: NodeWrap, token: TokenWrap) -> NodeWrap {
     add_ty(lhs);
 
-    if lhs.ty().kind() != Some(TypeKind::STRUCT) {
-        error_token(lhs.token(), "not a struct");
+    if lhs.ty().kind() != Some(TypeKind::STRUCT) && lhs.ty().kind() != Some(TypeKind::UNION){
+        error_token(lhs.token(), "not a struct nor a union");
     }
 
     let node = NodeWrap::new_unary(NodeKind::MEMBER, lhs, token);

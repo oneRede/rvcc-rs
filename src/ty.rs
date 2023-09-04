@@ -17,6 +17,7 @@ pub enum TypeKind {
     ARRAY,
     STR,
     STRUCT,
+    UNION,
 }
 
 #[allow(dead_code)]
