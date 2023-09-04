@@ -391,7 +391,10 @@ pub fn emit_text(prog: ObjWrap) {
 
 #[allow(dead_code)]
 pub fn load(ty: TyWrap) {
-    if ty.kind() == Some(TypeKind::ARRAY) {
+    if ty.kind() == Some(TypeKind::ARRAY)
+        || ty.kind() == Some(TypeKind::STRUCT)
+        || ty.kind() == Some(TypeKind::UNION)
+    {
         return;
     }
     write_to_file(&format!("  # 读取a0中存放的地址,得到的值存入a0"));
@@ -405,6 +408,27 @@ pub fn load(ty: TyWrap) {
 #[allow(dead_code)]
 pub fn store(ty: TyWrap) {
     pop("a1");
+
+    let kind = if ty.kind() == Some(TypeKind::STRUCT) {
+        "结构体"
+    } else {
+        "联合体"
+    };
+
+    if ty.kind() == Some(TypeKind::STRUCT) || ty.kind() == Some(TypeKind::UNION) {
+        write_to_file(&format!("  # 对{}进行赋值", kind));
+        for i in 0..ty.size() {
+            write_to_file(&format!("  li t0, {}", i));
+            write_to_file(&format!("  add t0, a0, t0"));
+            write_to_file(&format!("  lb t1, 0(t0)"));
+
+            write_to_file(&format!("  li t0, {}", i));
+            write_to_file(&format!("  add t0, a1, t0"));
+            write_to_file(&format!("  sb t1, 0(t0)"));
+        }
+        return;
+    }
+
     write_to_file(&format!("  # 将a0的值,写入到a1中存放的地址"));
     if ty.size() == 1 {
         write_to_file(&format!("  sb a0, 0(a1)"));
