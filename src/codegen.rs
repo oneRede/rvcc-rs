@@ -351,20 +351,9 @@ pub fn emit_text(prog: ObjWrap) {
         write_to_file(&format!("  addi sp, sp, -{}", func.stack_size()));
 
         let mut i = 0;
-        let vars = func.params();
-        for var in vars {
-            write_to_file(&format!(
-                "  # 将{}寄存器的值存入{}的栈地址",
-                ARG_REG[i],
-                var.name()
-            ));
-            if var.ty().size() == 1 {
-                write_to_file(&format!("  sb {}, {}(fp)", ARG_REG[i], var.offset()));
-                i += 1;
-            } else {
-                write_to_file(&format!("  sd {}, {}(fp)", ARG_REG[i], var.offset()));
-                i += 1;
-            }
+        for var in func.params() {
+            store_genernal(i, var.offset(), var.ty().size());
+            i += 1;
         }
 
         write_to_file(&format!("\n# =====段主体==============="));
@@ -400,6 +389,8 @@ pub fn load(ty: TyWrap) {
     write_to_file(&format!("  # 读取a0中存放的地址,得到的值存入a0"));
     if ty.size() == 1 {
         write_to_file(&format!("  lb a0, 0(a0)"));
+    } else if ty.size() == 4 {
+        write_to_file(&format!("  lw a0, 0(a0)"));
     } else {
         write_to_file(&format!("  ld a0, 0(a0)"));
     }
@@ -432,6 +423,8 @@ pub fn store(ty: TyWrap) {
     write_to_file(&format!("  # 将a0的值,写入到a1中存放的地址"));
     if ty.size() == 1 {
         write_to_file(&format!("  sb a0, 0(a1)"));
+    } else if ty.size() == 4 {
+        write_to_file(&format!("  sw a0, 0(a1)"));
     } else {
         write_to_file(&format!("  sd a0, 0(a1)"));
     }
@@ -480,4 +473,29 @@ pub(crate) fn codegen(prog: ObjWrap, out: File) {
     assign_l_var_offsets(prog);
     emit_data(prog);
     emit_text(prog);
+}
+
+#[allow(dead_code)]
+pub fn store_genernal(reg: usize, offset: i64, size: usize) {
+    write_to_file(&format!(
+        "  # 将{}寄存器的值存入{}(fp)的栈地址",
+        ARG_REG[reg], offset
+    ));
+    match size {
+        1 => {
+            write_to_file(&format!("  sb {}, {}(fp)", ARG_REG[reg], offset));
+            return;
+        }
+        4 => {
+            write_to_file(&format!("  sw {}, {}(fp)", ARG_REG[reg], offset));
+            return;
+        }
+        8 => {
+            write_to_file(&format!("  sd {}, {}(fp)", ARG_REG[reg], offset));
+            return;
+        }
+        _ => {
+            panic!("unreachable")
+        }
+    }
 }

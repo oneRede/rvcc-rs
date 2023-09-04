@@ -80,8 +80,8 @@ impl TyWrap {
     pub fn new_with_kind(kind: Option<TypeKind>) -> Self {
         let ty = TyWrap::new();
         if kind == Some(TypeKind::INT) {
-            ty.set_size(8);
-            ty.set_align(8);
+            ty.set_size(4);
+            ty.set_align(4);
         } else {
             ty.set_size(1);
             ty.set_align(1);
