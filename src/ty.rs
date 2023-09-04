@@ -18,6 +18,7 @@ pub enum TypeKind {
     STR,
     STRUCT,
     UNION,
+    LONG,
 }
 
 #[allow(dead_code)]
@@ -79,12 +80,15 @@ impl TyWrap {
 
     pub fn new_with_kind(kind: Option<TypeKind>) -> Self {
         let ty = TyWrap::new();
-        if kind == Some(TypeKind::INT) {
+        if kind == Some(TypeKind::CHAR) {
+            ty.set_size(1);
+            ty.set_align(1);
+        } else if kind == Some(TypeKind::INT) {
             ty.set_size(4);
             ty.set_align(4);
         } else {
-            ty.set_size(1);
-            ty.set_align(1);
+            ty.set_size(8);
+            ty.set_align(8);
         }
         ty.set_kind(kind);
         ty
@@ -193,7 +197,9 @@ impl TyWrap {
 
 #[allow(dead_code)]
 pub fn is_int(ty: TyWrap) -> bool {
-    return ty.kind() == Some(TypeKind::INT) || ty.kind() == Some(TypeKind::CHAR);
+    return ty.kind() == Some(TypeKind::INT)
+        || ty.kind() == Some(TypeKind::CHAR)
+        || ty.kind() == Some(TypeKind::LONG);
 }
 
 #[allow(dead_code)]
@@ -237,7 +243,7 @@ pub fn add_ty(node: NodeWrap) {
         | NodeKind::LT
         | NodeKind::LE
         | NodeKind::Num => {
-            node.set_ty(TyWrap::new_with_kind(Some(TypeKind::INT)));
+            node.set_ty(TyWrap::new_with_kind(Some(TypeKind::LONG)));
             return;
         }
         NodeKind::VAR => {

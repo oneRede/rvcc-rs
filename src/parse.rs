@@ -91,6 +91,10 @@ pub fn declspec(token: TokenWrap) -> (TokenWrap, TyWrap) {
         return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::INT)));
     }
 
+    if equal(token, "long") {
+        return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::LONG)));
+    }
+
     if equal(token, "struct") {
         return struct_decl(token.nxt());
     }
@@ -202,7 +206,8 @@ pub fn is_type_name(token: TokenWrap) -> bool {
     return equal(token, "char")
         || equal(token, "int")
         || equal(token, "struct")
-        || equal(token, "union");
+        || equal(token, "union")
+        || equal(token, "long");
 }
 
 #[allow(dead_code)]

@@ -374,7 +374,7 @@ pub fn convert_keyword(token: TokenWrap) {
 #[allow(dead_code)]
 fn is_keyword(token: TokenWrap) -> bool {
     let keywords = [
-        "return", "if", "else", "for", "while", "int", "sizeof", "char", "struct", "union",
+        "return", "if", "else", "for", "while", "int", "sizeof", "char", "struct", "union", "long",
     ];
 
     for kw in keywords {
