@@ -7,8 +7,8 @@ use crate::{
     },
     obj::ObjWrap,
     scope::{ScopeWrap, TagScopeWrap, SCOPE},
-    token::{consume, equal, skip, TokenKind, TokenWrap},
-    ty::{add_ty, is_int, TyWrap, TypeKind},
+    token::{consume, equal, skip, TokenKind, TokenWrap, self},
+    ty::{add_ty, is_int, TyWrap, TypeKind, Ty, self},
     utils::error_token,
 };
 
@@ -155,6 +155,31 @@ pub fn ty_suffix(mut token: TokenWrap, ty: TyWrap) -> (TyWrap, TokenWrap) {
 pub fn declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
     while consume(&mut token, "*") {
         ty = TyWrap::point_to(ty);
+    }
+
+    // if (equal(Tok, "(")) {
+    //     // 记录"("的位置
+    //     Token *Start = Tok;
+    //     Type Dummy = {};
+    //     // 使Tok前进到")"后面的位置
+    //     declarator(&Tok, Start->Next, &Dummy);
+    //     Tok = skip(Tok, ")");
+    //     // 获取到括号后面的类型后缀，Ty为解析完的类型，Rest指向分号
+    //     Ty = typeSuffix(Rest, Tok, Ty);
+    //     // 解析Ty整体作为Base去构造，返回Type的值
+    //     return declarator(&Tok, Start->Next, Ty);
+    //   }
+
+    if equal(token, "(") {
+        let start = token;
+        let dummy = TyWrap::new();
+
+        let (_, mut token) = declarator(start.nxt(), dummy);
+        token = skip(token, ")");
+
+        let (ty, _) = ty_suffix(token, ty);
+
+        return declarator(start.nxt(), ty)
     }
 
     if token.kind() != TokenKind::IDENT {
