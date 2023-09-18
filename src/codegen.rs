@@ -389,6 +389,8 @@ pub fn load(ty: TyWrap) {
     write_to_file(&format!("  # 读取a0中存放的地址,得到的值存入a0"));
     if ty.size() == 1 {
         write_to_file(&format!("  lb a0, 0(a0)"));
+    } else if ty.size() == 2 {
+        write_to_file(&format!("  lh a0, 0(a0)"));
     } else if ty.size() == 4 {
         write_to_file(&format!("  lw a0, 0(a0)"));
     } else {
@@ -423,9 +425,11 @@ pub fn store(ty: TyWrap) {
     write_to_file(&format!("  # 将a0的值,写入到a1中存放的地址"));
     if ty.size() == 1 {
         write_to_file(&format!("  sb a0, 0(a1)"));
+    } else if ty.size() == 2 {
+        write_to_file(&format!("  sh a0, 0(a1)"));
     } else if ty.size() == 4 {
         write_to_file(&format!("  sw a0, 0(a1)"));
-    } else {
+    }else {
         write_to_file(&format!("  sd a0, 0(a1)"));
     }
 }
@@ -484,6 +488,10 @@ pub fn store_genernal(reg: usize, offset: i64, size: usize) {
     match size {
         1 => {
             write_to_file(&format!("  sb {}, {}(fp)", ARG_REG[reg], offset));
+            return;
+        }
+        2 => {
+            write_to_file(&format!("  sh {}, {}(fp)", ARG_REG[reg], offset));
             return;
         }
         4 => {

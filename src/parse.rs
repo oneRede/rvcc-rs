@@ -87,6 +87,10 @@ pub fn declspec(token: TokenWrap) -> (TokenWrap, TyWrap) {
         return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::CHAR)));
     }
 
+    if equal(token, "short") {
+        return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::SHORT)));
+    }
+
     if equal(token, "int") {
         return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::INT)));
     }
@@ -207,7 +211,8 @@ pub fn is_type_name(token: TokenWrap) -> bool {
         || equal(token, "int")
         || equal(token, "struct")
         || equal(token, "union")
-        || equal(token, "long");
+        || equal(token, "long")
+        || equal(token, "short");
 }
 
 #[allow(dead_code)]
@@ -601,7 +606,6 @@ pub fn struct_union_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
 
 #[allow(dead_code)]
 pub fn struct_decl(token: TokenWrap) -> (TokenWrap, TyWrap) {
-
     let (tk, ty) = struct_union_decl(token);
     ty.set_kind(Some(TypeKind::STRUCT));
 
@@ -654,7 +658,7 @@ pub fn get_struct_member(ty: TyWrap, token: TokenWrap) -> MemberWrap {
 pub fn struct_ref(lhs: NodeWrap, token: TokenWrap) -> NodeWrap {
     add_ty(lhs);
 
-    if lhs.ty().kind() != Some(TypeKind::STRUCT) && lhs.ty().kind() != Some(TypeKind::UNION){
+    if lhs.ty().kind() != Some(TypeKind::STRUCT) && lhs.ty().kind() != Some(TypeKind::UNION) {
         error_token(lhs.token(), "not a struct nor a union");
     }
 

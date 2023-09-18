@@ -19,6 +19,7 @@ pub enum TypeKind {
     STRUCT,
     UNION,
     LONG,
+    SHORT,
 }
 
 #[allow(dead_code)]
@@ -86,6 +87,9 @@ impl TyWrap {
         } else if kind == Some(TypeKind::INT) {
             ty.set_size(4);
             ty.set_align(4);
+        } else if kind == Some(TypeKind::SHORT) {
+            ty.set_size(2);
+            ty.set_align(2);
         } else {
             ty.set_size(8);
             ty.set_align(8);
@@ -199,7 +203,8 @@ impl TyWrap {
 pub fn is_int(ty: TyWrap) -> bool {
     return ty.kind() == Some(TypeKind::INT)
         || ty.kind() == Some(TypeKind::CHAR)
-        || ty.kind() == Some(TypeKind::LONG);
+        || ty.kind() == Some(TypeKind::LONG)
+        || ty.kind() == Some(TypeKind::SHORT);
 }
 
 #[allow(dead_code)]
