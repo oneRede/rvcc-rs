@@ -82,36 +82,60 @@ pub fn find_tag(token: TokenWrap) -> TyWrap {
 }
 
 #[allow(dead_code)]
-pub fn declspec_bk(token: TokenWrap) -> (TokenWrap, TyWrap) {
-    if equal(token, "void") {
-        return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::VOID)));
-    }
-    if equal(token, "char") {
-        return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::CHAR)));
-    }
-
-    if equal(token, "short") {
-        return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::SHORT)));
+pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
+    enum TT {
+        VOID = 1 << 0,
+        CHAR = 1 << 2,
+        SHORT = 1 << 4,
+        INT = 1 << 6,
+        LONG = 1 << 8,
+        OTHER = 1 << 10,
     }
 
-    if equal(token, "int") {
-        return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::INT)));
-    }
+    let mut ty = TyWrap::new_with_kind(Some(TypeKind::INT));
+    let mut counter: u32 = 0;
 
-    if equal(token, "long") {
-        return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::LONG)));
-    }
+    while is_type_name(token) {
+        if equal(token, "struct") || equal(token, "union") {
+            if equal(token, "struct") {
+                ty = struct_decl(token.nxt()).1;
+                token = struct_decl(token.nxt()).0;
+            } else {
+                ty = union_decl(token.nxt()).1;
+                token = union_decl(token.nxt()).0;
+            }
+            counter += TT::OTHER as u32;
+            continue;
+        }
 
-    if equal(token, "struct") {
-        return struct_decl(token.nxt());
-    }
+        if equal(token, "void") {
+            counter += TT::VOID as u32;
+        } else if equal(token, "char") {
+            counter += TT::CHAR as u32;
+        } else if equal(token, "short") {
+            counter += TT::SHORT as u32;
+        } else if equal(token, "int") {
+            counter += TT::INT as u32;
+        } else if equal(token, "long") {
+            counter += TT::LONG as u32;
+        }
 
-    if equal(token, "union") {
-        return union_decl(token.nxt());
+        if counter == 1 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::VOID));
+        } else if counter == 4 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::CHAR));
+        } else if counter == 16 || counter == 80 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::SHORT));
+        } else if counter == 64 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::INT));
+        } else if counter == 256 || counter == 320 || counter == 512 || counter == 576 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::LONG));
+        } else {
+            error_token(token, "invalid type")
+        }
+        token = token.nxt();
     }
-
-    error_token(token, "typename expected");
-    return (TokenWrap::empty(), TyWrap::empty());
+    return (token, ty);
 }
 
 #[allow(dead_code)]
@@ -882,61 +906,4 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
     }
 
     return unsafe { GLOBALS };
-}
-
-#[allow(dead_code)]
-pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
-    enum TT {
-        VOID = 1 << 0,
-        CHAR = 1 << 2,
-        SHORT = 1 << 4,
-        INT = 1 << 6,
-        LONG = 1 << 8,
-        OTHER = 1 << 10,
-    }
-
-    let mut ty = TyWrap::new_with_kind(Some(TypeKind::INT));
-    let mut counter: u32 = 0;
-
-    while is_type_name(token) {
-        if equal(token, "struct") || equal(token, "union") {
-            if equal(token, "struct") {
-                ty = struct_decl(token.nxt()).1;
-                token = struct_decl(token.nxt()).0;
-            } else {
-                ty = union_decl(token.nxt()).1;
-                token = union_decl(token.nxt()).0;
-            }
-            counter += TT::OTHER as u32;
-            continue;
-        }
-
-        if equal(token, "void") {
-            counter += TT::VOID as u32;
-        } else if equal(token, "char") {
-            counter += TT::CHAR as u32;
-        } else if equal(token, "short") {
-            counter += TT::SHORT as u32;
-        } else if equal(token, "int") {
-            counter += TT::INT as u32;
-        } else if equal(token, "long") {
-            counter += TT::LONG as u32;
-        }
-
-        if counter == 1 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::VOID));
-        } else if counter == 4{
-            ty = TyWrap::new_with_kind(Some(TypeKind::CHAR));
-        } else if counter == 16 || counter == 80 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::SHORT));
-        } else if counter == 64 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::INT));
-        } else if counter == 256 || counter == 320 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::LONG));
-        } else{
-            error_token(token, "invalid type")
-        }
-        token = token.nxt();
-    }
-    return (token, ty);
 }
