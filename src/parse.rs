@@ -11,7 +11,6 @@ use crate::{
     ty::{add_ty, is_int, TyWrap, TypeKind},
     utils::error_token,
 };
-use num_enum::TryFromPrimitive;
 
 #[allow(dead_code)]
 pub static mut LOCALS: ObjWrap = ObjWrap::empty();
@@ -887,8 +886,6 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
 
 #[allow(dead_code)]
 pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
-    #[derive(TryFromPrimitive)]
-    #[repr(u32)]
     enum TT {
         VOID = 1 << 0,
         CHAR = 1 << 2,
@@ -926,28 +923,18 @@ pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
             counter += TT::LONG as u32;
         }
 
-        match counter {
-            1 => {
-                ty = TyWrap::new_with_kind(Some(TypeKind::VOID));
-                break;
-            }
-            4 => {
-                ty = TyWrap::new_with_kind(Some(TypeKind::CHAR));
-                break;
-            }
-            16 | 80 => {
-                ty = TyWrap::new_with_kind(Some(TypeKind::SHORT));
-                break;
-            }
-            64 => {
-                ty = TyWrap::new_with_kind(Some(TypeKind::INT));
-                break;
-            }
-            256 | 320 => {
-                ty = TyWrap::new_with_kind(Some(TypeKind::LONG));
-                break;
-            }
-            _ => error_token(token, "invalid type"),
+        if counter == 1 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::VOID));
+        } else if counter == 4{
+            ty = TyWrap::new_with_kind(Some(TypeKind::CHAR));
+        } else if counter == 16 || counter == 80 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::SHORT));
+        } else if counter == 64 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::INT));
+        } else if counter == 256 || counter == 320 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::LONG));
+        } else{
+            error_token(token, "invalid type")
         }
         token = token.nxt();
     }

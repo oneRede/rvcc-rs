@@ -88,13 +88,13 @@ impl TyWrap {
         } else if kind == Some(TypeKind::CHAR) {
             ty.set_size(1);
             ty.set_align(1);
-        } else if kind == Some(TypeKind::INT) {
-            ty.set_size(4);
-            ty.set_align(4);
         } else if kind == Some(TypeKind::SHORT) {
             ty.set_size(2);
             ty.set_align(2);
-        } else {
+        } else if kind == Some(TypeKind::INT) {
+            ty.set_size(4);
+            ty.set_align(4);
+        }  else {
             ty.set_size(8);
             ty.set_align(8);
         }
