@@ -11,6 +11,7 @@ use crate::{
     ty::{add_ty, is_int, TyWrap, TypeKind},
     utils::error_token,
 };
+use num_enum::TryFromPrimitive;
 
 #[allow(dead_code)]
 pub static mut LOCALS: ObjWrap = ObjWrap::empty();
@@ -82,7 +83,7 @@ pub fn find_tag(token: TokenWrap) -> TyWrap {
 }
 
 #[allow(dead_code)]
-pub fn declspec(token: TokenWrap) -> (TokenWrap, TyWrap) {
+pub fn declspec_bk(token: TokenWrap) -> (TokenWrap, TyWrap) {
     if equal(token, "void") {
         return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::VOID)));
     }
@@ -882,4 +883,73 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
     }
 
     return unsafe { GLOBALS };
+}
+
+#[allow(dead_code)]
+pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
+    #[derive(TryFromPrimitive)]
+    #[repr(u32)]
+    enum TT {
+        VOID = 1 << 0,
+        CHAR = 1 << 2,
+        SHORT = 1 << 4,
+        INT = 1 << 6,
+        LONG = 1 << 8,
+        OTHER = 1 << 10,
+    }
+
+    let mut ty = TyWrap::new_with_kind(Some(TypeKind::INT));
+    let mut counter: u32 = 0;
+
+    while is_type_name(token) {
+        if equal(token, "struct") || equal(token, "union") {
+            if equal(token, "struct") {
+                ty = struct_decl(token.nxt()).1;
+                token = struct_decl(token.nxt()).0;
+            } else {
+                ty = union_decl(token.nxt()).1;
+                token = union_decl(token.nxt()).0;
+            }
+            counter += TT::OTHER as u32;
+            continue;
+        }
+
+        if equal(token, "void") {
+            counter += TT::VOID as u32;
+        } else if equal(token, "char") {
+            counter += TT::CHAR as u32;
+        } else if equal(token, "short") {
+            counter += TT::SHORT as u32;
+        } else if equal(token, "int") {
+            counter += TT::INT as u32;
+        } else if equal(token, "long") {
+            counter += TT::LONG as u32;
+        }
+
+        match counter {
+            1 => {
+                ty = TyWrap::new_with_kind(Some(TypeKind::VOID));
+                break;
+            }
+            4 => {
+                ty = TyWrap::new_with_kind(Some(TypeKind::CHAR));
+                break;
+            }
+            16 | 80 => {
+                ty = TyWrap::new_with_kind(Some(TypeKind::SHORT));
+                break;
+            }
+            64 => {
+                ty = TyWrap::new_with_kind(Some(TypeKind::INT));
+                break;
+            }
+            256 | 320 => {
+                ty = TyWrap::new_with_kind(Some(TypeKind::LONG));
+                break;
+            }
+            _ => error_token(token, "invalid type"),
+        }
+        token = token.nxt();
+    }
+    return (token, ty);
 }
