@@ -83,6 +83,9 @@ pub fn find_tag(token: TokenWrap) -> TyWrap {
 
 #[allow(dead_code)]
 pub fn declspec(token: TokenWrap) -> (TokenWrap, TyWrap) {
+    if equal(token, "void") {
+        return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::VOID)));
+    }
     if equal(token, "char") {
         return (token.nxt(), TyWrap::new_with_kind(Some(TypeKind::CHAR)));
     }
@@ -195,6 +198,10 @@ pub fn declaration(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
         let ty = declarator(token, base_ty).0;
         token = declarator(token, base_ty).1;
+
+        if ty.kind() == Some(TypeKind::VOID) {
+            error_token(token, "variable declared void");
+        }
         let var = ObjWrap::new_local(get_ident(ty.name()), ty);
 
         if !equal(token, "=") {
@@ -218,12 +225,14 @@ pub fn declaration(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn is_type_name(token: TokenWrap) -> bool {
-    return equal(token, "char")
-        || equal(token, "int")
-        || equal(token, "struct")
-        || equal(token, "union")
-        || equal(token, "long")
-        || equal(token, "short");
+    let kws = ["void", "char", "short", "int", "long", "struct", "union"];
+
+    for kw in kws {
+        if equal(token, kw) {
+            return true;
+        }
+    }
+    return false;
 }
 
 #[allow(dead_code)]
@@ -809,7 +818,7 @@ pub fn function(token: TokenWrap, base_ty: TyWrap) -> (ObjWrap, TokenWrap) {
     func.set_is_function(true);
     func.set_is_definition(!consume(&mut token, ";"));
     if !func.is_definition() {
-        return (func, token)
+        return (func, token);
     }
 
     unsafe { LOCALS = ObjWrap::empty() };

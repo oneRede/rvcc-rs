@@ -20,6 +20,7 @@ pub enum TypeKind {
     UNION,
     LONG,
     SHORT,
+    VOID,
 }
 
 #[allow(dead_code)]
@@ -81,7 +82,10 @@ impl TyWrap {
 
     pub fn new_with_kind(kind: Option<TypeKind>) -> Self {
         let ty = TyWrap::new();
-        if kind == Some(TypeKind::CHAR) {
+        if kind == Some(TypeKind::VOID) {
+            ty.set_size(1);
+            ty.set_align(1);
+        } else if kind == Some(TypeKind::CHAR) {
             ty.set_size(1);
             ty.set_align(1);
         } else if kind == Some(TypeKind::INT) {
@@ -276,6 +280,9 @@ pub fn add_ty(node: NodeWrap) {
         NodeKind::DEREF => {
             if node.lhs().ty().base().ptr.is_none() {
                 error_token(node.token(), "invalid pointer dereference")
+            }
+            if node.lhs().ty().base().kind() == Some(TypeKind::VOID) {
+                error_token(node.token(), "dereferencing a void pointer")
             }
             node.set_ty(node.lhs().ty().base());
             return;
