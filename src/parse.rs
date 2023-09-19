@@ -165,7 +165,7 @@ pub fn declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
         let (ty, tk) = ty_suffix(token, ty);
         let (ty, _) = declarator(start.nxt(), ty);
 
-        return (ty, tk)
+        return (ty, tk);
     }
 
     if token.kind() != TokenKind::IDENT {
@@ -807,8 +807,12 @@ pub fn function(token: TokenWrap, base_ty: TyWrap) -> (ObjWrap, TokenWrap) {
 
     let func = ObjWrap::new_global(get_ident(typ.name()), typ);
     func.set_is_function(true);
-    unsafe { LOCALS = ObjWrap::empty() };
+    func.set_is_definition(!consume(&mut token, ";"));
+    if !func.is_definition() {
+        return (func, token)
+    }
 
+    unsafe { LOCALS = ObjWrap::empty() };
     let sc = ScopeWrap::new();
     sc.enter();
 

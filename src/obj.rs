@@ -15,6 +15,8 @@ pub struct Obj {
 
     pub is_local: bool,
     pub is_function: bool,
+    pub is_definition: bool,
+
     pub body: NodeWrap,
     pub locals: ObjWrap,
     pub stack_size: usize,
@@ -38,6 +40,7 @@ impl ObjWrap {
             ty: ty,
             is_local: true,
             is_function: false,
+            is_definition: false,
             body: NodeWrap::empty(),
             locals: ObjWrap::empty(),
             stack_size: 0,
@@ -119,6 +122,11 @@ impl ObjWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().is_function }
     }
 
+    pub fn is_definition(&self) -> bool {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().is_definition }
+    }
+
+
     pub fn set_nxt(&self, next: ObjWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().next = next }
     }
@@ -157,6 +165,10 @@ impl ObjWrap {
 
     pub fn set_is_function(&self, is_function: bool) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().is_function = is_function }
+    }
+
+    pub fn set_is_definition(&self, is_definition: bool) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().is_definition = is_definition }
     }
 
     pub fn set_init_data(&self, init_data: Vec<usize>) {

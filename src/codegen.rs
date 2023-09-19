@@ -323,7 +323,7 @@ pub fn assign_l_var_offsets(prog: ObjWrap) {
 #[allow(dead_code)]
 pub fn emit_text(prog: ObjWrap) {
     for func in prog {
-        if !func.is_function() {
+        if !func.is_function() || !func.is_definition() {
             continue;
         }
         write_to_file(&format!("\n  # 定义全局{}段", func.name()));
@@ -429,7 +429,7 @@ pub fn store(ty: TyWrap) {
         write_to_file(&format!("  sh a0, 0(a1)"));
     } else if ty.size() == 4 {
         write_to_file(&format!("  sw a0, 0(a1)"));
-    }else {
+    } else {
         write_to_file(&format!("  sd a0, 0(a1)"));
     }
 }
