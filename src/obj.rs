@@ -50,7 +50,7 @@ impl ObjWrap {
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
 
-        ScopeWrap::push(name, var);
+        ScopeWrap::push(name).set_var(var);
         var
     }
 
@@ -66,7 +66,7 @@ impl ObjWrap {
         var.set_is_local(false);
         var.set_nxt(unsafe { GLOBALS });
         unsafe { GLOBALS = var };
-        ScopeWrap::push(name, var);
+        // ScopeWrap::push(name, var);
         var
     }
 

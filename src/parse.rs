@@ -6,7 +6,7 @@ use crate::{
         NodeWrap,
     },
     obj::ObjWrap,
-    scope::{ScopeWrap, TagScopeWrap, SCOPE},
+    scope::{ScopeWrap, TagScopeWrap, VarAttr, VarScopeWrap, SCOPE},
     token::{consume, equal, skip, TokenKind, TokenWrap},
     ty::{add_ty, is_int, TyWrap, TypeKind},
     utils::error_token,
@@ -32,6 +32,18 @@ pub fn find_var(token: TokenWrap) -> ObjWrap {
 }
 
 #[allow(dead_code)]
+pub fn find_var_v2(token: TokenWrap) -> VarScopeWrap {
+    for sc in unsafe { SCOPE } {
+        for vs in sc.vars() {
+            if equal(token, vs.name()) {
+                return vs;
+            }
+        }
+    }
+    return VarScopeWrap::empty();
+}
+
+#[allow(dead_code)]
 pub fn get_ident(token: TokenWrap) -> &'static str {
     if token.kind() != TokenKind::IDENT {
         error_token(token, "expected an identifier");
@@ -40,6 +52,17 @@ pub fn get_ident(token: TokenWrap) -> &'static str {
     let len = token.len();
     let name: String = token.loc().unwrap()[..len].iter().collect();
     Box::leak(Box::new(name))
+}
+
+#[allow(dead_code)]
+pub fn find_typedef(token: TokenWrap) -> TyWrap {
+    if token.kind() == TokenKind::IDENT {
+        let vs = find_var_v2(token);
+        if !vs.ptr.is_none() {
+            return vs.typedef();
+        }
+    }
+    return TyWrap::empty();
 }
 
 #[allow(dead_code)]
@@ -139,6 +162,83 @@ pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
 }
 
 #[allow(dead_code)]
+pub fn declspec_v2(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap) {
+    enum TT {
+        VOID = 1 << 0,
+        CHAR = 1 << 2,
+        SHORT = 1 << 4,
+        INT = 1 << 6,
+        LONG = 1 << 8,
+        OTHER = 1 << 10,
+    }
+
+    let mut ty = TyWrap::new_with_kind(Some(TypeKind::INT));
+    let mut counter: u32 = 0;
+
+    while is_type_name(token) {
+        if equal(token, "typedef") {
+            if !attr.is_typedef.is_none() {
+                error_token(
+                    token,
+                    "storage class specifier is not allowed in this context",
+                );
+            }
+            attr.is_typedef = Some(true);
+            token = token.nxt();
+            continue;
+        }
+
+        let ty2 = find_typedef(token);
+        if equal(token, "struct") || equal(token, "union") || !ty2.ptr.is_none() {
+            if counter > 0 {
+                break;
+            }
+
+            if equal(token, "struct") {
+                ty = struct_decl(token.nxt()).1;
+                token = struct_decl(token.nxt()).0;
+            } else if equal(token, "union") {
+                ty = union_decl(token.nxt()).1;
+                token = union_decl(token.nxt()).0;
+            } else {
+                ty = ty2;
+                token = token.nxt();
+            }
+            counter += TT::OTHER as u32;
+            continue;
+        }
+
+        if equal(token, "void") {
+            counter += TT::VOID as u32;
+        } else if equal(token, "char") {
+            counter += TT::CHAR as u32;
+        } else if equal(token, "short") {
+            counter += TT::SHORT as u32;
+        } else if equal(token, "int") {
+            counter += TT::INT as u32;
+        } else if equal(token, "long") {
+            counter += TT::LONG as u32;
+        }
+
+        if counter == 1 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::VOID));
+        } else if counter == 4 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::CHAR));
+        } else if counter == 16 || counter == 80 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::SHORT));
+        } else if counter == 64 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::INT));
+        } else if counter == 256 || counter == 320 || counter == 512 || counter == 576 {
+            ty = TyWrap::new_with_kind(Some(TypeKind::LONG));
+        } else {
+            error_token(token, "invalid type")
+        }
+        token = token.nxt();
+    }
+    return (token, ty);
+}
+
+#[allow(dead_code)]
 pub fn func_params(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
     let head = TyWrap::new();
     let mut cur = head;
@@ -147,7 +247,7 @@ pub fn func_params(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) 
         if cur != head {
             token = skip(token, ",");
         }
-        let (tk, base_ty) = declspec(token);
+        let (tk, base_ty) = declspec_v2(token, &mut VarAttr::empty());
         let (declar_ty, tk) = declarator(tk, base_ty);
 
         cur.set_next(declar_ty);
@@ -248,8 +348,49 @@ pub fn declaration(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
+pub fn declaration_v2(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWrap) {
+    let head = NodeWrap::new(Num, token);
+    let mut cur = head;
+
+    let mut i = 0;
+    while !equal(token, ";") {
+        if i > 0 {
+            token = skip(token, ",");
+        }
+        i += 1;
+
+        let ty = declarator(token, base_ty).0;
+        token = declarator(token, base_ty).1;
+
+        if ty.kind() == Some(TypeKind::VOID) {
+            error_token(token, "variable declared void");
+        }
+        let var = ObjWrap::new_local(get_ident(ty.name()), ty);
+
+        if !equal(token, "=") {
+            continue;
+        }
+
+        let lhs = NodeWrap::new_var_node(var, ty.name());
+        let rhs = assign(token.nxt());
+        token = rhs.1;
+        let node = NodeWrap::new_binary(ASSIGN, lhs, rhs.0, token);
+
+        cur.set_nxt(NodeWrap::new_unary(EXPRSTMT, node, token));
+        cur = cur.nxt();
+    }
+
+    let node = NodeWrap::new(BLOCK, token);
+    node.set_body(head.nxt());
+
+    return (node, token.nxt());
+}
+
+#[allow(dead_code)]
 pub fn is_type_name(token: TokenWrap) -> bool {
-    let kws = ["void", "char", "short", "int", "long", "struct", "union"];
+    let kws = [
+        "void", "char", "short", "int", "long", "struct", "union", "typedef",
+    ];
 
     for kw in kws {
         if equal(token, kw) {
@@ -353,6 +494,14 @@ pub fn compound_stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
     while !equal(token, "}") {
         if is_type_name(token) {
+            let mut attr = VarAttr::empty();
+            let base_ty = declspec_v2(token, &mut attr).1;
+            token = declspec_v2(token, &mut attr).0;
+            if attr.is_typedef.unwrap() {
+                token = parse_typedef(token, base_ty);
+                continue;
+            }
+
             let (nd, tk) = declaration(token);
             token = tk;
             cur.set_nxt(nd)
@@ -595,7 +744,7 @@ pub fn struct_members(mut token: TokenWrap, ty: TyWrap) -> TokenWrap {
     let mut cur = head;
 
     while !equal(token, "}") {
-        let (mut tk, base_ty) = declspec(token);
+        let (mut tk, base_ty) = declspec_v2(token, &mut VarAttr::empty());
         let mut first = true;
 
         while !consume(&mut tk, ";") {
@@ -802,11 +951,11 @@ fn primary(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
             return func_call(token);
         }
 
-        let var = find_var(token);
-        if var.ptr.is_none() {
+        let vs = find_var_v2(token);
+        if vs.ptr.is_none() || !vs.var().ptr.is_none() {
             error_token(token, "undefined variable");
         }
-        let node = NodeWrap::new_var_node(var, token);
+        let node = NodeWrap::new_var_node(vs.var(), token);
         return (node, token.nxt());
     }
 
@@ -824,6 +973,23 @@ fn primary(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
     error_token(token, "expected an expression");
     (NodeWrap::empty(), token)
+}
+
+#[allow(dead_code)]
+pub fn parse_typedef(mut token: TokenWrap, base_ty: TyWrap) -> TokenWrap {
+    let mut first = true;
+
+    while !consume(&mut token, ";") {
+        if !first {
+            token = skip(token, ",")
+        }
+        first = false;
+        let ty = declarator(token, base_ty).0;
+        token = declarator(token, base_ty).1;
+        ScopeWrap::push(get_ident(ty.name())).set_typedef(ty);
+    }
+
+    return token;
 }
 
 #[allow(dead_code)]
@@ -896,7 +1062,13 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
     unsafe { GLOBALS = ObjWrap::empty() };
 
     while token.kind() != TokenKind::EOF {
+        let attr = VarAttr::empty();
         let (tk, base_ty) = declspec(token);
+
+        if attr.is_typedef.unwrap() {
+            token = parse_typedef(token, base_ty);
+            continue;
+        }
         if is_function(tk) {
             let (_, tk) = function(tk, base_ty);
             token = tk;

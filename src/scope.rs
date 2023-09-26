@@ -9,6 +9,7 @@ pub struct VarScope {
     next: VarScopeWrap,
     name: &'static str,
     var: ObjWrap,
+    typedef: TyWrap,
 }
 
 #[allow(dead_code)]
@@ -18,6 +19,7 @@ impl VarScope {
             next: VarScopeWrap::empty(),
             name: "",
             var: ObjWrap::empty(),
+            typedef: TyWrap::empty(),
         }
     }
 }
@@ -25,7 +27,7 @@ impl VarScope {
 #[allow(dead_code)]
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub struct VarScopeWrap {
-    ptr: Option<*mut VarScope>,
+    pub ptr: Option<*mut VarScope>,
 }
 
 #[allow(dead_code)]
@@ -66,6 +68,10 @@ impl VarScopeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().var }
     }
 
+    pub fn typedef(&self) -> TyWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().typedef }
+    }
+
     pub fn set_name(&self, name: &'static str) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().name = name }
     }
@@ -76,6 +82,10 @@ impl VarScopeWrap {
 
     pub fn set_next(&self, next: VarScopeWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().next = next }
+    }
+
+    pub fn set_typedef(&self, typedef: TyWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().typedef = typedef }
     }
 }
 
@@ -141,10 +151,10 @@ impl ScopeWrap {
         unsafe { SCOPE = SCOPE.nxt() }
     }
 
-    pub fn push(name: &'static str, var: ObjWrap) -> VarScopeWrap {
+    pub fn push(name: &'static str) -> VarScopeWrap {
         let var_scope = VarScopeWrap::new();
         var_scope.set_name(name);
-        var_scope.set_var(var);
+        // var_scope.set_var(var);
         var_scope.set_next(unsafe { SCOPE.vars() });
         unsafe { SCOPE.set_vars(var_scope) }
 
@@ -259,6 +269,20 @@ impl Iterator for TagScopeWrap {
             return Some(now);
         } else {
             return None;
+        }
+    }
+}
+
+#[allow(dead_code)]
+pub struct VarAttr {
+    pub is_typedef: Option<bool>
+}
+
+#[allow(dead_code)]
+impl VarAttr {
+    pub fn empty() -> Self{
+        Self{
+            is_typedef: None,
         }
     }
 }
