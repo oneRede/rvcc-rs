@@ -1,4 +1,6 @@
+typedef int MyInt;
+
 int main()
 {
-   assert(1, ({ typedef int t; t x=1; x; }));
+   assert(3, ({ MyInt x=3; x; }));
 }

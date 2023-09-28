@@ -970,6 +970,7 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
     while token.kind() != TokenKind::EOF {
         let mut attr = VarAttr::empty();
         let (tk, base_ty) = declspec_v2(token, &mut attr);
+        token = tk;
 
         if attr.is_typedef.unwrap() {
             token = parse_typedef(token, base_ty);
