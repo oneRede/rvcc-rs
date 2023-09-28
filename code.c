@@ -1,4 +1,4 @@
 int main()
 {
-   assert(0, 0);
+   assert(1, ({ typedef int t; t x=1; x; }));
 }

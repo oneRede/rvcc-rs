@@ -282,7 +282,7 @@ pub struct VarAttr {
 impl VarAttr {
     pub fn empty() -> Self{
         Self{
-            is_typedef: None,
+            is_typedef: Some(false),
         }
     }
 }

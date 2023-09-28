@@ -50,8 +50,9 @@ impl ObjWrap {
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
 
-        ScopeWrap::push(name).set_var(var);
-        var
+        let scope = ScopeWrap::push(name);
+        scope.set_var(var);
+        return var
     }
 
     pub fn new_local(name: &'static str, ty: TyWrap) -> Self {

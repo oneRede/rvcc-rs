@@ -19,17 +19,17 @@ pub static mut GLOBALS: ObjWrap = ObjWrap::empty();
 #[allow(dead_code)]
 pub static mut VAR_IDXS: usize = 0;
 
-#[allow(dead_code)]
-pub fn find_var(token: TokenWrap) -> ObjWrap {
-    for sc in unsafe { SCOPE } {
-        for vs in sc.vars() {
-            if equal(token, vs.name()) {
-                return vs.var();
-            }
-        }
-    }
-    return ObjWrap::empty();
-}
+// #[allow(dead_code)]
+// pub fn find_var(token: TokenWrap) -> ObjWrap {
+//     for sc in unsafe { SCOPE } {
+//         for vs in sc.vars() {
+//             if equal(token, vs.name()) {
+//                 return vs.var();
+//             }
+//         }
+//     }
+//     return ObjWrap::empty();
+// }
 
 #[allow(dead_code)]
 pub fn find_var_v2(token: TokenWrap) -> VarScopeWrap {
@@ -62,6 +62,7 @@ pub fn find_typedef(token: TokenWrap) -> TyWrap {
             return vs.typedef();
         }
     }
+
     return TyWrap::empty();
 }
 
@@ -105,63 +106,6 @@ pub fn find_tag(token: TokenWrap) -> TyWrap {
 }
 
 #[allow(dead_code)]
-pub fn declspec(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
-    enum TT {
-        VOID = 1 << 0,
-        CHAR = 1 << 2,
-        SHORT = 1 << 4,
-        INT = 1 << 6,
-        LONG = 1 << 8,
-        OTHER = 1 << 10,
-    }
-
-    let mut ty = TyWrap::new_with_kind(Some(TypeKind::INT));
-    let mut counter: u32 = 0;
-
-    while is_type_name(token) {
-        if equal(token, "struct") || equal(token, "union") {
-            if equal(token, "struct") {
-                ty = struct_decl(token.nxt()).1;
-                token = struct_decl(token.nxt()).0;
-            } else {
-                ty = union_decl(token.nxt()).1;
-                token = union_decl(token.nxt()).0;
-            }
-            counter += TT::OTHER as u32;
-            continue;
-        }
-
-        if equal(token, "void") {
-            counter += TT::VOID as u32;
-        } else if equal(token, "char") {
-            counter += TT::CHAR as u32;
-        } else if equal(token, "short") {
-            counter += TT::SHORT as u32;
-        } else if equal(token, "int") {
-            counter += TT::INT as u32;
-        } else if equal(token, "long") {
-            counter += TT::LONG as u32;
-        }
-
-        if counter == 1 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::VOID));
-        } else if counter == 4 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::CHAR));
-        } else if counter == 16 || counter == 80 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::SHORT));
-        } else if counter == 64 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::INT));
-        } else if counter == 256 || counter == 320 || counter == 512 || counter == 576 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::LONG));
-        } else {
-            error_token(token, "invalid type")
-        }
-        token = token.nxt();
-    }
-    return (token, ty);
-}
-
-#[allow(dead_code)]
 pub fn declspec_v2(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap) {
     enum TT {
         VOID = 1 << 0,
@@ -177,7 +121,7 @@ pub fn declspec_v2(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWr
 
     while is_type_name(token) {
         if equal(token, "typedef") {
-            if !attr.is_typedef.is_none() {
+            if attr.is_typedef.is_none() {
                 error_token(
                     token,
                     "storage class specifier is not allowed in this context",
@@ -306,48 +250,6 @@ pub fn declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn declaration(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let base_ty = declspec(token).1;
-    token = declspec(token).0;
-
-    let head = NodeWrap::new(Num, token);
-    let mut cur = head;
-
-    let mut i = 0;
-    while !equal(token, ";") {
-        if i > 0 {
-            token = skip(token, ",");
-        }
-        i += 1;
-
-        let ty = declarator(token, base_ty).0;
-        token = declarator(token, base_ty).1;
-
-        if ty.kind() == Some(TypeKind::VOID) {
-            error_token(token, "variable declared void");
-        }
-        let var = ObjWrap::new_local(get_ident(ty.name()), ty);
-
-        if !equal(token, "=") {
-            continue;
-        }
-
-        let lhs = NodeWrap::new_var_node(var, ty.name());
-        let rhs = assign(token.nxt());
-        token = rhs.1;
-        let node = NodeWrap::new_binary(ASSIGN, lhs, rhs.0, token);
-
-        cur.set_nxt(NodeWrap::new_unary(EXPRSTMT, node, token));
-        cur = cur.nxt();
-    }
-
-    let node = NodeWrap::new(BLOCK, token);
-    node.set_body(head.nxt());
-
-    return (node, token.nxt());
-}
-
-#[allow(dead_code)]
 pub fn declaration_v2(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWrap) {
     let head = NodeWrap::new(Num, token);
     let mut cur = head;
@@ -397,7 +299,11 @@ pub fn is_type_name(token: TokenWrap) -> bool {
             return true;
         }
     }
-    return false;
+    if find_typedef(token).ptr.is_none() {
+        return false;
+    } else {
+        return true;
+    }
 }
 
 #[allow(dead_code)]
@@ -502,7 +408,7 @@ pub fn compound_stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
                 continue;
             }
 
-            let (nd, tk) = declaration(token);
+            let (nd, tk) = declaration_v2(token, base_ty);
             token = tk;
             cur.set_nxt(nd)
         } else {
@@ -952,7 +858,7 @@ fn primary(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         }
 
         let vs = find_var_v2(token);
-        if vs.ptr.is_none() || !vs.var().ptr.is_none() {
+        if vs.ptr.is_none() || vs.var().ptr.is_none() {
             error_token(token, "undefined variable");
         }
         let node = NodeWrap::new_var_node(vs.var(), token);
@@ -1062,8 +968,8 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
     unsafe { GLOBALS = ObjWrap::empty() };
 
     while token.kind() != TokenKind::EOF {
-        let attr = VarAttr::empty();
-        let (tk, base_ty) = declspec(token);
+        let mut attr = VarAttr::empty();
+        let (tk, base_ty) = declspec_v2(token, &mut attr);
 
         if attr.is_typedef.unwrap() {
             token = parse_typedef(token, base_ty);
