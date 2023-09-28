@@ -104,7 +104,12 @@ pub fn gen_expr(node: NodeWrap) {
         NodeKind::NEG => {
             gen_expr(node.lhs());
             write_to_file(&format!("  # 对a0值进行取反"));
-            write_to_file(&format!("  neg a0, a0"));
+            if node.ty().size() <= 4 {
+                write_to_file(&format!("  negw a0, a0",));
+            } else {
+                write_to_file(&format!("  neg a0, a0"));
+            }
+
             return;
         }
         NodeKind::VAR | NodeKind::MEMBER => {
@@ -164,25 +169,29 @@ pub fn gen_expr(node: NodeWrap) {
     gen_expr(node.lhs());
     pop("a1");
 
+    let mut c = 'w';
+    if node.lhs().ty().kind() == Some(TypeKind::LONG) || !node.lhs().ty().base().ptr.is_none() {
+        c = ' '
+    }
     match node.kind() {
         NodeKind::Add => {
             write_to_file(&format!("  # a0+a1,结果写入a0"));
-            write_to_file(&format!("  add a0, a0, a1"));
+            write_to_file(&format!("  add{} a0, a0, a1", c));
             return;
         }
         NodeKind::Sub => {
             write_to_file(&format!("  # a0-a1,结果写入a0"));
-            write_to_file(&format!("  sub a0, a0, a1"));
+            write_to_file(&format!("  sub{} a0, a0, a1", c));
             return;
         }
         NodeKind::Mul => {
             write_to_file(&format!("  # a0*a1,结果写入a0"));
-            write_to_file(&format!("  mul a0, a0, a1"));
+            write_to_file(&format!("  mul{} a0, a0, a1", c));
             return;
         }
         NodeKind::Div => {
             write_to_file(&format!("  # a0÷a1,结果写入a0"));
-            write_to_file(&format!("  div a0, a0, a1"));
+            write_to_file(&format!("  div{} a0, a0, a1", c));
             return;
         }
         NodeKind::EQ => {
