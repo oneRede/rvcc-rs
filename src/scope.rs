@@ -154,7 +154,6 @@ impl ScopeWrap {
     pub fn push(name: &'static str) -> VarScopeWrap {
         let var_scope = VarScopeWrap::new();
         var_scope.set_name(name);
-        // var_scope.set_var(var);
         var_scope.set_next(unsafe { SCOPE.vars() });
         unsafe { SCOPE.set_vars(var_scope) }
 

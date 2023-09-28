@@ -67,7 +67,6 @@ impl ObjWrap {
         var.set_is_local(false);
         var.set_nxt(unsafe { GLOBALS });
         unsafe { GLOBALS = var };
-        // ScopeWrap::push(name, var);
         var
     }
 

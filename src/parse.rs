@@ -238,6 +238,35 @@ pub fn declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
+pub fn abstract_declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
+    while equal(token, "*") {
+        ty = TyWrap::point_to(ty);
+        token = token.nxt();
+    }
+
+    if equal(token, "(") {
+        let start = token;
+        let dummy = TyWrap::empty();
+
+        token = abstract_declarator(start.nxt(), dummy).1;
+
+        token = skip(token, ")");
+        ty = ty_suffix(token, ty).0;
+        token = ty_suffix(token, ty).1;
+        ty = abstract_declarator(start.nxt(), ty).0;
+        return (ty, token)
+    }
+
+    return ty_suffix(token, ty);
+}
+
+#[allow(dead_code)]
+pub fn type_name(token: TokenWrap) -> (TyWrap, TokenWrap) {
+    let (token, ty) = declspec(token, &mut VarAttr::empty());
+    return abstract_declarator(token, ty);
+}
+
+#[allow(dead_code)]
 pub fn declaration(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWrap) {
     let head = NodeWrap::new(Num, token);
     let mut cur = head;
@@ -287,8 +316,8 @@ pub fn is_type_name(token: TokenWrap) -> bool {
             return true;
         }
     }
-    
-    return !find_typedef(token).ptr.is_none()
+
+    return !find_typedef(token).ptr.is_none();
 }
 
 #[allow(dead_code)]
@@ -817,6 +846,7 @@ pub fn func_call(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 fn primary(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let start = token;
     if equal(token, "(") && equal(token.nxt(), "{") {
         let node = NodeWrap::new(NodeKind::STMTEXPR, token);
         let (nd, tk) = compound_stmt(token.nxt().nxt());
@@ -829,6 +859,13 @@ fn primary(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         let (nd, tk) = expr(token.nxt());
         token = skip(tk, ")");
         return (nd, token);
+    }
+
+    if equal(token, "sizeof") && equal(token.nxt(), "(") && is_type_name(token.nxt().nxt()) {
+        let (ty, mut token) = type_name(token.nxt().nxt());
+        token = skip(token, ")");
+        let node = NodeWrap::new_num(ty.size() as i64, start);
+        return (node, token);
     }
 
     if equal(token, "sizeof") {
