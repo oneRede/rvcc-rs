@@ -618,17 +618,17 @@ fn add(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 fn mul(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (mut node, mut token) = unary(token);
+    let (mut node, mut token) = cast(token);
 
     loop {
         if equal(token, "*") {
-            let (nd, tk) = unary(token.nxt());
+            let (nd, tk) = cast(token.nxt());
             node = NodeWrap::new_binary(Mul, node, nd, token);
             token = tk;
             continue;
         }
         if equal(token, "/") {
-            let (nd, tk) = unary(token.nxt());
+            let (nd, tk) = cast(token.nxt());
             node = NodeWrap::new_binary(Div, node, nd, token);
             token = tk;
             continue;
@@ -638,20 +638,36 @@ fn mul(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
+pub fn cast(mut token: TokenWrap) -> (NodeWrap, TokenWrap){
+    if equal(token, "(") && is_type_name(token.nxt()) {
+        let start = token;
+        let ty = type_name(token.nxt()).0;
+        token = type_name(token.nxt()).1;
+        token = skip(token, ")");
+        let expr = cast(token).0;
+        token = cast(token).1;
+        let node = NodeWrap::new_cast(expr, ty);
+        node.set_token(start);
+        return (node, token)
+    }
+    return unary(token)
+}
+
+#[allow(dead_code)]
 fn unary(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "+") {
-        return unary(token.nxt());
+        return cast(token.nxt());
     }
     if equal(token, "-") {
-        let (nd, tk) = unary(token.nxt());
+        let (nd, tk) = cast(token.nxt());
         return (NodeWrap::new_unary(NEG, nd, tk), tk);
     }
     if equal(token, "&") {
-        let (nd, tk) = unary(token.nxt());
+        let (nd, tk) = cast(token.nxt());
         return (NodeWrap::new_unary(ADDR, nd, tk), tk);
     }
     if equal(token, "*") {
-        let (nd, tk) = unary(token.nxt());
+        let (nd, tk) = cast(token.nxt());
         return (NodeWrap::new_unary(DEREF, nd, tk), tk);
     }
 

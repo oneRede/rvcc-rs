@@ -1,7 +1,7 @@
 use crate::{
     obj::ObjWrap,
     token::TokenWrap,
-    ty::{TyWrap, TypeKind},
+    ty::{add_ty, TyWrap, TypeKind},
 };
 
 #[allow(dead_code)]
@@ -30,6 +30,7 @@ pub enum NodeKind {
     STMTEXPR,
     COMMA,
     MEMBER,
+    CAST,
 }
 
 impl ToString for NodeKind {
@@ -58,6 +59,7 @@ impl ToString for NodeKind {
             NodeKind::STMTEXPR => "STMTEXPR".to_string(),
             NodeKind::COMMA => "COMMA".to_string(),
             NodeKind::MEMBER => "MEMBER".to_string(),
+            NodeKind::CAST => "CAST".to_string(),
         }
     }
 }
@@ -192,6 +194,15 @@ impl NodeWrap {
         };
         let node: Option<*mut NodeV2> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
+    }
+
+    pub fn new_cast(expr: NodeWrap, ty: TyWrap) -> NodeWrap {
+        add_ty(expr);
+
+        let node = Self::new(NodeKind::CAST, expr.token());
+        node.set_lhs(expr);
+        node.set_ty(ty);
+        node
     }
 
     pub fn new_node_wrap(node: Option<*mut NodeV2>) -> Self {

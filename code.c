@@ -1,6 +1,4 @@
-typedef int MyInt;
-
 int main()
 {
-   assert(1, sizeof(char));
+   assert(131585, (int)8590066177);
 }

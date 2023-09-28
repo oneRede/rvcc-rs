@@ -144,6 +144,12 @@ pub fn gen_expr(node: NodeWrap) {
             gen_expr(node.rhs());
             return;
         }
+        NodeKind::CAST => {
+            gen_expr(node.lhs());
+            cast(node.lhs().ty(), node.ty());
+            return;
+        }
+
         NodeKind::FUNCALL => {
             let mut n_args = 0;
 
@@ -514,5 +520,60 @@ pub fn store_genernal(reg: usize, offset: i64, size: usize) {
         _ => {
             panic!("unreachable")
         }
+    }
+}
+
+#[allow(dead_code)]
+pub enum NumType {
+    I8,
+    I16,
+    I32,
+    I64,
+}
+
+#[allow(dead_code)]
+pub fn get_type_id(ty: TyWrap) -> NumType {
+    match ty.kind().unwrap() {
+        TypeKind::CHAR => {
+            return NumType::I8;
+        }
+        TypeKind::SHORT => {
+            return NumType::I16;
+        }
+        TypeKind::INT => {
+            return NumType::I32;
+        }
+        _ => {
+            return NumType::I64;
+        }
+    }
+}
+
+#[allow(dead_code)]
+pub static mut I64I8: &'static str = "  # 转换为i8类型\n  slli a0, a0, 56\n  srai a0, a0, 56";
+#[allow(dead_code)]
+pub static mut I64I16: &'static str = "  # 转换为i16类型\n  slli a0, a0, 48\n  srai a0, a0, 48";
+#[allow(dead_code)]
+pub static mut I64I32: &'static str = "  # 转换为i32类型\n  slli a0, a0, 32\n  srai a0, a0, 32";
+#[allow(dead_code)]
+pub static mut CAST_TABLE: [[&'static str; 4]; 4] = unsafe {
+    [
+        ["", "", "", ""],
+        [I64I8, "", "", ""],
+        [I64I8, I64I16, "", ""],
+        [I64I8, I64I16, I64I32, ""],
+    ]
+};
+
+#[allow(dead_code)]
+pub fn cast(from: TyWrap, to: TyWrap) {
+    if to.kind() == Some(TypeKind::VOID) {
+        return;
+    }
+    let t1 = get_type_id(from) as usize;
+    let t2 = get_type_id(to) as usize;
+    if unsafe { CAST_TABLE }[t1][t2] != "" {
+        write_to_file(&format!("  # 转换函数"));
+        write_to_file(&format!("{}", unsafe { CAST_TABLE }[t1][t2]));
     }
 }
