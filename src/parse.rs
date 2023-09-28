@@ -19,20 +19,8 @@ pub static mut GLOBALS: ObjWrap = ObjWrap::empty();
 #[allow(dead_code)]
 pub static mut VAR_IDXS: usize = 0;
 
-// #[allow(dead_code)]
-// pub fn find_var(token: TokenWrap) -> ObjWrap {
-//     for sc in unsafe { SCOPE } {
-//         for vs in sc.vars() {
-//             if equal(token, vs.name()) {
-//                 return vs.var();
-//             }
-//         }
-//     }
-//     return ObjWrap::empty();
-// }
-
 #[allow(dead_code)]
-pub fn find_var_v2(token: TokenWrap) -> VarScopeWrap {
+pub fn find_var(token: TokenWrap) -> VarScopeWrap {
     for sc in unsafe { SCOPE } {
         for vs in sc.vars() {
             if equal(token, vs.name()) {
@@ -57,7 +45,7 @@ pub fn get_ident(token: TokenWrap) -> &'static str {
 #[allow(dead_code)]
 pub fn find_typedef(token: TokenWrap) -> TyWrap {
     if token.kind() == TokenKind::IDENT {
-        let vs = find_var_v2(token);
+        let vs = find_var(token);
         if !vs.ptr.is_none() {
             return vs.typedef();
         }
@@ -106,7 +94,7 @@ pub fn find_tag(token: TokenWrap) -> TyWrap {
 }
 
 #[allow(dead_code)]
-pub fn declspec_v2(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap) {
+pub fn declspec(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap) {
     enum TT {
         VOID = 1 << 0,
         CHAR = 1 << 2,
@@ -191,7 +179,7 @@ pub fn func_params(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) 
         if cur != head {
             token = skip(token, ",");
         }
-        let (tk, base_ty) = declspec_v2(token, &mut VarAttr::empty());
+        let (tk, base_ty) = declspec(token, &mut VarAttr::empty());
         let (declar_ty, tk) = declarator(tk, base_ty);
 
         cur.set_next(declar_ty);
@@ -250,7 +238,7 @@ pub fn declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn declaration_v2(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWrap) {
+pub fn declaration(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWrap) {
     let head = NodeWrap::new(Num, token);
     let mut cur = head;
 
@@ -299,11 +287,8 @@ pub fn is_type_name(token: TokenWrap) -> bool {
             return true;
         }
     }
-    if find_typedef(token).ptr.is_none() {
-        return false;
-    } else {
-        return true;
-    }
+    
+    return !find_typedef(token).ptr.is_none()
 }
 
 #[allow(dead_code)]
@@ -401,14 +386,14 @@ pub fn compound_stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     while !equal(token, "}") {
         if is_type_name(token) {
             let mut attr = VarAttr::empty();
-            let base_ty = declspec_v2(token, &mut attr).1;
-            token = declspec_v2(token, &mut attr).0;
+            let base_ty = declspec(token, &mut attr).1;
+            token = declspec(token, &mut attr).0;
             if attr.is_typedef.unwrap() {
                 token = parse_typedef(token, base_ty);
                 continue;
             }
 
-            let (nd, tk) = declaration_v2(token, base_ty);
+            let (nd, tk) = declaration(token, base_ty);
             token = tk;
             cur.set_nxt(nd)
         } else {
@@ -650,7 +635,7 @@ pub fn struct_members(mut token: TokenWrap, ty: TyWrap) -> TokenWrap {
     let mut cur = head;
 
     while !equal(token, "}") {
-        let (mut tk, base_ty) = declspec_v2(token, &mut VarAttr::empty());
+        let (mut tk, base_ty) = declspec(token, &mut VarAttr::empty());
         let mut first = true;
 
         while !consume(&mut tk, ";") {
@@ -857,7 +842,7 @@ fn primary(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
             return func_call(token);
         }
 
-        let vs = find_var_v2(token);
+        let vs = find_var(token);
         if vs.ptr.is_none() || vs.var().ptr.is_none() {
             error_token(token, "undefined variable");
         }
@@ -873,8 +858,7 @@ fn primary(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
     if token.kind() == TokenKind::Num {
         let node = NodeWrap::new_num(token.val() as i64, token);
-        token = token.nxt();
-        return (node, token);
+        return (node, token.nxt());
     }
 
     error_token(token, "expected an expression");
@@ -958,7 +942,7 @@ pub fn is_function(token: TokenWrap) -> bool {
     }
 
     let dummy = TyWrap::new();
-    let (ty, _) = declarator(token, dummy);
+    let ty = declarator(token, dummy).0;
     return ty.kind() == Some(TypeKind::FUNC);
 }
 
@@ -969,7 +953,7 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
 
     while token.kind() != TokenKind::EOF {
         let mut attr = VarAttr::empty();
-        let (tk, base_ty) = declspec_v2(token, &mut attr);
+        let (tk, base_ty) = declspec(token, &mut attr);
         token = tk;
 
         if attr.is_typedef.unwrap() {
@@ -977,8 +961,7 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
             continue;
         }
         if is_function(tk) {
-            let (_, tk) = function(tk, base_ty);
-            token = tk;
+            token = function(tk, base_ty).1;
             continue;
         }
         token = global_variable(tk, base_ty);
