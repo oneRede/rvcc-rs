@@ -104,7 +104,7 @@ pub fn declspec(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap)
         OTHER = 1 << 10,
     }
 
-    let mut ty = TyWrap::new_with_kind(Some(TypeKind::INT));
+    let mut ty = TyWrap::new_with_kind(TypeKind::INT);
     let mut counter: u32 = 0;
 
     while is_type_name(token) {
@@ -153,15 +153,15 @@ pub fn declspec(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap)
         }
 
         if counter == 1 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::VOID));
+            ty = TyWrap::new_with_kind(TypeKind::VOID);
         } else if counter == 4 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::CHAR));
+            ty = TyWrap::new_with_kind(TypeKind::CHAR);
         } else if counter == 16 || counter == 80 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::SHORT));
+            ty = TyWrap::new_with_kind(TypeKind::SHORT);
         } else if counter == 64 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::INT));
+            ty = TyWrap::new_with_kind(TypeKind::INT);
         } else if counter == 256 || counter == 320 || counter == 512 || counter == 576 {
-            ty = TyWrap::new_with_kind(Some(TypeKind::LONG));
+            ty = TyWrap::new_with_kind(TypeKind::LONG);
         } else {
             error_token(token, "invalid type")
         }
@@ -555,7 +555,7 @@ pub fn new_add(mut lhs: NodeWrap, mut rhs: NodeWrap, token: TokenWrap) -> (NodeW
         rhs = tmp;
     }
     let val = lhs.ty().base().size();
-    let num_node = NodeWrap::new_num(val as i64, token);
+    let num_node = NodeWrap::new_long(val as i64, token);
     let rhs = NodeWrap::new_binary(Mul, rhs, num_node, token);
     let node = NodeWrap::new_binary(Add, lhs, rhs, token);
     return (node, token);
@@ -573,7 +573,7 @@ pub fn new_sub(lhs: NodeWrap, rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, Tok
 
     if !((lhs.ty().base().ptr).is_none()) && is_int(rhs.ty()) {
         let val = lhs.ty().base().size();
-        let num_node = NodeWrap::new_num(val as i64, token);
+        let num_node = NodeWrap::new_long(val as i64, token);
         let rhs_node = NodeWrap::new_binary(Mul, rhs, num_node, token);
         add_ty(rhs_node);
         let node = NodeWrap::new_binary(Sub, lhs, rhs_node, token);
@@ -582,7 +582,7 @@ pub fn new_sub(lhs: NodeWrap, rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, Tok
     }
     if !lhs.ty().base().ptr.is_none() && !rhs.ty().base().ptr.is_none() {
         let node = NodeWrap::new_binary(Sub, lhs, rhs, token);
-        let ty = TyWrap::new_with_kind(Some(TypeKind::INT));
+        let ty = TyWrap::new_with_kind(TypeKind::INT);
         node.set_ty(ty);
         let val = lhs.ty().base().size();
         let num_node = NodeWrap::new_num(val as i64, token);
@@ -723,7 +723,7 @@ pub fn struct_union_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
     }
 
     let ty = TyWrap::new();
-    ty.set_kind(Some(TypeKind::STRUCT));
+    ty.set_kind(TypeKind::STRUCT);
     token = struct_members(token.nxt(), ty);
     ty.set_align(1);
 
@@ -736,7 +736,7 @@ pub fn struct_union_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
 #[allow(dead_code)]
 pub fn struct_decl(token: TokenWrap) -> (TokenWrap, TyWrap) {
     let (tk, ty) = struct_union_decl(token);
-    ty.set_kind(Some(TypeKind::STRUCT));
+    ty.set_kind(TypeKind::STRUCT);
 
     let mut offset = 0;
     for mem in ty.mems() {
@@ -755,7 +755,7 @@ pub fn struct_decl(token: TokenWrap) -> (TokenWrap, TyWrap) {
 #[allow(dead_code)]
 pub fn union_decl(token: TokenWrap) -> (TokenWrap, TyWrap) {
     let (token, ty) = struct_union_decl(token);
-    ty.set_kind(Some(TypeKind::UNION));
+    ty.set_kind(TypeKind::UNION);
 
     for mem in ty.mems() {
         if ty.align() < mem.ty().align() {

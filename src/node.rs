@@ -157,7 +157,31 @@ impl NodeWrap {
             init: NodeWrap::empty(),
             inc: NodeWrap::empty(),
             token: token,
-            ty: TyWrap::new_with_kind(Some(TypeKind::INT)),
+            ty: TyWrap::new_with_kind(TypeKind::INT),
+            func_name: "",
+            args: NodeWrap::empty(),
+            mem: MemberWrap::empty(),
+        };
+        let node: Option<*mut NodeV2> = Some(Box::leak(Box::new(node)));
+        NodeWrap::new_node_wrap(node)
+    }
+
+    pub fn new_long(val: i64, token: TokenWrap) -> NodeWrap {
+        let node = NodeV2 {
+            kind: NodeKind::Num,
+            next: NodeWrap::empty(),
+            lhs: NodeWrap::empty(),
+            rhs: NodeWrap::empty(),
+            body: NodeWrap::empty(),
+            cond: NodeWrap::empty(),
+            then: NodeWrap::empty(),
+            els: NodeWrap::empty(),
+            val: val,
+            var: ObjWrap::empty(),
+            init: NodeWrap::empty(),
+            inc: NodeWrap::empty(),
+            token: token,
+            ty: TyWrap::new_with_kind(TypeKind::LONG),
             func_name: "",
             args: NodeWrap::empty(),
             mem: MemberWrap::empty(),

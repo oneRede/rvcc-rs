@@ -70,7 +70,7 @@ impl TyWrap {
 
     pub fn new_v2(kind: TypeKind, size: usize, align: usize) -> Self {
         let ty = Self::new();
-        ty.set_kind(Some(kind));
+        ty.set_kind(kind);
         ty.set_size(size);
         ty.set_align(align);
         ty
@@ -80,21 +80,21 @@ impl TyWrap {
         Self { ptr: None }
     }
 
-    pub fn new_with_kind(kind: Option<TypeKind>) -> Self {
+    pub fn new_with_kind(kind: TypeKind) -> Self {
         let ty = TyWrap::new();
-        if kind == Some(TypeKind::VOID) {
+        if kind == TypeKind::VOID {
             ty.set_size(1);
             ty.set_align(1);
-        } else if kind == Some(TypeKind::CHAR) {
+        } else if kind == TypeKind::CHAR {
             ty.set_size(1);
             ty.set_align(1);
-        } else if kind == Some(TypeKind::SHORT) {
+        } else if kind == TypeKind::SHORT {
             ty.set_size(2);
             ty.set_align(2);
-        } else if kind == Some(TypeKind::INT) {
+        } else if kind == TypeKind::INT {
             ty.set_size(4);
             ty.set_align(4);
-        }  else {
+        } else {
             ty.set_size(8);
             ty.set_align(8);
         }
@@ -104,7 +104,7 @@ impl TyWrap {
 
     pub fn new_func_ty(return_ty: TyWrap) -> Self {
         let ty = TyWrap::new();
-        ty.set_kind(Some(TypeKind::FUNC));
+        ty.set_kind(TypeKind::FUNC);
         ty.set_return_ty(return_ty);
         ty
     }
@@ -162,8 +162,8 @@ impl TyWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().align }
     }
 
-    pub fn set_kind(&self, kind: Option<TypeKind>) {
-        unsafe { self.ptr.unwrap().as_mut().unwrap().kind = kind };
+    pub fn set_kind(&self, kind: TypeKind) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().kind = Some(kind) };
     }
 
     pub fn set_base(&self, base: TyWrap) {
@@ -234,8 +234,25 @@ pub fn add_ty(node: NodeWrap) {
     }
 
     match node.kind() {
-        NodeKind::NEG | NodeKind::Div | NodeKind::Mul | NodeKind::Sub | NodeKind::Add => {
+        NodeKind::Num => {
+            let ty: TyWrap = if node.val() == node.val() as u32 as i64 {
+                TyWrap::new_with_kind(TypeKind::INT)
+            } else {
+                TyWrap::new_with_kind(TypeKind::LONG)
+            };
+            node.set_ty(ty)
+        }
+        NodeKind::Div | NodeKind::Mul | NodeKind::Sub | NodeKind::Add => {
+            let (lhs, rhs) = usual_arith_conv(node.lhs(), node.rhs());
+            node.set_lhs(lhs);
+            node.set_rhs(rhs);
             node.set_ty(node.lhs().ty());
+            return;
+        }
+        NodeKind::NEG => {
+            let ty = get_common_ty(TyWrap::new_with_kind(TypeKind::INT), node.lhs().ty());
+            node.set_lhs(NodeWrap::new_cast(node.lhs(), ty));
+            node.set_ty(ty);
             return;
         }
         NodeKind::ASSIGN => {
@@ -243,16 +260,21 @@ pub fn add_ty(node: NodeWrap) {
             if kind == Some(TypeKind::ARRAY) {
                 error_token(node.lhs().token(), "not an lvalue");
             }
+            if node.lhs().ty().kind() != Some(TypeKind::STRUCT) {
+                node.set_rhs(NodeWrap::new_cast(node.rhs(), node.lhs().ty()));
+            }
             node.set_ty(node.lhs().ty());
             return;
         }
-        NodeKind::FUNCALL
-        | NodeKind::EQ
-        | NodeKind::NE
-        | NodeKind::LT
-        | NodeKind::LE
-        | NodeKind::Num => {
-            node.set_ty(TyWrap::new_with_kind(Some(TypeKind::LONG)));
+        NodeKind::EQ | NodeKind::NE | NodeKind::LT | NodeKind::LE => {
+            let (lhs, rhs) = usual_arith_conv(node.lhs(), node.rhs());
+            node.set_lhs(lhs);
+            node.set_rhs(rhs);
+            node.set_ty(TyWrap::new_with_kind(TypeKind::INT));
+            return;
+        }
+        NodeKind::FUNCALL => {
+            node.set_ty(TyWrap::new_with_kind(TypeKind::LONG));
             return;
         }
         NodeKind::VAR => {
@@ -309,4 +331,26 @@ pub fn add_ty(node: NodeWrap) {
         _ => {}
     }
     return;
+}
+
+#[allow(dead_code)]
+pub fn get_common_ty(ty1: TyWrap, ty2: TyWrap) -> TyWrap {
+    if !ty1.base().ptr.is_none() {
+        return TyWrap::point_to(ty1.base());
+    }
+    if ty1.size() == 8 || ty2.size() == 8 {
+        return TyWrap::new_with_kind(TypeKind::LONG);
+    }
+
+    return TyWrap::new_with_kind(TypeKind::INT);
+}
+
+#[allow(dead_code)]
+pub fn usual_arith_conv(lhs: NodeWrap, rhs: NodeWrap) -> (NodeWrap, NodeWrap) {
+    let ty = get_common_ty(lhs.ty(), rhs.ty());
+
+    let lhs = NodeWrap::new_cast(lhs, ty);
+    let rhs = NodeWrap::new_cast(rhs, ty);
+
+    return (lhs, rhs);
 }
