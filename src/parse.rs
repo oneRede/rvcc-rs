@@ -17,6 +17,8 @@ pub static mut LOCALS: ObjWrap = ObjWrap::empty();
 #[allow(dead_code)]
 pub static mut GLOBALS: ObjWrap = ObjWrap::empty();
 #[allow(dead_code)]
+pub static mut CURRENT_FN: ObjWrap = ObjWrap::empty();
+#[allow(dead_code)]
 pub static mut VAR_IDXS: usize = 0;
 
 #[allow(dead_code)]
@@ -254,7 +256,7 @@ pub fn abstract_declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, Tok
         ty = ty_suffix(token, ty).0;
         token = ty_suffix(token, ty).1;
         ty = abstract_declarator(start.nxt(), ty).0;
-        return (ty, token)
+        return (ty, token);
     }
 
     return ty_suffix(token, ty);
@@ -324,10 +326,14 @@ pub fn is_type_name(token: TokenWrap) -> bool {
 fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "return") {
         let node = NodeWrap::new(RETURN, token);
-        let (nd, tk) = expr(token.nxt());
-        node.set_lhs(nd);
+        let (expr, tk) = expr(token.nxt());
 
         token = skip(tk, ";");
+
+        add_ty(expr);
+        node.set_lhs(NodeWrap::new_cast(expr, unsafe {
+            CURRENT_FN.ty().return_ty()
+        }));
         return (node, token);
     }
 
@@ -638,7 +644,7 @@ fn mul(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn cast(mut token: TokenWrap) -> (NodeWrap, TokenWrap){
+pub fn cast(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "(") && is_type_name(token.nxt()) {
         let start = token;
         let ty = type_name(token.nxt()).0;
@@ -648,9 +654,9 @@ pub fn cast(mut token: TokenWrap) -> (NodeWrap, TokenWrap){
         token = cast(token).1;
         let node = NodeWrap::new_cast(expr, ty);
         node.set_token(start);
-        return (node, token)
+        return (node, token);
     }
-    return unary(token)
+    return unary(token);
 }
 
 #[allow(dead_code)]
@@ -836,16 +842,8 @@ pub fn func_call(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let start = token;
     token = token.nxt().nxt();
 
-    // 查找函数名
-//   VarScope *S = findVar(Start);
-//   if (!S)
-//     errorTok(Start, "implicit declaration of a function");
-//   if (!S->Var || S->Var->Ty->Kind != TY_FUNC)
-//     errorTok(Start, "not a function");
-
-//   Type *Ty = S->Var->Ty->ReturnTy;
     let vs = find_var(start);
-    if vs.ptr.is_none(){
+    if vs.ptr.is_none() {
         error_token(start, "implicit declaration of a function")
     }
     if vs.var().ptr.is_none() || vs.var().ty().kind() != Some(TypeKind::FUNC) {
@@ -972,6 +970,8 @@ pub fn function(token: TokenWrap, base_ty: TyWrap) -> (ObjWrap, TokenWrap) {
     if !func.is_definition() {
         return (func, token);
     }
+
+    unsafe { CURRENT_FN = func }
 
     unsafe { LOCALS = ObjWrap::empty() };
     let sc = ScopeWrap::new();
