@@ -836,6 +836,23 @@ pub fn func_call(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let start = token;
     token = token.nxt().nxt();
 
+    // 查找函数名
+//   VarScope *S = findVar(Start);
+//   if (!S)
+//     errorTok(Start, "implicit declaration of a function");
+//   if (!S->Var || S->Var->Ty->Kind != TY_FUNC)
+//     errorTok(Start, "not a function");
+
+//   Type *Ty = S->Var->Ty->ReturnTy;
+    let vs = find_var(start);
+    if vs.ptr.is_none(){
+        error_token(start, "implicit declaration of a function")
+    }
+    if vs.var().ptr.is_none() || vs.var().ty().kind() != Some(TypeKind::FUNC) {
+        error_token(start, "not a function")
+    }
+    let ty = vs.var().ty().return_ty();
+
     let head = NodeWrap::new(Num, token);
     let mut cur = head;
 
@@ -847,6 +864,7 @@ pub fn func_call(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         cur.set_nxt(n);
         cur = cur.nxt();
         token = t;
+        add_ty(cur);
     }
     token = skip(token, ")");
 
@@ -854,6 +872,7 @@ pub fn func_call(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let len = start.len();
     let func_name: String = start.loc().unwrap()[..len].iter().collect();
     node.set_func_name(Box::leak(Box::new(func_name)));
+    node.set_ty(ty);
 
     node.set_args(head.nxt());
 
