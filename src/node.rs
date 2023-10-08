@@ -66,7 +66,7 @@ impl ToString for NodeKind {
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
-pub struct NodeV2 {
+pub struct Node {
     pub kind: NodeKind,
     pub next: NodeWrap,
     pub lhs: NodeWrap,
@@ -84,18 +84,19 @@ pub struct NodeV2 {
     pub func_name: &'static str,
     pub args: NodeWrap,
     pub mem: MemberWrap,
+    pub func_type: TyWrap,
 }
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct NodeWrap {
-    pub ptr: Option<*mut NodeV2>,
+    pub ptr: Option<*mut Node>,
 }
 
 #[allow(dead_code)]
 impl NodeWrap {
     pub fn new(kind: NodeKind, token: TokenWrap) -> NodeWrap {
-        let node = NodeV2 {
+        let node = Node {
             kind: kind,
             next: NodeWrap::empty(),
             lhs: NodeWrap::empty(),
@@ -113,13 +114,14 @@ impl NodeWrap {
             func_name: "",
             args: NodeWrap::empty(),
             mem: MemberWrap::empty(),
+            func_type: TyWrap::empty(),
         };
-        let node: Option<*mut NodeV2> = Some(Box::leak(Box::new(node)));
+        let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
     }
 
     pub fn new_binary(kind: NodeKind, lhs: NodeWrap, rhs: NodeWrap, token: TokenWrap) -> NodeWrap {
-        let node = NodeV2 {
+        let node = Node {
             kind: kind,
             next: NodeWrap::empty(),
             lhs: lhs,
@@ -137,13 +139,14 @@ impl NodeWrap {
             func_name: "",
             args: NodeWrap::empty(),
             mem: MemberWrap::empty(),
+            func_type: TyWrap::empty(),
         };
-        let node: Option<*mut NodeV2> = Some(Box::leak(Box::new(node)));
+        let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
     }
 
     pub fn new_num(val: i64, token: TokenWrap) -> NodeWrap {
-        let node = NodeV2 {
+        let node = Node {
             kind: NodeKind::Num,
             next: NodeWrap::empty(),
             lhs: NodeWrap::empty(),
@@ -161,13 +164,14 @@ impl NodeWrap {
             func_name: "",
             args: NodeWrap::empty(),
             mem: MemberWrap::empty(),
+            func_type: TyWrap::empty(),
         };
-        let node: Option<*mut NodeV2> = Some(Box::leak(Box::new(node)));
+        let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
     }
 
     pub fn new_long(val: i64, token: TokenWrap) -> NodeWrap {
-        let node = NodeV2 {
+        let node = Node {
             kind: NodeKind::Num,
             next: NodeWrap::empty(),
             lhs: NodeWrap::empty(),
@@ -185,8 +189,9 @@ impl NodeWrap {
             func_name: "",
             args: NodeWrap::empty(),
             mem: MemberWrap::empty(),
+            func_type: TyWrap::empty(),
         };
-        let node: Option<*mut NodeV2> = Some(Box::leak(Box::new(node)));
+        let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
     }
 
@@ -197,7 +202,7 @@ impl NodeWrap {
     }
 
     pub fn new_var_node(var: ObjWrap, token: TokenWrap) -> NodeWrap {
-        let node = NodeV2 {
+        let node = Node {
             kind: NodeKind::VAR,
             next: NodeWrap::empty(),
             lhs: NodeWrap::empty(),
@@ -215,8 +220,9 @@ impl NodeWrap {
             func_name: "",
             args: NodeWrap::empty(),
             mem: MemberWrap::empty(),
+            func_type: TyWrap::empty(),
         };
-        let node: Option<*mut NodeV2> = Some(Box::leak(Box::new(node)));
+        let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
     }
 
@@ -229,7 +235,7 @@ impl NodeWrap {
         node
     }
 
-    pub fn new_node_wrap(node: Option<*mut NodeV2>) -> Self {
+    pub fn new_node_wrap(node: Option<*mut Node>) -> Self {
         Self { ptr: node }
     }
 
@@ -305,6 +311,10 @@ impl NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().mem }
     }
 
+    pub fn func_type(&self) -> TyWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().func_type }
+    }
+
     pub fn set_kind(&self, kind: NodeKind) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().kind = kind }
     }
@@ -371,6 +381,10 @@ impl NodeWrap {
 
     pub fn set_mem(&self, mem: MemberWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().mem = mem }
+    }
+
+    pub fn set_func_type(&self, func_type: TyWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().func_type = func_type }
     }
 }
 

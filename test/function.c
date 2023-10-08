@@ -40,12 +40,16 @@ int sub_long(long a, long b, long c) {
 int sub_short(short a, short b, short c) {
   return a - b - c;
 }
-
 // [70] 处理返回类型转换\n
 int g1;
 
 int *g1_ptr() { return &g1; }
 char int_to_char(int x) { return x; }
+
+// {71] 处理函数实参类型转换\n
+int div_long(long a, long b) {
+  return a / b;
+}
 
 int main() {
   // [25] 支持零参函数定义\n
@@ -68,6 +72,9 @@ int main() {
 
   ASSERT(3, *g1_ptr());
   ASSERT(5, int_to_char(261));
+
+  // {71] 处理函数实参类型转换\n
+  ASSERT(-5, div_long(-10, 2));
 
   printf("OK\n");
   return 0;

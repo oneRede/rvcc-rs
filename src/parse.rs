@@ -849,7 +849,9 @@ pub fn func_call(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if vs.var().ptr.is_none() || vs.var().ty().kind() != Some(TypeKind::FUNC) {
         error_token(start, "not a function")
     }
-    let ty = vs.var().ty().return_ty();
+
+    let ty = vs.var().ty();
+    let mut param_ty = ty.params();
 
     let head = NodeWrap::new(Num, token);
     let mut cur = head;
@@ -858,8 +860,20 @@ pub fn func_call(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         if cur != head {
             token = skip(token, ",");
         }
-        let (n, t) = assign(token);
-        cur.set_nxt(n);
+
+        let (mut arg, t) = assign(token);
+        add_ty(arg);
+
+        if !param_ty.ptr.is_none() {
+            if param_ty.kind() == Some(TypeKind::STRUCT) || param_ty.kind() == Some(TypeKind::UNION)
+            {
+                error_token(arg.token(), "passing struct or union is not supported yet");
+            }
+            arg = NodeWrap::new_cast(arg, param_ty);
+            param_ty = param_ty.next();
+        }
+
+        cur.set_nxt(arg);
         cur = cur.nxt();
         token = t;
         add_ty(cur);
@@ -870,7 +884,8 @@ pub fn func_call(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let len = start.len();
     let func_name: String = start.loc().unwrap()[..len].iter().collect();
     node.set_func_name(Box::leak(Box::new(func_name)));
-    node.set_ty(ty);
+    node.set_func_type(ty);
+    node.set_ty(ty.return_ty());
 
     node.set_args(head.nxt());
 

@@ -274,7 +274,7 @@ pub fn add_ty(node: NodeWrap) {
             return;
         }
         NodeKind::FUNCALL => {
-            node.set_ty(TyWrap::new_with_kind(TypeKind::LONG));
+            node.set_ty(node.func_type().return_ty());
             return;
         }
         NodeKind::VAR => {
