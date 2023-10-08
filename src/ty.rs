@@ -21,6 +21,7 @@ pub enum TypeKind {
     LONG,
     SHORT,
     VOID,
+    BOOL,
 }
 
 #[allow(dead_code)]
@@ -83,6 +84,9 @@ impl TyWrap {
     pub fn new_with_kind(kind: TypeKind) -> Self {
         let ty = TyWrap::new();
         if kind == TypeKind::VOID {
+            ty.set_size(1);
+            ty.set_align(1);
+        } else if kind == TypeKind::BOOL {
             ty.set_size(1);
             ty.set_align(1);
         } else if kind == TypeKind::CHAR {
@@ -205,7 +209,8 @@ impl TyWrap {
 
 #[allow(dead_code)]
 pub fn is_int(ty: TyWrap) -> bool {
-    return ty.kind() == Some(TypeKind::INT)
+    return ty.kind() == Some(TypeKind::BOOL)
+        || ty.kind() == Some(TypeKind::INT)
         || ty.kind() == Some(TypeKind::CHAR)
         || ty.kind() == Some(TypeKind::LONG)
         || ty.kind() == Some(TypeKind::SHORT);

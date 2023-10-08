@@ -99,11 +99,12 @@ pub fn find_tag(token: TokenWrap) -> TyWrap {
 pub fn declspec(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap) {
     enum TT {
         VOID = 1 << 0,
-        CHAR = 1 << 2,
-        SHORT = 1 << 4,
-        INT = 1 << 6,
-        LONG = 1 << 8,
-        OTHER = 1 << 10,
+        BOOL = 1 << 2,
+        CHAR = 1 << 4,
+        SHORT = 1 << 6,
+        INT = 1 << 8,
+        LONG = 1 << 10,
+        OTHER = 1 << 12,
     }
 
     let mut ty = TyWrap::new_with_kind(TypeKind::INT);
@@ -144,6 +145,8 @@ pub fn declspec(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap)
 
         if equal(token, "void") {
             counter += TT::VOID as u32;
+        } else if equal(token, "_Bool") {
+            counter += TT::BOOL as u32;
         } else if equal(token, "char") {
             counter += TT::CHAR as u32;
         } else if equal(token, "short") {
@@ -157,12 +160,14 @@ pub fn declspec(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap)
         if counter == 1 {
             ty = TyWrap::new_with_kind(TypeKind::VOID);
         } else if counter == 4 {
+            ty = TyWrap::new_with_kind(TypeKind::BOOL);
+        } else if counter == 16 {
             ty = TyWrap::new_with_kind(TypeKind::CHAR);
-        } else if counter == 16 || counter == 80 {
+        } else if counter == 64 || counter == 320 {
             ty = TyWrap::new_with_kind(TypeKind::SHORT);
-        } else if counter == 64 {
+        } else if counter == 256 {
             ty = TyWrap::new_with_kind(TypeKind::INT);
-        } else if counter == 256 || counter == 320 || counter == 512 || counter == 576 {
+        } else if counter == 1024 || counter == 1280 || counter == 2048 || counter == 2304{
             ty = TyWrap::new_with_kind(TypeKind::LONG);
         } else {
             error_token(token, "invalid type")
@@ -310,7 +315,7 @@ pub fn declaration(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWra
 #[allow(dead_code)]
 pub fn is_type_name(token: TokenWrap) -> bool {
     let kws = [
-        "void", "char", "short", "int", "long", "struct", "union", "typedef",
+        "void", "char", "short", "int", "long", "struct", "union", "typedef", "_Bool"
     ];
 
     for kw in kws {

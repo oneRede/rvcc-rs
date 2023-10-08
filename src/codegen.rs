@@ -570,6 +570,13 @@ pub fn cast(from: TyWrap, to: TyWrap) {
     if to.kind() == Some(TypeKind::VOID) {
         return;
     }
+
+    if to.kind() == Some(TypeKind::BOOL) {
+        write_to_file(&format!("  # 转为bool类型：为0置0，非0置1"));
+        write_to_file(&format!("  snez a0, a0"));
+        return;
+    }
+
     let t1 = get_type_id(from) as usize;
     let t2 = get_type_id(to) as usize;
     if unsafe { CAST_TABLE }[t1][t2] != "" {
