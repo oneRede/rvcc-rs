@@ -305,6 +305,13 @@ pub fn tokenize(file_name: &'static str, mut chars: &'static [char]) -> TokenWra
             continue;
         }
 
+        if chars[0] == '\'' {
+            cur.set_nxt(read_char_literal(chars));
+            cur = cur.nxt();
+            chars = &chars[cur.len()..];
+            continue;
+        }
+
         if is_ident_v1(chars[0]) {
             let mut len_ident = 1;
 
@@ -519,32 +526,6 @@ pub fn tokenize_file(file_path: &'static str) -> TokenWrap {
     return tokenize(file_path, chars);
 }
 
-// 读取字符字面量
-// static Token *readCharLiteral(char *Start) {
-//     char *P = Start + 1;
-//     // 解析字符为 \0 的情况
-//     if (*P == '\0')
-//       errorAt(Start, "unclosed char literal");
-
-//     // 解析字符
-//     char C;
-//     // 转义
-//     if (*P == '\\')
-//       C = readEscapedChar(&P, P + 1);
-//     else
-//       C = *P++;
-
-//     // strchr返回以 ' 开头的字符串，若无则为NULL
-//     char *End = strchr(P, '\'');
-//     if (!End)
-//       errorAt(P, "unclosed char literal");
-
-//     // 构造一个NUM的终结符，值为C的数值
-//     Token *Tok = newToken(TK_NUM, Start, End + 1);
-//     Tok->Val = C;
-//     return Tok;
-//   }
-
 #[allow(dead_code)]
 pub fn read_char_literal(start: &'static [char]) -> TokenWrap {
     let mut p = &start[1..];
@@ -563,9 +544,21 @@ pub fn read_char_literal(start: &'static [char]) -> TokenWrap {
         p = &p[1..]
     }
 
-    let end = 0;
+    let end = str_chr(p);
 
     let token = TokenWrap::new(TokenKind::Num, p, end + 1);
     token.set_val(c as i64);
     return token;
+}
+
+#[allow(dead_code)]
+pub fn str_chr(chars: &'static [char]) -> usize {
+    let mut i = 0;
+    for c in chars {
+        if *c == '\'' {
+            break;
+        }
+        i += 1;
+    }
+    return i;
 }
