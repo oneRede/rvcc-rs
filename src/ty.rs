@@ -332,7 +332,6 @@ pub fn add_ty(node: NodeWrap) {
             );
             return;
         }
-
         _ => {}
     }
     return;
