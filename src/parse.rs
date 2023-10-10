@@ -382,11 +382,21 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "for") {
         let node = NodeWrap::new(FOR, token);
 
-        token = token.nxt();
-        token = skip(token, "(");
+        token = skip(token.nxt(), "(");
 
-        let (nd, mut token) = expr_stmt(token);
-        node.set_init(nd);
+        let sc = ScopeWrap::new();
+        sc.enter();
+
+        if is_type_name(token) {
+            let (tk, base_ty) = declspec(token, &mut VarAttr::empty());
+            let (nd, tk) = declaration(tk, base_ty);
+            token = tk;
+            node.set_init(nd);
+        } else{
+            let (nd, tk) = expr_stmt(token);
+            token = tk;
+            node.set_init(nd);
+        }
 
         if !equal(token, ";") {
             let (nd, tk) = expr(token);
@@ -404,7 +414,7 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
         let (nd, token) = stmt(token);
         node.set_then(nd);
-
+        sc.leave();
         return (node, token);
     }
 
