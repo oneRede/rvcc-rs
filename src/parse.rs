@@ -744,7 +744,7 @@ fn unary(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         let nd = to_assign(nd);
         return (nd, tk);
     }
-    
+
     if equal(token, "--") {
         let (nd, tk) = unary(token.nxt());
         let rhs = NodeWrap::new_num(1, token);
@@ -906,6 +906,20 @@ pub fn postfix(token: TokenWrap) -> (NodeWrap, TokenWrap) {
             let nd = struct_ref(nd, token.nxt());
             node = nd;
             token = token.nxt().nxt();
+            continue;
+        }
+
+        if equal(token, "++") {
+            let nd = new_inc_dec(node, token, 1);
+            node = nd;
+            token = token.nxt();
+            continue;
+        }
+
+        if equal(token, "--") {
+            let nd = new_inc_dec(node, token, -1);
+            node = nd;
+            token = token.nxt();
             continue;
         }
 
@@ -1219,4 +1233,12 @@ pub fn to_assign(binary: NodeWrap) -> NodeWrap {
     );
 
     return NodeWrap::new_binary(NodeKind::COMMA, expr1, expr2, token);
+}
+
+#[allow(dead_code)]
+pub fn new_inc_dec(node: NodeWrap, token: TokenWrap, add_end: i64) -> NodeWrap{
+    add_ty(node);
+    let (nd, _) = new_add(node, NodeWrap::new_num(add_end, token), token);
+    let (nd, _) = new_add(to_assign(nd), NodeWrap::new_num(-add_end, token), token);
+    return NodeWrap::new_cast(nd, node.ty());
 }
