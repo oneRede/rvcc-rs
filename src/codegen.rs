@@ -341,8 +341,14 @@ pub fn emit_text(prog: ObjWrap) {
         if !func.is_function() || !func.is_definition() {
             continue;
         }
-        write_to_file(&format!("\n  # 定义全局{}段", func.name()));
-        write_to_file(&format!("  .globl {}", func.name()));
+
+        if func.is_static() {
+            write_to_file(&format!("\n  # 定义局部{}段", func.name()));
+            write_to_file(&format!("  .local {}", func.name()));
+        } else{
+            write_to_file(&format!("\n  # 定义全部{}段", func.name()));
+            write_to_file(&format!("  .globl {}", func.name()));
+        }
 
         write_to_file(&format!("  # 代码段标签"));
         write_to_file(&format!("  .text"));

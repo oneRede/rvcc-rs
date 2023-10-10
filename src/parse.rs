@@ -111,14 +111,23 @@ pub fn declspec(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap)
     let mut counter: u32 = 0;
 
     while is_type_name(token) {
-        if equal(token, "typedef") {
+        if equal(token, "typedef") || equal(token, "static") {
             if attr.is_typedef.is_none() {
                 error_token(
                     token,
                     "storage class specifier is not allowed in this context",
                 );
             }
-            attr.is_typedef = Some(true);
+            if equal(token, "typedef") {
+                attr.is_typedef = Some(true);
+            } else {
+                attr.is_static = Some(true);
+            }
+
+            if attr.is_typedef.unwrap() && attr.is_static.unwrap() {
+                error_token(token, "typedef and static may not be used together");
+            }
+
             token = token.nxt();
             continue;
         }
@@ -322,7 +331,7 @@ pub fn declaration(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWra
 #[allow(dead_code)]
 pub fn is_type_name(token: TokenWrap) -> bool {
     let kws = [
-        "void", "char", "short", "int", "long", "struct", "union", "typedef", "_Bool", "enum",
+        "void", "char", "short", "int", "long", "struct", "union", "typedef", "_Bool", "enum", "static"
     ];
 
     for kw in kws {
@@ -995,12 +1004,14 @@ pub fn create_param_l_vars(params: TyWrap) {
 }
 
 #[allow(dead_code)]
-pub fn function(token: TokenWrap, base_ty: TyWrap) -> (ObjWrap, TokenWrap) {
+pub fn function(token: TokenWrap, base_ty: TyWrap, attr: VarAttr) -> (ObjWrap, TokenWrap) {
     let (typ, mut token) = declarator(token, base_ty);
 
     let func = ObjWrap::new_global(get_ident(typ.name()), typ);
     func.set_is_function(true);
     func.set_is_definition(!consume(&mut token, ";"));
+    func.set_is_static(attr.is_static.unwrap());
+
     if !func.is_definition() {
         return (func, token);
     }
@@ -1067,7 +1078,7 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
             continue;
         }
         if is_function(tk) {
-            token = function(tk, base_ty).1;
+            token = function(tk, base_ty, attr).1;
             continue;
         }
         token = global_variable(tk, base_ty);

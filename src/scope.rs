@@ -294,7 +294,8 @@ impl Iterator for TagScopeWrap {
 
 #[allow(dead_code)]
 pub struct VarAttr {
-    pub is_typedef: Option<bool>
+    pub is_typedef: Option<bool>,
+    pub is_static: Option<bool>,
 }
 
 #[allow(dead_code)]
@@ -302,6 +303,7 @@ impl VarAttr {
     pub fn empty() -> Self{
         Self{
             is_typedef: Some(false),
+            is_static: Some(false),
         }
     }
 }

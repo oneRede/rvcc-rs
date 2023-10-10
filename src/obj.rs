@@ -16,12 +16,13 @@ pub struct Obj {
     pub is_local: bool,
     pub is_function: bool,
     pub is_definition: bool,
+    pub is_static: bool,
 
     pub body: NodeWrap,
     pub locals: ObjWrap,
     pub stack_size: usize,
     pub params: ObjWrap,
-    pub init_data: Vec<usize>,
+    pub init_data: Vec<usize>,   
 }
 
 #[allow(dead_code)]
@@ -41,6 +42,7 @@ impl ObjWrap {
             is_local: true,
             is_function: false,
             is_definition: false,
+            is_static: false,
             body: NodeWrap::empty(),
             locals: ObjWrap::empty(),
             stack_size: 0,
@@ -126,6 +128,9 @@ impl ObjWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().is_definition }
     }
 
+    pub fn is_static(&self) -> bool {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().is_static }
+    }
 
     pub fn set_nxt(&self, next: ObjWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().next = next }
@@ -173,6 +178,10 @@ impl ObjWrap {
 
     pub fn set_init_data(&self, init_data: Vec<usize>) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().init_data = init_data }
+    }
+
+    pub fn set_is_static(&self, is_static: bool) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().is_static = is_static }
     }
 }
 
