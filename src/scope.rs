@@ -10,6 +10,8 @@ pub struct VarScope {
     name: &'static str,
     var: ObjWrap,
     typedef: TyWrap,
+    enum_ty: TyWrap,
+    enum_val: i64,
 }
 
 #[allow(dead_code)]
@@ -20,6 +22,8 @@ impl VarScope {
             name: "",
             var: ObjWrap::empty(),
             typedef: TyWrap::empty(),
+            enum_ty: TyWrap::empty(),
+            enum_val: 0,
         }
     }
 }
@@ -72,6 +76,14 @@ impl VarScopeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().typedef }
     }
 
+    pub fn enum_ty(&self) -> TyWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().enum_ty }
+    }
+
+    pub fn enum_val(&self) -> i64 {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().enum_val }
+    }
+
     pub fn set_name(&self, name: &'static str) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().name = name }
     }
@@ -86,6 +98,14 @@ impl VarScopeWrap {
 
     pub fn set_typedef(&self, typedef: TyWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().typedef = typedef }
+    }
+
+    pub fn set_enum_ty(&self, enum_ty: TyWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().enum_ty = enum_ty }
+    }
+
+    pub fn set_enum_val(&self, enum_val: i64) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().enum_val = enum_val }
     }
 }
 

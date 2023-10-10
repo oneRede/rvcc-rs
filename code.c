@@ -1,4 +1,6 @@
+void assert(int expected, int actual, char *code);
+
 int main()
 {
-   assert(8, ({ char (*x)[3]; sizeof(x); }));
+   assert(0, ({ enum { zero, one, two }; zero; }));
 }

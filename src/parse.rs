@@ -124,7 +124,11 @@ pub fn declspec(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap)
         }
 
         let ty2 = find_typedef(token);
-        if equal(token, "struct") || equal(token, "union") || !ty2.ptr.is_none() {
+        if equal(token, "struct")
+            || equal(token, "union")
+            || equal(token, "enum")
+            || !ty2.ptr.is_none()
+        {
             if counter > 0 {
                 break;
             }
@@ -135,6 +139,9 @@ pub fn declspec(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap)
             } else if equal(token, "union") {
                 ty = union_decl(token.nxt()).1;
                 token = union_decl(token.nxt()).0;
+            } else if equal(token, "enum") {
+                ty = enum_specifier(token.nxt()).0;
+                token = enum_specifier(token.nxt()).1;
             } else {
                 ty = ty2;
                 token = token.nxt();
@@ -167,7 +174,7 @@ pub fn declspec(mut token: TokenWrap, attr: &mut VarAttr) -> (TokenWrap, TyWrap)
             ty = TyWrap::new_with_kind(TypeKind::SHORT);
         } else if counter == 256 {
             ty = TyWrap::new_with_kind(TypeKind::INT);
-        } else if counter == 1024 || counter == 1280 || counter == 2048 || counter == 2304{
+        } else if counter == 1024 || counter == 1280 || counter == 2048 || counter == 2304 {
             ty = TyWrap::new_with_kind(TypeKind::LONG);
         } else {
             error_token(token, "invalid type")
@@ -315,7 +322,7 @@ pub fn declaration(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWra
 #[allow(dead_code)]
 pub fn is_type_name(token: TokenWrap) -> bool {
     let kws = [
-        "void", "char", "short", "int", "long", "struct", "union", "typedef", "_Bool"
+        "void", "char", "short", "int", "long", "struct", "union", "typedef", "_Bool", "enum",
     ];
 
     for kw in kws {
@@ -933,10 +940,17 @@ fn primary(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         }
 
         let vs = find_var(token);
-        if vs.ptr.is_none() || vs.var().ptr.is_none() {
+        if vs.ptr.is_none() || (vs.var().ptr.is_none() && vs.enum_ty().ptr.is_none()) {
             error_token(token, "undefined variable");
         }
-        let node = NodeWrap::new_var_node(vs.var(), token);
+
+        let node: NodeWrap;
+        if !vs.var().ptr.is_none() {
+            node = NodeWrap::new_var_node(vs.var(), token);
+        } else {
+            node = NodeWrap::new_num(vs.enum_val(), token)
+        }
+
         return (node, token.nxt());
     }
 
@@ -1060,4 +1074,53 @@ pub fn parse(mut token: TokenWrap) -> ObjWrap {
     }
 
     return unsafe { GLOBALS };
+}
+
+#[allow(dead_code)]
+pub fn enum_specifier(mut token: TokenWrap) -> (TyWrap, TokenWrap) {
+    let ty = TyWrap::new_with_kind(TypeKind::ENUM);
+
+    let mut tag = TokenWrap::empty();
+    if token.kind() == TokenKind::IDENT {
+        tag = token;
+        token = token.nxt();
+    }
+
+    if !tag.ptr.is_none() && !equal(token, "{") {
+        let ty = find_tag(tag);
+        if ty.ptr.is_none() {
+            error_token(tag, "unknown enum type");
+        }
+        if ty.kind() != Some(TypeKind::ENUM) {
+            error_token(tag, "not an enum tag");
+        }
+        return (ty, token);
+    }
+    token = skip(token, "{");
+
+    let mut i = 0;
+    let mut val = 0;
+
+    while !equal(token, "}") {
+        if i > 0 {
+            token = skip(token, ",");
+        }
+        i += 1;
+        let name = get_ident(token);
+        token = token.nxt();
+
+        if equal(token, "=") {
+            val = get_number(token.nxt());
+            token = token.nxt().nxt();
+        }
+        let vs = ScopeWrap::push(name);
+        vs.set_enum_ty(ty);
+        vs.set_enum_val(val);
+        val += 1;
+    }
+    if !tag.ptr.is_none() {
+        TagScopeWrap::push(tag, ty);
+    }
+
+    return (ty, token.nxt());
 }
