@@ -1,4 +1,4 @@
 int main()
 {
-   assert(131585, (int)8590066177);
+   assert(8, ({ char (*x)[3]; sizeof(x); }));
 }

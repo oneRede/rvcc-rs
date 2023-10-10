@@ -306,9 +306,10 @@ pub fn tokenize(file_name: &'static str, mut chars: &'static [char]) -> TokenWra
         }
 
         if chars[0] == '\'' {
-            cur.set_nxt(read_char_literal(chars));
+            let (tk,chs )= read_char_literal(chars);
+            cur.set_nxt(tk);
             cur = cur.nxt();
-            chars = &chars[cur.len()..];
+            chars = chs;
             continue;
         }
 
@@ -527,7 +528,7 @@ pub fn tokenize_file(file_path: &'static str) -> TokenWrap {
 }
 
 #[allow(dead_code)]
-pub fn read_char_literal(start: &'static [char]) -> TokenWrap {
+pub fn read_char_literal(start: &'static [char]) -> (TokenWrap, &'static [char]) {
     let mut p = &start[1..];
 
     if p[0] == '\0' {
@@ -544,11 +545,11 @@ pub fn read_char_literal(start: &'static [char]) -> TokenWrap {
         p = &p[1..]
     }
 
-    let end = str_chr(p);
+    let end = str_chr(&start[1..]);
 
-    let token = TokenWrap::new(TokenKind::Num, p, end + 1);
+    let token = TokenWrap::new(TokenKind::Num, start, end +1);
     token.set_val(c as i64);
-    return token;
+    return (token, &p[1..]);
 }
 
 #[allow(dead_code)]
@@ -560,5 +561,5 @@ pub fn str_chr(chars: &'static [char]) -> usize {
         }
         i += 1;
     }
-    return i;
+    return i+1;
 }
