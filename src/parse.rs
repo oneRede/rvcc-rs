@@ -526,7 +526,7 @@ pub fn assign(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         let nd = to_assign(nd);
         return (nd, tk);
     }
-    
+
     if equal(token, "*=") {
         let (nd, tk) = assign(token.nxt());
         let nd = NodeWrap::new_binary(NodeKind::Mul, node, nd, token);
@@ -735,6 +735,22 @@ fn unary(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "*") {
         let (nd, tk) = cast(token.nxt());
         return (NodeWrap::new_unary(DEREF, nd, tk), tk);
+    }
+
+    if equal(token, "++") {
+        let (nd, tk) = unary(token.nxt());
+        let rhs = NodeWrap::new_num(1, token);
+        let (nd, _) = new_add(nd, rhs, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
+    }
+    
+    if equal(token, "--") {
+        let (nd, tk) = unary(token.nxt());
+        let rhs = NodeWrap::new_num(1, token);
+        let (nd, _) = new_sub(nd, rhs, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
     }
 
     postfix(token)
