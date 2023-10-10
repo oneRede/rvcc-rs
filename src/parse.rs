@@ -331,7 +331,8 @@ pub fn declaration(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWra
 #[allow(dead_code)]
 pub fn is_type_name(token: TokenWrap) -> bool {
     let kws = [
-        "void", "char", "short", "int", "long", "struct", "union", "typedef", "_Bool", "enum", "static"
+        "void", "char", "short", "int", "long", "struct", "union", "typedef", "_Bool", "enum",
+        "static",
     ];
 
     for kw in kws {
@@ -392,7 +393,7 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
             let (nd, tk) = declaration(tk, base_ty);
             token = tk;
             node.set_init(nd);
-        } else{
+        } else {
             let (nd, tk) = expr_stmt(token);
             token = tk;
             node.set_init(nd);
@@ -510,6 +511,34 @@ pub fn assign(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         let (n, t) = assign(token.nxt());
         node = NodeWrap::new_binary(ASSIGN, node, n, token);
         token = t;
+    }
+
+    if equal(token, "+=") {
+        let (nd, tk) = assign(token.nxt());
+        let (nd, _) = new_add(node, nd, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
+    }
+
+    if equal(token, "-=") {
+        let (nd, tk) = assign(token.nxt());
+        let (nd, _) = new_sub(node, nd, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
+    }
+    
+    if equal(token, "*=") {
+        let (nd, tk) = assign(token.nxt());
+        let nd = NodeWrap::new_binary(NodeKind::Mul, node, nd, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
+    }
+
+    if equal(token, "/=") {
+        let (nd, tk) = assign(token.nxt());
+        let nd = NodeWrap::new_binary(NodeKind::Div, node, nd, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
     }
 
     return (node, token);
@@ -1144,4 +1173,34 @@ pub fn enum_specifier(mut token: TokenWrap) -> (TyWrap, TokenWrap) {
     }
 
     return (ty, token.nxt());
+}
+
+#[allow(dead_code)]
+pub fn to_assign(binary: NodeWrap) -> NodeWrap {
+    add_ty(binary.lhs());
+    add_ty(binary.rhs());
+
+    let token = binary.token();
+    let var = ObjWrap::new_local("", TyWrap::point_to(binary.lhs().ty()));
+
+    let expr1 = NodeWrap::new_binary(
+        NodeKind::ASSIGN,
+        NodeWrap::new_var_node(var, token),
+        NodeWrap::new_unary(NodeKind::ADDR, binary.lhs(), token),
+        token,
+    );
+
+    let expr2 = NodeWrap::new_binary(
+        NodeKind::ASSIGN,
+        NodeWrap::new_unary(NodeKind::DEREF, NodeWrap::new_var_node(var, token), token),
+        NodeWrap::new_binary(
+            binary.kind(),
+            NodeWrap::new_unary(NodeKind::DEREF, NodeWrap::new_var_node(var, token), token),
+            binary.rhs(),
+            token,
+        ),
+        token,
+    );
+
+    return NodeWrap::new_binary(NodeKind::COMMA, expr1, expr2, token);
 }

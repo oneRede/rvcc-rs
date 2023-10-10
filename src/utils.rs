@@ -31,6 +31,10 @@ pub fn read_punct(ptr: &[char]) -> usize {
         || starts_with(ptr, &['<', '='])
         || starts_with(ptr, &['>', '='])
         || starts_with(ptr, &['-', '>'])
+        || starts_with(ptr, &['+', '='])
+        || starts_with(ptr, &['-', '='])
+        || starts_with(ptr, &['*', '='])
+        || starts_with(ptr, &['/', '='])
     {
         return 2;
     }
