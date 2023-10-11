@@ -202,10 +202,16 @@ pub fn func_params(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) 
         if cur != head {
             token = skip(token, ",");
         }
-        let (tk, base_ty) = declspec(token, &mut VarAttr::empty());
-        let (declar_ty, tk) = declarator(tk, base_ty);
+        let (tk, ty2) = declspec(token, &mut VarAttr::empty());
+        let (mut ty2, tk) = declarator(tk, ty2);
 
-        cur.set_next(declar_ty);
+        if ty2.kind() == Some(TypeKind::ARRAY) {
+            let name = ty2.name();
+            ty2 = TyWrap::point_to(ty2.base());
+            ty2.set_token(name);
+        }
+
+        cur.set_next(ty2);
         cur = cur.next();
         token = tk;
     }

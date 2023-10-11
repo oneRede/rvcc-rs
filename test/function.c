@@ -59,6 +59,9 @@ _Bool bool_fn_sub(_Bool x) { return x - 1; }
 // [75] 支持文件域内函数\n
 static int static_fn() { return 3; }
 
+// [87] 在函数形参中退化数组为指针\n
+int param_decay(int x[]) { return x[0]; }
+
 int main() {
   // [25] 支持零参函数定义\n
   ASSERT(3, ret3());
