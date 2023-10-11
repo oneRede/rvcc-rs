@@ -155,6 +155,41 @@ pub fn gen_expr(node: NodeWrap) {
             write_to_file(&format!("  seqz a0, a0"));
             return;
         }
+
+        NodeKind::LOGAND => {
+            let c = count();
+            write_to_file(&format!("\n# =====逻辑与{}===============", c));
+            gen_expr(node.lhs());
+            // 判断是否为短路操作
+            write_to_file(&format!("  # 左部短路操作判断，为0则跳转"));
+            write_to_file(&format!("  beqz a0, .L.false.{}", c));
+            gen_expr(node.rhs());
+            write_to_file(&format!("  # 右部判断，为0则跳转"));
+            write_to_file(&format!("  beqz a0, .L.false.{}", c));
+            write_to_file(&format!("  li a0, 1"));
+            write_to_file(&format!("  j .L.end.{}", c));
+            write_to_file(&format!(".L.false.{}:", c));
+            write_to_file(&format!("  li a0, 0"));
+            write_to_file(&format!(".L.end.{}:", c));
+            return;
+        }
+        NodeKind::LOGOR => {
+            let c = count();
+            write_to_file(&format!("\n# =====逻辑或{}===============", c));
+            gen_expr(node.lhs());
+            // 判断是否为短路操作
+            write_to_file(&format!("  # 左部短路操作判断，不为0则跳转"));
+            write_to_file(&format!("  bnez a0, .L.true.{}", c));
+            gen_expr(node.rhs());
+            write_to_file(&format!("  # 右部判断，bu为0则跳转"));
+            write_to_file(&format!("  bnez a0, .L.true.{}", c));
+            write_to_file(&format!("  li a0, 0"));
+            write_to_file(&format!("  j .L.end.{}", c));
+            write_to_file(&format!(".L.true.{}:", c));
+            write_to_file(&format!("  li a0, 1"));
+            write_to_file(&format!(".L.end.{}:", c));
+            return;
+        }
         NodeKind::BITNOT => {
             gen_expr(node.lhs());
             write_to_file(&format!("  # 按位取反"));

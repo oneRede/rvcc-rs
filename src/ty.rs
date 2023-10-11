@@ -294,7 +294,7 @@ pub fn add_ty(node: NodeWrap) {
             node.set_ty(node.func_type().return_ty());
             return;
         }
-        NodeKind::NOT => {
+        NodeKind::NOT | NodeKind::LOGAND | NodeKind::LOGOR => {
             node.set_ty(TyWrap::new_with_kind(TypeKind::INT));
             return;
         }

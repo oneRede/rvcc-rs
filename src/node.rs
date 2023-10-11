@@ -37,6 +37,8 @@ pub enum NodeKind {
     BITAND,
     BITOR,
     BITXOR,
+    LOGAND,
+    LOGOR,
 }
 
 impl ToString for NodeKind {
@@ -72,6 +74,8 @@ impl ToString for NodeKind {
             NodeKind::BITAND => "BITAND".to_string(),
             NodeKind::BITOR => "BITOR".to_string(),
             NodeKind::BITXOR => "BITXOR".to_string(),
+            NodeKind::LOGAND => "LOGAND".to_string(),
+            NodeKind::LOGOR => "LOGOR".to_string(),
         }
     }
 }

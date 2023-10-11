@@ -506,7 +506,7 @@ pub fn expr(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn assign(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (mut node, mut token) = bit_or(token);
+    let (mut node, mut token) = log_or(token);
     if equal(token, "=") {
         let (n, t) = assign(token.nxt());
         node = NodeWrap::new_binary(ASSIGN, node, n, token);
@@ -1318,6 +1318,32 @@ pub fn bit_or(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         let (nd, tk2) = bit_xor(token.nxt());
         token = tk2;
         let nd = NodeWrap::new_binary(NodeKind::BITOR, node, nd, start);
+        node = nd;
+    }
+    return (node, token);
+}
+
+#[allow(dead_code)]
+pub fn log_and(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (mut node, mut token) = bit_or(token);
+    while equal(token, "&&") {
+        let start = token;
+        let (nd, tk2) = bit_or(token.nxt());
+        token = tk2;
+        let nd = NodeWrap::new_binary(NodeKind::LOGAND, node, nd, start);
+        node = nd;
+    }
+    return (node, token);
+}
+
+#[allow(dead_code)]
+pub fn log_or(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (mut node, mut token) = log_and(token);
+    while equal(token, "||") {
+        let start = token;
+        let (nd, tk2) = log_and(token.nxt());
+        token = tk2;
+        let nd = NodeWrap::new_binary(NodeKind::LOGOR, node, nd, start);
         node = nd;
     }
     return (node, token);
