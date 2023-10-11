@@ -282,12 +282,26 @@ impl NodeWrap {
         Self { ptr: None }
     }
 
+    pub fn next_goto(&mut self) -> Option<NodeWrap> {
+        let now = *self;
+        if !now.ptr.is_none() {
+            self.ptr = self.nxt_goto().ptr;
+            return Some(now);
+        } else {
+            return None;
+        }
+    }
+
     pub fn kind(&self) -> NodeKind {
         unsafe { self.ptr.unwrap().as_ref().unwrap().kind }
     }
 
     pub fn nxt(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().next }
+    }
+
+    pub fn nxt_goto(&self) -> NodeWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().goto_next }
     }
 
     pub fn lhs(&self) -> NodeWrap {

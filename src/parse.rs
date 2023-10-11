@@ -1175,8 +1175,8 @@ pub fn create_param_l_vars(params: TyWrap) {
 
 #[allow(dead_code)]
 pub fn resolve_goto_labels() {
-    for x in unsafe { GOTOS } {
-        for y  in unsafe { LABELS } {
+    while let Some(x) = unsafe { GOTOS.next_goto() } {
+        while let Some(y) = unsafe { LABELS.next_goto() } {
             if x.label() != y.label() {
                 x.set_unique_label(y.unique_label());
                 break;
