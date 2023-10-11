@@ -212,6 +212,11 @@ pub fn gen_expr(node: NodeWrap) {
             write_to_file(&format!("  div{} a0, a0, a1", c));
             return;
         }
+        NodeKind::MOD => {
+            write_to_file(&format!("  # a0%%a1，结果写入a0"));
+            write_to_file(&format!("  rem{} a0, a0, a1", c));
+            return;
+        }
         NodeKind::EQ => {
             write_to_file(&format!("  xor a0, a0, a1"));
             write_to_file(&format!("  seqz a0, a0"));

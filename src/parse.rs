@@ -541,6 +541,13 @@ pub fn assign(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         return (nd, tk);
     }
 
+    if equal(token, "%=") {
+        let (nd, tk) = assign(token.nxt());
+        let nd = NodeWrap::new_binary(NodeKind::MOD, node, nd, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
+    }
+
     return (node, token);
 }
 
@@ -696,6 +703,12 @@ fn mul(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         if equal(token, "/") {
             let (nd, tk) = cast(token.nxt());
             node = NodeWrap::new_binary(Div, node, nd, token);
+            token = tk;
+            continue;
+        }
+        if equal(token, "%") {
+            let (nd, tk) = cast(token.nxt());
+            node = NodeWrap::new_binary(MOD, node, nd, token);
             token = tk;
             continue;
         }
