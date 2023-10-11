@@ -34,6 +34,9 @@ pub enum NodeKind {
     NOT,
     BITNOT,
     MOD,
+    BITAND,
+    BITOR,
+    BITXOR,
 }
 
 impl ToString for NodeKind {
@@ -66,6 +69,9 @@ impl ToString for NodeKind {
             NodeKind::NOT => "NOT".to_string(),
             NodeKind::BITNOT => "BITNOT".to_string(),
             NodeKind::MOD => "MOD".to_string(),
+            NodeKind::BITAND => "BITAND".to_string(),
+            NodeKind::BITOR => "BITOR".to_string(),
+            NodeKind::BITXOR => "BITXOR".to_string(),
         }
     }
 }

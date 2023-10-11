@@ -506,7 +506,7 @@ pub fn expr(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn assign(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (mut node, mut token) = equality(token);
+    let (mut node, mut token) = bit_or(token);
     if equal(token, "=") {
         let (n, t) = assign(token.nxt());
         node = NodeWrap::new_binary(ASSIGN, node, n, token);
@@ -544,6 +544,27 @@ pub fn assign(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if equal(token, "%=") {
         let (nd, tk) = assign(token.nxt());
         let nd = NodeWrap::new_binary(NodeKind::MOD, node, nd, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
+    }
+
+    if equal(token, "&=") {
+        let (nd, tk) = assign(token.nxt());
+        let nd = NodeWrap::new_binary(NodeKind::BITAND, node, nd, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
+    }
+
+    if equal(token, "|=") {
+        let (nd, tk) = assign(token.nxt());
+        let nd = NodeWrap::new_binary(NodeKind::BITOR, node, nd, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
+    }
+
+    if equal(token, "^=") {
+        let (nd, tk) = assign(token.nxt());
+        let nd = NodeWrap::new_binary(NodeKind::BITXOR, node, nd, token);
         let nd = to_assign(nd);
         return (nd, tk);
     }
@@ -1261,4 +1282,43 @@ pub fn new_inc_dec(node: NodeWrap, token: TokenWrap, add_end: i64) -> NodeWrap {
     let (nd, _) = new_add(node, NodeWrap::new_num(add_end, token), token);
     let (nd, _) = new_add(to_assign(nd), NodeWrap::new_num(-add_end, token), token);
     return NodeWrap::new_cast(nd, node.ty());
+}
+
+#[allow(dead_code)]
+pub fn bit_and(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (mut node, mut token) = equality(token);
+    while equal(token, "&") {
+        let start = token;
+        let (nd, tk2) = equality(token.nxt());
+        token = tk2;
+        let nd = NodeWrap::new_binary(NodeKind::BITAND, node, nd, start);
+        node = nd;
+    }
+    return (node, token);
+}
+
+#[allow(dead_code)]
+pub fn bit_xor(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (mut node, mut token) = bit_and(token);
+    while equal(token, "^") {
+        let start = token;
+        let (nd, tk2) = bit_and(token.nxt());
+        token = tk2;
+        let nd = NodeWrap::new_binary(NodeKind::BITXOR, node, nd, start);
+        node = nd;
+    }
+    return (node, token);
+}
+
+#[allow(dead_code)]
+pub fn bit_or(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (mut node, mut token) = bit_xor(token);
+    while equal(token, "|") {
+        let start = token;
+        let (nd, tk2) = bit_xor(token.nxt());
+        token = tk2;
+        let nd = NodeWrap::new_binary(NodeKind::BITOR, node, nd, start);
+        node = nd;
+    }
+    return (node, token);
 }

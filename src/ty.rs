@@ -252,7 +252,14 @@ pub fn add_ty(node: NodeWrap) {
             };
             node.set_ty(ty)
         }
-        NodeKind::Div | NodeKind::Mul | NodeKind::Sub | NodeKind::Add | NodeKind::MOD => {
+        NodeKind::Div
+        | NodeKind::Mul
+        | NodeKind::Sub
+        | NodeKind::Add
+        | NodeKind::MOD
+        | NodeKind::BITAND
+        | NodeKind::BITOR
+        | NodeKind::BITXOR => {
             let (lhs, rhs) = usual_arith_conv(node.lhs(), node.rhs());
             node.set_lhs(lhs);
             node.set_rhs(rhs);
