@@ -550,6 +550,7 @@ pub struct Member {
     ty: TyWrap,
     name: TokenWrap,
     offset: i64,
+    token: TokenWrap,
 }
 
 #[allow(dead_code)]
@@ -560,6 +561,7 @@ impl Member {
             ty: TyWrap::empty(),
             name: TokenWrap::empty(),
             offset: 0,
+            token: TokenWrap::empty(),
         }
     }
 }

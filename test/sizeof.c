@@ -36,6 +36,10 @@ int main() {
   // [79] 支持后置++和--\n
   ASSERT(1, ({ char i; sizeof(i++); }));
 
+  // [86] 增加不完整数组类型的概念\n
+  ASSERT(8, sizeof(int(*)[10]));
+  ASSERT(8, sizeof(int(*)[][10]));
+
   printf("OK\n");
   return 0;
 }

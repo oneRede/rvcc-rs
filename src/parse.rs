@@ -217,17 +217,26 @@ pub fn func_params(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) 
 }
 
 #[allow(dead_code)]
-pub fn ty_suffix(mut token: TokenWrap, ty: TyWrap) -> (TyWrap, TokenWrap) {
+pub fn array_dimensions(mut token: TokenWrap, ty: TyWrap) -> (TyWrap, TokenWrap) {
+    if equal(token, "]") {
+        let (ty, tk) = ty_suffix(token.nxt(), ty);
+        return (TyWrap::new_array_ty(ty, 0), tk);
+    }
+    let sz = get_number(token);
+    token = skip(token.nxt(), "]");
+    let (ty, token) = ty_suffix(token, ty);
+    let ty = TyWrap::new_array_ty(ty, sz as usize);
+    return (ty, token);
+}
+
+#[allow(dead_code)]
+pub fn ty_suffix(token: TokenWrap, ty: TyWrap) -> (TyWrap, TokenWrap) {
     if equal(token, "(") {
         return func_params(token.nxt(), ty);
     }
 
     if equal(token, "[") {
-        let sz = get_number(token.nxt());
-        token = skip(token.nxt().nxt(), "]");
-        let (ty, token) = ty_suffix(token, ty);
-        let ty = TyWrap::new_array_ty(ty, sz as usize);
-        return (ty, token);
+        return array_dimensions(token.nxt(), ty);
     }
 
     return (ty, token);
