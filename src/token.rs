@@ -586,6 +586,7 @@ pub fn read_int_literal(start: &'static [char]) -> (TokenWrap, &'static [char]) 
             break;
         }
     }
+    
     let val = i64::from_str_radix(&str_num, base).unwrap();
     let mut len = str_num.len();
     if base == 16 || base == 2 {

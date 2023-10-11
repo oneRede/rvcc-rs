@@ -287,6 +287,10 @@ pub fn add_ty(node: NodeWrap) {
             node.set_ty(node.func_type().return_ty());
             return;
         }
+        NodeKind::NOT => {
+            node.set_ty(TyWrap::new_with_kind(TypeKind::INT));
+            return;
+        }
         NodeKind::VAR => {
             let ty = node.var().ty();
             node.set_ty(ty);

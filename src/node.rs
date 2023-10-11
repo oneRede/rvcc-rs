@@ -31,6 +31,7 @@ pub enum NodeKind {
     COMMA,
     MEMBER,
     CAST,
+    NOT,
 }
 
 impl ToString for NodeKind {
@@ -60,6 +61,7 @@ impl ToString for NodeKind {
             NodeKind::COMMA => "COMMA".to_string(),
             NodeKind::MEMBER => "MEMBER".to_string(),
             NodeKind::CAST => "CAST".to_string(),
+            NodeKind::NOT => "NOT".to_string(),
         }
     }
 }

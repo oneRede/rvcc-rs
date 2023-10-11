@@ -736,6 +736,10 @@ fn unary(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         let (nd, tk) = cast(token.nxt());
         return (NodeWrap::new_unary(DEREF, nd, tk), tk);
     }
+    if equal(token, "!") {
+        let (nd, tk) = cast(token.nxt());
+        return (NodeWrap::new_unary(NOT, nd, tk), tk);
+    }
 
     if equal(token, "++") {
         let (nd, tk) = unary(token.nxt());

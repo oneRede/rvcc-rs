@@ -150,6 +150,13 @@ pub fn gen_expr(node: NodeWrap) {
             return;
         }
 
+        NodeKind::NOT => {
+            gen_expr(node.lhs());
+            write_to_file(&format!("  # 非运算"));
+            write_to_file(&format!("  seqz a0, a0"));
+            return;
+        }
+
         NodeKind::FUNCALL => {
             let mut n_args = 0;
 
@@ -345,7 +352,7 @@ pub fn emit_text(prog: ObjWrap) {
         if func.is_static() {
             write_to_file(&format!("\n  # 定义局部{}段", func.name()));
             write_to_file(&format!("  .local {}", func.name()));
-        } else{
+        } else {
             write_to_file(&format!("\n  # 定义全部{}段", func.name()));
             write_to_file(&format!("  .globl {}", func.name()));
         }
