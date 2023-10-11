@@ -395,10 +395,10 @@ pub fn assign_l_var_offsets(prog: ObjWrap) {
         let mut offset = 0;
         for obj in func.locals() {
             offset += obj.ty().size();
-            offset = align_to(offset, obj.ty().align());
+            offset = align_to(offset as usize, obj.ty().align()) as i64;
             obj.set_offset(-(offset as i64));
         }
-        func.set_stack_size(align_to(offset, 16));
+        func.set_stack_size(align_to(offset as usize, 16));
     }
 }
 
@@ -440,7 +440,7 @@ pub fn emit_text(prog: ObjWrap) {
 
         let mut i = 0;
         for var in func.params() {
-            store_genernal(i, var.offset(), var.ty().size());
+            store_genernal(i, var.offset(), var.ty().size() as usize);
             i += 1;
         }
 

@@ -420,7 +420,7 @@ pub fn read_string_literal(chars: &'static [char]) -> TokenWrap {
     let n_chars = chars.len() - start.len();
 
     let token = TokenWrap::new(TokenKind::STR, chars, n_chars + 1);
-    let ty = TyWrap::new_array_ty(TyWrap::new_with_kind(TypeKind::CHAR), n_chars);
+    let ty = TyWrap::new_array_ty(TyWrap::new_with_kind(TypeKind::CHAR), n_chars as i64);
     token.set_ty(ty);
     token.set_stri(buf);
 

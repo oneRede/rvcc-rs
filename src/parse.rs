@@ -226,12 +226,12 @@ pub fn func_params(mut token: TokenWrap, mut ty: TyWrap) -> (TyWrap, TokenWrap) 
 pub fn array_dimensions(mut token: TokenWrap, ty: TyWrap) -> (TyWrap, TokenWrap) {
     if equal(token, "]") {
         let (ty, tk) = ty_suffix(token.nxt(), ty);
-        return (TyWrap::new_array_ty(ty, 0), tk);
+        return (TyWrap::new_array_ty(ty, -1), tk);
     }
     let sz = get_number(token);
     token = skip(token.nxt(), "]");
     let (ty, token) = ty_suffix(token, ty);
-    let ty = TyWrap::new_array_ty(ty, sz as usize);
+    let ty = TyWrap::new_array_ty(ty, sz as i64);
     return (ty, token);
 }
 
@@ -319,6 +319,9 @@ pub fn declaration(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWra
         let ty = declarator(token, base_ty).0;
         token = declarator(token, base_ty).1;
 
+        if ty.size() < 0 {
+            error_token(token, "variable has incomplete type");
+        }
         if ty.kind() == Some(TypeKind::VOID) {
             error_token(token, "variable declared void");
         }
@@ -854,18 +857,28 @@ pub fn struct_union_decl(mut token: TokenWrap) -> (TokenWrap, TyWrap) {
 
     if !tag.ptr.is_none() && !equal(token, "{") {
         let ty = find_tag(tag);
-        if ty.ptr.is_none() {
-            error_token(tag, "unknown struct type");
+        if !ty.ptr.is_none() {
+            return (token, ty);
         }
+
+        let ty = TyWrap::new_with_kind(TypeKind::STRUCT);
+        ty.set_size(-1);
+        TagScopeWrap::push(tag, ty);
         return (token, ty);
     }
+    token = skip(token, "{");
 
-    let ty = TyWrap::new();
-    ty.set_kind(TypeKind::STRUCT);
-    token = struct_members(token.nxt(), ty);
+    let ty = TyWrap::new_with_kind(TypeKind::STRUCT);
+    token = struct_members(token, ty);
     ty.set_align(1);
 
     if !tag.ptr.is_none() {
+        for s in unsafe { SCOPE.tags() } {
+            if equal(tag, s.name()) {
+                s.set_ty(ty);
+                return (token, s.ty());
+            }
+        }
         TagScopeWrap::push(tag, ty);
     }
     return (token, ty);
@@ -876,16 +889,20 @@ pub fn struct_decl(token: TokenWrap) -> (TokenWrap, TyWrap) {
     let (tk, ty) = struct_union_decl(token);
     ty.set_kind(TypeKind::STRUCT);
 
+    if ty.size() < 0 {
+        return (tk, ty);
+    }
+
     let mut offset = 0;
     for mem in ty.mems() {
         offset = align_to(offset, mem.ty().align());
         mem.set_offset(offset as i64);
-        offset += mem.ty().size();
+        offset += mem.ty().size() as usize;
         if ty.align() < mem.ty().align() {
             ty.set_align(mem.ty().align());
         }
     }
-    ty.set_size(align_to(offset, ty.align()) as usize);
+    ty.set_size(align_to(offset, ty.align()) as i64);
 
     return (tk, ty);
 }
@@ -903,7 +920,7 @@ pub fn union_decl(token: TokenWrap) -> (TokenWrap, TyWrap) {
             ty.set_size(mem.ty().size());
         }
     }
-    ty.set_size(align_to(ty.size(), ty.align()));
+    ty.set_size(align_to(ty.size() as usize, ty.align()) as i64);
     return (token, ty);
 }
 

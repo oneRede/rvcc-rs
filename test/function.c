@@ -98,6 +98,9 @@ int main() {
   // [75] 支持文件域内函数\n
   ASSERT(3, static_fn());
 
+  // [87] 在函数形参中退化数组为指针\n
+  ASSERT(3, ({ int x[2]; x[0]=3; param_decay(x); }));
+
   printf("OK\n");
   return 0;
 }

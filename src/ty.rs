@@ -34,7 +34,7 @@ pub struct Ty {
     pub return_ty: TyWrap,
     pub params: TyWrap,
     pub next: TyWrap,
-    pub size: usize,
+    pub size: i64,
     pub array_len: usize,
     pub mems: MemberWrap,
     pub align: usize,
@@ -70,7 +70,7 @@ impl TyWrap {
         Self { ptr: ty }
     }
 
-    pub fn new_v2(kind: TypeKind, size: usize, align: usize) -> Self {
+    pub fn new_v2(kind: TypeKind, size: i64, align: usize) -> Self {
         let ty = Self::new();
         ty.set_kind(kind);
         ty.set_size(size);
@@ -99,7 +99,10 @@ impl TyWrap {
         } else if kind == TypeKind::ENUM {
             ty.set_size(4);
             ty.set_align(4);
-        } else if kind == TypeKind::INT {
+        } else if kind == TypeKind::STRUCT {
+            ty.set_size(0);
+            ty.set_align(1);
+        }else if kind == TypeKind::INT {
             ty.set_size(4);
             ty.set_align(4);
         } else {
@@ -117,10 +120,10 @@ impl TyWrap {
         ty
     }
 
-    pub fn new_array_ty(base: TyWrap, len: usize) -> Self {
+    pub fn new_array_ty(base: TyWrap, len: i64) -> Self {
         let ty = TyWrap::new_v2(TypeKind::ARRAY, base.size() * len, base.align());
         ty.set_base(base);
-        ty.set_array_len(len);
+        ty.set_array_len(len as usize);
         ty
     }
 
@@ -154,7 +157,7 @@ impl TyWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().next }
     }
 
-    pub fn size(&self) -> usize {
+    pub fn size(&self) -> i64 {
         unsafe { self.ptr.unwrap().as_ref().unwrap().size }
     }
 
@@ -194,7 +197,7 @@ impl TyWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().next = next }
     }
 
-    pub fn set_size(&self, size: usize) {
+    pub fn set_size(&self, size: i64) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().size = size }
     }
 
