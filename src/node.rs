@@ -32,6 +32,7 @@ pub enum NodeKind {
     MEMBER,
     CAST,
     NOT,
+    BITNOT,
 }
 
 impl ToString for NodeKind {
@@ -62,6 +63,7 @@ impl ToString for NodeKind {
             NodeKind::MEMBER => "MEMBER".to_string(),
             NodeKind::CAST => "CAST".to_string(),
             NodeKind::NOT => "NOT".to_string(),
+            NodeKind::BITNOT => "BITNOT".to_string(),
         }
     }
 }

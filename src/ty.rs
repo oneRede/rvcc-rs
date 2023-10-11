@@ -291,6 +291,10 @@ pub fn add_ty(node: NodeWrap) {
             node.set_ty(TyWrap::new_with_kind(TypeKind::INT));
             return;
         }
+        NodeKind::BITNOT => {
+            node.set_ty(node.lhs().ty());
+            return;
+        }
         NodeKind::VAR => {
             let ty = node.var().ty();
             node.set_ty(ty);

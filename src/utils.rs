@@ -59,6 +59,7 @@ pub fn read_punct(ptr: &[char]) -> usize {
         || ptr[0] == ']'
         || ptr[0] == '\"'
         || ptr[0] == '.'
+        || ptr[0] == '~'
     {
         return 1;
     } else {

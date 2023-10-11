@@ -149,11 +149,16 @@ pub fn gen_expr(node: NodeWrap) {
             cast(node.lhs().ty(), node.ty());
             return;
         }
-
         NodeKind::NOT => {
             gen_expr(node.lhs());
             write_to_file(&format!("  # 非运算"));
             write_to_file(&format!("  seqz a0, a0"));
+            return;
+        }
+        NodeKind::BITNOT => {
+            gen_expr(node.lhs());
+            write_to_file(&format!("  # 按位取反"));
+            write_to_file(&format!("  not a0, a0"));
             return;
         }
 

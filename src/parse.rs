@@ -740,7 +740,10 @@ fn unary(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         let (nd, tk) = cast(token.nxt());
         return (NodeWrap::new_unary(NOT, nd, tk), tk);
     }
-
+    if equal(token, "~") {
+        let (nd, tk) = cast(token.nxt());
+        return (NodeWrap::new_unary(BITNOT, nd, tk), tk);
+    }
     if equal(token, "++") {
         let (nd, tk) = unary(token.nxt());
         let rhs = NodeWrap::new_num(1, token);
@@ -1240,7 +1243,7 @@ pub fn to_assign(binary: NodeWrap) -> NodeWrap {
 }
 
 #[allow(dead_code)]
-pub fn new_inc_dec(node: NodeWrap, token: TokenWrap, add_end: i64) -> NodeWrap{
+pub fn new_inc_dec(node: NodeWrap, token: TokenWrap, add_end: i64) -> NodeWrap {
     add_ty(node);
     let (nd, _) = new_add(node, NodeWrap::new_num(add_end, token), token);
     let (nd, _) = new_add(to_assign(nd), NodeWrap::new_num(-add_end, token), token);
