@@ -141,3 +141,16 @@ pub fn add_line_numbers(mut token: TokenWrap) {
         start = unsafe { start.add(1) };
     }
 }
+
+#[allow(dead_code)]
+pub fn num_base_conversion(mut num: i64, src_base: i64, dst_base: i64) -> i64{
+    let mut dst_base_num = 0;
+    let mut i = 0;
+
+    while num != 0{
+        dst_base_num += (num % dst_base) * i64::pow(src_base, i);
+        num /= dst_base;
+        i +=1;
+    }
+    return dst_base_num
+}

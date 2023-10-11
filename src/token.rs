@@ -7,7 +7,7 @@ use std::{
 use self::TokenKind::*;
 use crate::{
     ty::{TyWrap, TypeKind},
-    utils::{add_line_numbers, error_at, error_token, get_num_from_chars, read_punct},
+    utils::{add_line_numbers, error_at, error_token, read_punct},
 };
 
 pub static mut CURRENT_INPUT: Option<&[char]> = None;
@@ -287,14 +287,11 @@ pub fn tokenize(file_name: &'static str, mut chars: &'static [char]) -> TokenWra
             continue;
         }
 
-        let num_rs = get_num_from_chars(chars);
-        if let Ok((num, cs)) = num_rs {
-            cur.set_next(TokenWrap::new(Num, chars, num.to_string().len()));
-
-            chars = cs;
+        if chars[0].is_ascii_digit() {
+            let (tk, chs) = read_int_literal(chars);
+            cur.set_next(tk);
             cur = cur.nxt();
-            cur.set_val(num);
-            cur.set_len(num.to_string().len());
+            chars = chs;
             continue;
         }
 
@@ -306,7 +303,7 @@ pub fn tokenize(file_name: &'static str, mut chars: &'static [char]) -> TokenWra
         }
 
         if chars[0] == '\'' {
-            let (tk,chs )= read_char_literal(chars);
+            let (tk, chs) = read_char_literal(chars);
             cur.set_nxt(tk);
             cur = cur.nxt();
             chars = chs;
@@ -383,7 +380,7 @@ pub fn convert_keyword(token: TokenWrap) {
 fn is_keyword(token: TokenWrap) -> bool {
     let keywords = [
         "return", "if", "else", "for", "while", "int", "sizeof", "char", "struct", "union", "long",
-        "short", "void", "typedef", "_Bool", "enum", "static"
+        "short", "void", "typedef", "_Bool", "enum", "static",
     ];
 
     for kw in keywords {
@@ -547,7 +544,7 @@ pub fn read_char_literal(start: &'static [char]) -> (TokenWrap, &'static [char])
 
     let end = str_chr(&start[1..]);
 
-    let token = TokenWrap::new(TokenKind::Num, start, end +1);
+    let token = TokenWrap::new(TokenKind::Num, start, end + 1);
     token.set_val(c as i64);
     return (token, &p[1..]);
 }
@@ -561,5 +558,40 @@ pub fn str_chr(chars: &'static [char]) -> usize {
         }
         i += 1;
     }
-    return i+1;
+    return i + 1;
+}
+
+#[allow(dead_code)]
+pub fn read_int_literal(start: &'static [char]) -> (TokenWrap, &'static [char]) {
+    let mut p = start;
+
+    let mut base: u32 = 10;
+    if p[0] == '0' && !(p[1] == 'x' || p[1] == 'X' || p[1] == 'b' || p[1] == 'B') {
+        base = 8;
+    } else if (p.starts_with(&['0', 'b']) || p.starts_with(&['0', 'B']))
+        && (p[2] == '0' || p[2] == '1')
+    {
+        p = &p[2..];
+        base = 2
+    } else if (p.starts_with(&['0', 'x'])||p.starts_with(&['0', 'X']))  && p[2].is_ascii_hexdigit() {
+        p = &p[2..];
+        base = 16;
+    }
+
+    let mut str_num = "".to_string();
+    for c in p {
+        if c.is_ascii_digit() || (base == 16 && c.is_ascii_hexdigit()) {
+            str_num += &c.to_string();
+        } else {
+            break;
+        }
+    }
+    let val = i64::from_str_radix(&str_num, base).unwrap();
+    let mut len = str_num.len();
+    if base == 16 || base == 2 {
+        len += 2;
+    }
+    let token = TokenWrap::new(TokenKind::Num, start, len);
+    token.set_val(val);
+    return (token, &start[len..]);
 }

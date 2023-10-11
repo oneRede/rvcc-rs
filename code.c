@@ -2,5 +2,5 @@ void assert(int expected, int actual, char *code);
 
 int main()
 {
-   assert(0, ({ enum { zero, one, two }; zero; }));
+   assert(47, 0B101111);
 }
