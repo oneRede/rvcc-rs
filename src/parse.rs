@@ -20,6 +20,10 @@ pub static mut GLOBALS: ObjWrap = ObjWrap::empty();
 pub static mut CURRENT_FN: ObjWrap = ObjWrap::empty();
 #[allow(dead_code)]
 pub static mut VAR_IDXS: usize = 0;
+#[allow(dead_code)]
+pub static mut GOTOS: NodeWrap = NodeWrap::empty();
+#[allow(dead_code)]
+pub static mut LABELS: NodeWrap = NodeWrap::empty();
 
 #[allow(dead_code)]
 pub fn find_var(token: TokenWrap) -> VarScopeWrap {
@@ -453,6 +457,30 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         return (node, token);
     }
 
+    if equal(token, "goto") {
+        let node = NodeWrap::new(GOTO, token);
+        node.set_label(get_ident(token.nxt()));
+
+        node.set_goto_next(unsafe { GOTOS });
+        unsafe { GOTOS = node };
+        token = skip(token.nxt().nxt(), ";");
+        return (node, token)
+    }
+
+    if token.kind() == TokenKind::IDENT && equal(token.nxt(), ":"){
+        let node = NodeWrap::new(NodeKind::LABEL, token);
+        let label: String = token.loc().unwrap()[..token.len()].iter().collect();
+        let label = Box::leak(Box::new(label));
+        node.set_label(label);
+        node.set_unique_label(new_unique_name());
+        let (nd, tk) = stmt(token.nxt().nxt());
+        node.set_lhs(nd);
+        node.set_goto_next(unsafe { LABELS });
+        unsafe { LABELS = node };
+        return (node, tk)
+        
+    }
+
     if equal(token, "{") {
         return compound_stmt(token.nxt());
     }
@@ -685,7 +713,7 @@ pub fn new_sub(lhs: NodeWrap, rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, Tok
 
     if !((lhs.ty().base().ptr).is_none()) && is_int(rhs.ty()) {
         let val = lhs.ty().base().size();
-        let num_node = NodeWrap::new_long(val as i64, token);
+        let num_node = NodeWrap::new_long(val, token);
         let rhs_node = NodeWrap::new_binary(Mul, rhs, num_node, token);
         add_ty(rhs_node);
         let node = NodeWrap::new_binary(Sub, lhs, rhs_node, token);
@@ -697,7 +725,7 @@ pub fn new_sub(lhs: NodeWrap, rhs: NodeWrap, token: TokenWrap) -> (NodeWrap, Tok
         let ty = TyWrap::new_with_kind(TypeKind::INT);
         node.set_ty(ty);
         let val = lhs.ty().base().size();
-        let num_node = NodeWrap::new_num(val as i64, token);
+        let num_node = NodeWrap::new_num(val, token);
         let node = NodeWrap::new_binary(Div, node, num_node, token);
         return (node, token);
     }
@@ -1146,6 +1174,23 @@ pub fn create_param_l_vars(params: TyWrap) {
 }
 
 #[allow(dead_code)]
+pub fn resolve_goto_labels() {
+    for x in unsafe { GOTOS } {
+        for y  in unsafe { LABELS } {
+            if x.label() != y.label() {
+                x.set_unique_label(y.unique_label());
+                break;
+            }
+        }
+        if x.unique_label() == "" {
+            error_token(x.token().nxt(), "use of undeclared label")
+        }
+    }
+    unsafe { GOTOS = NodeWrap::empty() };
+    unsafe { LABELS = NodeWrap::empty() };
+}
+
+#[allow(dead_code)]
 pub fn function(token: TokenWrap, base_ty: TyWrap, attr: VarAttr) -> (ObjWrap, TokenWrap) {
     let (typ, mut token) = declarator(token, base_ty);
 
@@ -1174,6 +1219,7 @@ pub fn function(token: TokenWrap, base_ty: TyWrap, attr: VarAttr) -> (ObjWrap, T
     func.set_locals(unsafe { LOCALS });
 
     unsafe { SCOPE.leave() };
+    resolve_goto_labels();
 
     return (func, token);
 }

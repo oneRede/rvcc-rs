@@ -365,6 +365,15 @@ fn gen_stmt(node: NodeWrap) {
             }
             return;
         }
+        NodeKind::GOTO => {
+            write_to_file(&format!("  j {}", node.unique_label()));
+            return;
+        }
+        NodeKind::LABEL => {
+            write_to_file(&format!("{}:", node.unique_label()));
+            gen_stmt(node.lhs());
+            return;
+        }
 
         NodeKind::RETURN => {
             write_to_file(&format!("# 返回语句"));

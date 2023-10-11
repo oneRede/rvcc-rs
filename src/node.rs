@@ -39,6 +39,8 @@ pub enum NodeKind {
     BITXOR,
     LOGAND,
     LOGOR,
+    GOTO,
+    LABEL,
 }
 
 impl ToString for NodeKind {
@@ -76,6 +78,8 @@ impl ToString for NodeKind {
             NodeKind::BITXOR => "BITXOR".to_string(),
             NodeKind::LOGAND => "LOGAND".to_string(),
             NodeKind::LOGOR => "LOGOR".to_string(),
+            NodeKind::GOTO => "GOTO".to_string(),
+            NodeKind::LABEL => "LABEL".to_string(),
         }
     }
 }
@@ -101,6 +105,10 @@ pub struct Node {
     pub args: NodeWrap,
     pub mem: MemberWrap,
     pub func_type: TyWrap,
+
+    pub label: &'static str,
+    pub unique_label: &'static str,
+    pub goto_next: NodeWrap,
 }
 
 #[allow(dead_code)]
@@ -131,6 +139,9 @@ impl NodeWrap {
             args: NodeWrap::empty(),
             mem: MemberWrap::empty(),
             func_type: TyWrap::empty(),
+            label: "",
+            unique_label: "",
+            goto_next: NodeWrap::empty(),
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -156,6 +167,9 @@ impl NodeWrap {
             args: NodeWrap::empty(),
             mem: MemberWrap::empty(),
             func_type: TyWrap::empty(),
+            label: "",
+            unique_label: "",
+            goto_next: NodeWrap::empty(),
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -181,6 +195,9 @@ impl NodeWrap {
             args: NodeWrap::empty(),
             mem: MemberWrap::empty(),
             func_type: TyWrap::empty(),
+            label: "",
+            unique_label: "",
+            goto_next: NodeWrap::empty(),
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -206,6 +223,9 @@ impl NodeWrap {
             args: NodeWrap::empty(),
             mem: MemberWrap::empty(),
             func_type: TyWrap::empty(),
+            label: "",
+            unique_label: "",
+            goto_next: NodeWrap::empty(),
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -237,6 +257,9 @@ impl NodeWrap {
             args: NodeWrap::empty(),
             mem: MemberWrap::empty(),
             func_type: TyWrap::empty(),
+            label: "",
+            unique_label: "",
+            goto_next: NodeWrap::empty(),
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -255,7 +278,7 @@ impl NodeWrap {
         Self { ptr: node }
     }
 
-    pub fn empty() -> Self {
+    pub const fn empty() -> Self {
         Self { ptr: None }
     }
 
@@ -331,6 +354,18 @@ impl NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().func_type }
     }
 
+    pub fn label(&self) -> &'static str {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().label }
+    }
+
+    pub fn unique_label(&self) -> &'static str {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().unique_label }
+    }
+
+    pub fn goto_next(&self) -> NodeWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().goto_next }
+    }
+
     pub fn set_kind(&self, kind: NodeKind) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().kind = kind }
     }
@@ -401,6 +436,18 @@ impl NodeWrap {
 
     pub fn set_func_type(&self, func_type: TyWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().func_type = func_type }
+    }
+
+    pub fn set_label(&self, label: &'static str) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().label = label }
+    }
+
+    pub fn set_unique_label(&self, unique_label: &'static str) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().unique_label = unique_label }
+    }
+
+    pub fn set_goto_next(&self, goto_next: NodeWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().goto_next = goto_next }
     }
 }
 
