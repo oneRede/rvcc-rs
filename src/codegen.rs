@@ -340,8 +340,8 @@ fn gen_stmt(node: NodeWrap) {
             write_to_file(&format!("# Cond表达式{}", c));
             if !node.cond().ptr.is_none() {
                 gen_expr(node.cond());
-                write_to_file(&format!("  # 若a0为0,则跳转到循环{}的.L.end.{}段", c, c));
-                write_to_file(&format!("  beqz a0, .L.end.{}", c));
+                write_to_file(&format!("  # 若a0为0，则跳转到循环{}的{}段", c, node.brk_label()));
+                write_to_file(&format!("  beqz a0, {}", node.brk_label()));
             }
 
             write_to_file(&format!("\n# Then语句{}", c));
@@ -354,8 +354,9 @@ fn gen_stmt(node: NodeWrap) {
 
             write_to_file(&format!("  # 跳转到循环{}的.L.begin.{}段", c, c));
             write_to_file(&format!("  j .L.begin.{}", c));
-            write_to_file(&format!("\n# 循环{}的.L.end.{}段标签", c, c));
-            write_to_file(&format!(".L.end.{}:", c));
+
+            write_to_file(&format!("\n# 循环{}的{}段标签", c, node.brk_label()));
+            write_to_file(&format!("{}:", node.brk_label()));
             return;
         }
 
