@@ -380,7 +380,8 @@ pub fn convert_keyword(token: TokenWrap) {
 fn is_keyword(token: TokenWrap) -> bool {
     let keywords = [
         "return", "if", "else", "for", "while", "int", "sizeof", "char", "struct", "union", "long",
-        "short", "void", "typedef", "_Bool", "enum", "static", "goto", "break", "continue"
+        "short", "void", "typedef", "_Bool", "enum", "static", "goto", "break", "continue",
+        "switch", "case", "default",
     ];
 
     for kw in keywords {
@@ -564,7 +565,6 @@ pub fn str_chr(chars: &'static [char]) -> usize {
 #[allow(dead_code)]
 pub fn read_int_literal(start: &'static [char]) -> (TokenWrap, &'static [char]) {
     let mut p = start;
-
     let mut base: u32 = 10;
     if p[0] == '0' && !(p[1] == 'x' || p[1] == 'X' || p[1] == 'b' || p[1] == 'B') {
         base = 8;
@@ -572,8 +572,9 @@ pub fn read_int_literal(start: &'static [char]) -> (TokenWrap, &'static [char]) 
         && (p[2] == '0' || p[2] == '1')
     {
         p = &p[2..];
-        base = 2
-    } else if (p.starts_with(&['0', 'x'])||p.starts_with(&['0', 'X']))  && p[2].is_ascii_hexdigit() {
+        base = 2;
+    } else if (p.starts_with(&['0', 'x']) || p.starts_with(&['0', 'X'])) && p[2].is_ascii_hexdigit()
+    {
         p = &p[2..];
         base = 16;
     }
@@ -586,7 +587,7 @@ pub fn read_int_literal(start: &'static [char]) -> (TokenWrap, &'static [char]) 
             break;
         }
     }
-    
+
     let val = i64::from_str_radix(&str_num, base).unwrap();
     let mut len = str_num.len();
     if base == 16 || base == 2 {

@@ -340,7 +340,11 @@ fn gen_stmt(node: NodeWrap) {
             write_to_file(&format!("# Cond表达式{}", c));
             if !node.cond().ptr.is_none() {
                 gen_expr(node.cond());
-                write_to_file(&format!("  # 若a0为0，则跳转到循环{}的{}段", c, node.brk_label()));
+                write_to_file(&format!(
+                    "  # 若a0为0，则跳转到循环{}的{}段",
+                    c,
+                    node.brk_label()
+                ));
                 write_to_file(&format!("  beqz a0, {}", node.brk_label()));
             }
 
@@ -358,6 +362,37 @@ fn gen_stmt(node: NodeWrap) {
 
             write_to_file(&format!("\n# 循环{}的{}段标签", c, node.brk_label()));
             write_to_file(&format!("{}:", node.brk_label()));
+            return;
+        }
+        NodeKind::SWITCH => {
+            write_to_file(&format!("\n# =====switch语句==============="));
+            gen_expr(node.cond());
+
+            write_to_file(&format!("  # 遍历跳转到值等于a0的case标签"));
+            let mut cn = node.case_next();
+            while !cn.ptr.is_none() {
+                write_to_file(&format!("  li t0, {}", cn.val()));
+                write_to_file(&format!("  beq a0, t0, {}", cn.label()));
+                cn = cn.case_next();
+            }
+
+            if !node.default_case().ptr.is_none() {
+                write_to_file(&format!("  # 跳转到default标签"));
+                write_to_file(&format!("  j {}", node.default_case().label())); 
+            }
+
+            write_to_file(&format!("  # 结束switch，跳转break标签"));
+            write_to_file(&format!("  j {}", node.brk_label()));
+            gen_stmt(node.then());
+            write_to_file(&format!("# switch的break标签，结束switch"));
+            write_to_file(&format!("{}:", node.brk_label()));
+            return;
+        }
+
+        NodeKind::CASE => {
+            write_to_file(&format!("# case标签，值为{}", node.val()));
+            write_to_file(&format!("{}:", node.label()));
+            gen_stmt(node.lhs());
             return;
         }
 

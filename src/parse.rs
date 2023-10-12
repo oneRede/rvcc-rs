@@ -28,6 +28,8 @@ pub static mut LABELS: NodeWrap = NodeWrap::empty();
 pub static mut BRAAK_LABELS: &'static str = "";
 #[allow(dead_code)]
 pub static mut CONT_LABELS: &'static str = "";
+#[allow(dead_code)]
+pub static mut CURRENT_SWITCH: NodeWrap = NodeWrap::empty();
 
 #[allow(dead_code)]
 pub fn find_var(token: TokenWrap) -> VarScopeWrap {
@@ -404,6 +406,64 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
             token = tk;
         }
         return (node, token);
+    }
+
+    if equal(token, "switch"){
+        let node = NodeWrap::new(SWITCH, token);
+        token = skip(token.nxt(), "(");
+        let (nd, mut token) = expr(token);
+        node.set_cond(nd);
+        token = skip(token, ")");
+
+        let sw = unsafe { CURRENT_SWITCH };
+        unsafe { CURRENT_SWITCH = node };
+
+        let brk = unsafe { BRAAK_LABELS };
+        node.set_brk_label(new_unique_name());
+        unsafe { BRAAK_LABELS = node.brk_label() };
+
+        let (nd, token) = stmt(token);
+        node.set_then(nd);
+        unsafe { CURRENT_SWITCH = sw };
+
+        unsafe { BRAAK_LABELS = brk };
+        return (node, token)
+    }
+
+    if equal(token, "case"){
+        if unsafe { CURRENT_SWITCH.ptr.is_none() } {
+            error_token(token, "stray case")
+        }
+        let val = get_number(token.nxt());
+
+        let node = NodeWrap::new(CASE, token);
+        token = skip(token.nxt().nxt(), ":");
+        node.set_label(new_unique_name());
+
+        let (nd, token) = stmt(token);
+        node.set_lhs(nd);
+        node.set_val(val);
+
+        node.set_case_next(unsafe { CURRENT_SWITCH.case_next() });
+        unsafe { CURRENT_SWITCH.set_case_next(node) };
+
+        return (node, token)
+    }
+
+    if equal(token, "default"){
+        if unsafe { CURRENT_SWITCH.ptr.is_none() } {
+            error_token(token, "stray default")
+        }
+        let node = NodeWrap::new(CASE, token);
+        token = skip(token.nxt(), ":");
+        node.set_label(new_unique_name());
+
+        let (nd, token) = stmt(token);
+        node.set_lhs(nd);
+
+        unsafe { CURRENT_SWITCH.set_default_case(node) };
+        return (node, token)
+
     }
 
     if equal(token, "for") {

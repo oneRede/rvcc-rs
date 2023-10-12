@@ -41,6 +41,8 @@ pub enum NodeKind {
     LOGOR,
     GOTO,
     LABEL,
+    SWITCH,
+    CASE,
 }
 
 impl ToString for NodeKind {
@@ -80,6 +82,8 @@ impl ToString for NodeKind {
             NodeKind::LOGOR => "LOGOR".to_string(),
             NodeKind::GOTO => "GOTO".to_string(),
             NodeKind::LABEL => "LABEL".to_string(),
+            NodeKind::SWITCH => "SWITCH".to_string(),
+            NodeKind::CASE => "CASE".to_string(),
         }
     }
 }
@@ -111,6 +115,9 @@ pub struct Node {
     pub goto_next: NodeWrap,
     pub brk_label: &'static str,
     pub cont_label: &'static str,
+
+    pub default_case: NodeWrap,
+    pub case_next: NodeWrap,
 }
 
 #[allow(dead_code)]
@@ -146,6 +153,9 @@ impl NodeWrap {
             goto_next: NodeWrap::empty(),
             brk_label: ",",
             cont_label: "",
+
+            default_case: NodeWrap::empty(),
+            case_next: NodeWrap::empty(),
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -176,6 +186,9 @@ impl NodeWrap {
             goto_next: NodeWrap::empty(),
             brk_label: "",
             cont_label: "",
+
+            default_case: NodeWrap::empty(),
+            case_next: NodeWrap::empty(),
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -206,6 +219,9 @@ impl NodeWrap {
             goto_next: NodeWrap::empty(),
             brk_label: ",",
             cont_label: "",
+
+            default_case: NodeWrap::empty(),
+            case_next: NodeWrap::empty(),
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -236,6 +252,9 @@ impl NodeWrap {
             goto_next: NodeWrap::empty(),
             brk_label: "",
             cont_label: "",
+
+            default_case: NodeWrap::empty(),
+            case_next: NodeWrap::empty(),
 
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
@@ -273,6 +292,8 @@ impl NodeWrap {
             goto_next: NodeWrap::empty(),
             brk_label: "",
             cont_label: "",
+            default_case: NodeWrap::empty(),
+            case_next: NodeWrap::empty(),
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -401,6 +422,14 @@ impl NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().cont_label }
     }
 
+    pub fn default_case(&self) -> NodeWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().default_case }
+    }
+
+    pub fn case_next(&self) -> NodeWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().case_next }
+    }
+
     pub fn set_kind(&self, kind: NodeKind) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().kind = kind }
     }
@@ -491,6 +520,14 @@ impl NodeWrap {
 
     pub fn set_cont_label(&self, cont_label: &'static str) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().cont_label = cont_label }
+    }
+
+    pub fn set_default_case(&self, default_case: NodeWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().default_case = default_case }
+    }
+
+    pub fn set_case_next(&self, case_next: NodeWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().case_next = case_next }
     }
 }
 
