@@ -18,7 +18,7 @@ pub static mut CURRENT_FILENAEM: Option<&'static str> = None;
 pub enum TokenKind {
     IDENT,
     Punct,
-    Num,
+    NUM,
     EOF,
     KEYWORD,
     STR,
@@ -29,7 +29,7 @@ impl ToString for TokenKind {
         match self {
             TokenKind::Punct => "Punct".to_string(),
             TokenKind::IDENT => "IDENT".to_string(),
-            TokenKind::Num => "Num".to_string(),
+            TokenKind::NUM => "NUM".to_string(),
             TokenKind::EOF => "EOF".to_string(),
             TokenKind::KEYWORD => "KEYWORD".to_string(),
             TokenKind::STR => "STR".to_string(),
@@ -54,7 +54,7 @@ pub struct Token {
 impl Token{
     pub fn new()-> Self{
         Self {
-            kind: TokenKind::Num,
+            kind: TokenKind::NUM,
             next: TokenWrap::empty(),
             val: 0,
             loc: None,
@@ -244,7 +244,7 @@ pub fn skip<'a>(token: TokenWrap, s: &str) -> TokenWrap {
 
 #[allow(dead_code)]
 pub fn get_num(token: TokenWrap) -> i64 {
-    if token.kind() != Num {
+    if token.kind() != NUM {
         error_token(token, "expect a num");
     }
     token.val()
@@ -553,7 +553,7 @@ pub fn read_char_literal(start: &'static [char]) -> (TokenWrap, &'static [char])
 
     let end = str_chr(&start[1..]);
 
-    let token = TokenWrap::new(TokenKind::Num, start, end + 1);
+    let token = TokenWrap::new(TokenKind::NUM, start, end + 1);
     token.set_val(c as i64);
     return (token, &p[1..]);
 }
@@ -601,7 +601,7 @@ pub fn read_int_literal(start: &'static [char]) -> (TokenWrap, &'static [char]) 
     if base == 16 || base == 2 {
         len += 2;
     }
-    let token = TokenWrap::new(TokenKind::Num, start, len);
+    let token = TokenWrap::new(TokenKind::NUM, start, len);
     token.set_val(val);
     return (token, &start[len..]);
 }
