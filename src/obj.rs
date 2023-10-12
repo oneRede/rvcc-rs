@@ -26,6 +26,26 @@ pub struct Obj {
 }
 
 #[allow(dead_code)]
+impl Obj {
+    pub fn new() -> Self{
+        Obj {
+        next: ObjWrap::empty(),
+        name: "",
+        offset: 0,
+        ty: TyWrap::empty(),
+        is_local: true,
+        is_function: false,
+        is_definition: false,
+        is_static: false,
+        body: NodeWrap::empty(),
+        locals: ObjWrap::empty(),
+        stack_size: 0,
+        params: ObjWrap::empty(),
+        init_data: vec![],
+    }
+}}
+
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub struct ObjWrap {
     pub ptr: Option<*mut Obj>,
@@ -34,23 +54,11 @@ pub struct ObjWrap {
 #[allow(dead_code)]
 impl ObjWrap {
     pub fn new(name: &'static str, ty: TyWrap) -> Self {
-        let var = Obj {
-            next: ObjWrap::empty(),
-            name: name,
-            offset: 0,
-            ty: ty,
-            is_local: true,
-            is_function: false,
-            is_definition: false,
-            is_static: false,
-            body: NodeWrap::empty(),
-            locals: ObjWrap::empty(),
-            stack_size: 0,
-            params: ObjWrap::empty(),
-            init_data: vec![],
-        };
+        let var = Obj::new();
         let var: Option<*mut Obj> = Some(Box::leak(Box::new(var)));
         let var = Self { ptr: var };
+        var.set_name(name);
+        var.set_ty(ty);
 
         let scope = ScopeWrap::push(name);
         scope.set_var(var);
