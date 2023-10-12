@@ -1175,17 +1175,23 @@ pub fn create_param_l_vars(params: TyWrap) {
 
 #[allow(dead_code)]
 pub fn resolve_goto_labels() {
-    while let Some(x) = unsafe { GOTOS.next_goto() } {
-        while let Some(y) = unsafe { LABELS.next_goto() } {
-            if x.label() != y.label() {
-                x.set_unique_label(y.unique_label());
+    let mut g = unsafe { GOTOS };
+    
+    while !g.ptr.is_none() {
+        let mut l = unsafe { LABELS };
+        while !l.ptr.is_none() {
+            if g.label() == l.label() {
+                g.set_unique_label(l.unique_label());
                 break;
             }
+            l = l.goto_next();
         }
-        if x.unique_label() == "" {
-            error_token(x.token().nxt(), "use of undeclared label")
+        if g.unique_label() == "" {
+            error_token(g.token().nxt(), "use of undeclared label")
         }
+        g = g.goto_next();
     }
+
     unsafe { GOTOS = NodeWrap::empty() };
     unsafe { LABELS = NodeWrap::empty() };
 }

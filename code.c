@@ -2,5 +2,5 @@ void assert(int expected, int actual, char *code);
 
 int main()
 {
-   assert(3, ({ int i=0; goto a; a: i++; b: i++; c: i++; i; }));
+   assert(1, ({ int i=0; goto i; g: i++; h: i++; i: i++; i; }));
 }
