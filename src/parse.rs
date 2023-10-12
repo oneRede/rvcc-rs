@@ -464,10 +464,10 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         node.set_goto_next(unsafe { GOTOS });
         unsafe { GOTOS = node };
         token = skip(token.nxt().nxt(), ";");
-        return (node, token)
+        return (node, token);
     }
 
-    if token.kind() == TokenKind::IDENT && equal(token.nxt(), ":"){
+    if token.kind() == TokenKind::IDENT && equal(token.nxt(), ":") {
         let node = NodeWrap::new(NodeKind::LABEL, token);
         let label: String = token.loc().unwrap()[..token.len()].iter().collect();
         let label = Box::leak(Box::new(label));
@@ -477,8 +477,7 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         node.set_lhs(nd);
         node.set_goto_next(unsafe { LABELS });
         unsafe { LABELS = node };
-        return (node, tk)
-        
+        return (node, tk);
     }
 
     if equal(token, "{") {
@@ -497,7 +496,7 @@ pub fn compound_stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     sc.enter();
 
     while !equal(token, "}") {
-        if is_type_name(token) {
+        if is_type_name(token) && !equal(token.nxt(), ":") {
             let mut attr = VarAttr::empty();
             let base_ty = declspec(token, &mut attr).1;
             token = declspec(token, &mut attr).0;
@@ -1176,7 +1175,7 @@ pub fn create_param_l_vars(params: TyWrap) {
 #[allow(dead_code)]
 pub fn resolve_goto_labels() {
     let mut g = unsafe { GOTOS };
-    
+
     while !g.ptr.is_none() {
         let mut l = unsafe { LABELS };
         while !l.ptr.is_none() {
