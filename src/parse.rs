@@ -266,8 +266,7 @@ pub fn declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TokenWrap, TyWrap) {
 
     if equal(token, "(") {
         let start = token;
-        let dummy = TyWrap::new();
-        let (mut token, _) = declarator(start.nxt(), dummy);
+        let (mut token, _) = declarator(start.nxt(), TyWrap::new());
         token = skip(token, ")");
         let (tk, ty) = ty_suffix(token, ty);
         let (_, ty) = declarator(start.nxt(), ty);
@@ -294,9 +293,8 @@ pub fn abstract_declarator(mut token: TokenWrap, mut ty: TyWrap) -> (TokenWrap, 
 
     if equal(token, "(") {
         let start = token;
-        let dummy = TyWrap::empty();
 
-        token = abstract_declarator(start.nxt(), dummy).0;
+        token = abstract_declarator(start.nxt(), TyWrap::empty()).0;
 
         token = skip(token, ")");
         ty = ty_suffix(token, ty).1;
@@ -381,9 +379,8 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         token = skip(tk, ";");
 
         add_ty(expr);
-        node.set_lhs(NodeWrap::new_cast(expr, unsafe {
-            CURRENT_FN.ty().return_ty()
-        }));
+        let ty = unsafe { CURRENT_FN.ty().return_ty() };
+        node.set_lhs(NodeWrap::new_cast(expr, ty));
         return (node, token);
     }
 
@@ -408,7 +405,7 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         return (node, token);
     }
 
-    if equal(token, "switch"){
+    if equal(token, "switch") {
         let node = NodeWrap::new(SWITCH, token);
         token = skip(token.nxt(), "(");
         let (nd, mut token) = expr(token);
@@ -427,10 +424,10 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         unsafe { CURRENT_SWITCH = sw };
 
         unsafe { BRAAK_LABELS = brk };
-        return (node, token)
+        return (node, token);
     }
 
-    if equal(token, "case"){
+    if equal(token, "case") {
         if unsafe { CURRENT_SWITCH.ptr.is_none() } {
             error_token(token, "stray case")
         }
@@ -447,10 +444,10 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         node.set_case_next(unsafe { CURRENT_SWITCH.case_next() });
         unsafe { CURRENT_SWITCH.set_case_next(node) };
 
-        return (node, token)
+        return (node, token);
     }
 
-    if equal(token, "default"){
+    if equal(token, "default") {
         if unsafe { CURRENT_SWITCH.ptr.is_none() } {
             error_token(token, "stray default")
         }
@@ -462,8 +459,7 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         node.set_lhs(nd);
 
         unsafe { CURRENT_SWITCH.set_default_case(node) };
-        return (node, token)
-
+        return (node, token);
     }
 
     if equal(token, "for") {
@@ -475,9 +471,10 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         sc.enter();
 
         let brk = unsafe { BRAAK_LABELS };
-        let cont = unsafe { CONT_LABELS };
         node.set_brk_label(new_unique_name());
         unsafe { BRAAK_LABELS = node.brk_label() };
+
+        let cont = unsafe { CONT_LABELS };
         node.set_cont_label(new_unique_name());
         unsafe { CONT_LABELS = node.cont_label() };
 
@@ -516,9 +513,7 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
     if equal(token, "while") {
         let node = NodeWrap::new(FOR, token);
-
-        token = token.nxt();
-        token = skip(token, "(");
+        token = skip(token.nxt(), "(");
 
         let (nd, mut token) = expr(token);
         node.set_cond(nd);
@@ -537,7 +532,7 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
         unsafe { BRAAK_LABELS = brk };
         unsafe { CONT_LABELS = cont };
-        
+
         return (node, token);
     }
 
@@ -800,7 +795,7 @@ pub fn new_add(mut lhs: NodeWrap, mut rhs: NodeWrap, token: TokenWrap) -> (NodeW
         rhs = tmp;
     }
     let val = lhs.ty().base().size();
-    let num_node = NodeWrap::new_long(val as i64, token);
+    let num_node = NodeWrap::new_long(val, token);
     let rhs = NodeWrap::new_binary(Mul, rhs, num_node, token);
     let node = NodeWrap::new_binary(Add, lhs, rhs, token);
     return (node, token);
@@ -845,14 +840,14 @@ fn add(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     loop {
         if equal(token, "+") {
             let (nd, tk) = mul(token.nxt());
-            let (nd, _t) = new_add(node, nd, token);
+            let (nd, _) = new_add(node, nd, token);
             node = nd;
             token = tk;
             continue;
         }
         if equal(token, "-") {
             let (nd, tk) = mul(token.nxt());
-            let (nd, _t) = new_sub(node, nd, token);
+            let (nd, _) = new_sub(node, nd, token);
             node = nd;
             token = tk;
             continue;
@@ -1178,7 +1173,7 @@ pub fn func_call(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
     let node = NodeWrap::new(FUNCALL, start);
     let len = start.len();
-    let func_name: String = start.loc().unwrap()[..len].iter().collect();
+    let func_name = start.loc().unwrap()[..len].iter().collect::<String>();
     node.set_func_name(Box::leak(Box::new(func_name)));
     node.set_func_type(ty);
     node.set_ty(ty.return_ty());
@@ -1200,8 +1195,8 @@ fn primary(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
     }
 
     if equal(token, "(") {
-        let (nd, tk) = expr(token.nxt());
-        token = skip(tk, ")");
+        let (nd, mut token) = expr(token.nxt());
+        token = skip(token, ")");
         return (nd, token);
     }
 
