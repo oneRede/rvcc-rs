@@ -51,6 +51,22 @@ pub struct Token {
 }
 
 #[allow(dead_code)]
+impl Token{
+    pub fn new()-> Self{
+        Self {
+            kind: TokenKind::Num,
+            next: TokenWrap::empty(),
+            val: 0,
+            loc: None,
+            len: 0,
+            ty: TyWrap::empty(),
+            stri: vec![],
+            line_no: 0,
+        }
+    }
+}
+
+#[allow(dead_code)]
 impl Iterator for TokenWrap {
     type Item = TokenWrap;
 
@@ -73,34 +89,22 @@ pub struct TokenWrap {
 
 #[allow(dead_code)]
 impl TokenWrap {
-    pub fn new(token_kind: TokenKind, loc: &'static [char], len: usize) -> Self {
-        let tk = Token {
-            kind: token_kind,
-            next: TokenWrap::empty(),
-            val: 0,
-            loc: Some(loc),
-            len: len,
-            ty: TyWrap::empty(),
-            stri: vec![],
-            line_no: 0,
-        };
-        let tk: Option<*mut Token> = Some(Box::leak(Box::new(tk)));
-        Self { ptr: tk }
+    pub fn new(kind: TokenKind, loc: &'static [char], len: usize) -> Self {
+        let token = Token::new();
+        let token: Option<*mut Token> = Some(Box::leak(Box::new(token)));
+        
+        let token = Self { ptr: token };
+        token.set_kind(kind);
+        token.set_loc(loc);
+        token.set_len(len);
+        token
     }
 
     pub fn init() -> Self {
-        let tk = Token {
-            kind: TokenKind::Num,
-            next: TokenWrap::empty(),
-            val: 0,
-            loc: None,
-            len: 0,
-            ty: TyWrap::empty(),
-            stri: vec![],
-            line_no: 0,
-        };
-        let tk: Option<*mut Token> = Some(Box::leak(Box::new(tk)));
-        Self { ptr: tk }
+        let token = Token::new();
+        let tk: Option<*mut Token> = Some(Box::leak(Box::new(token)));
+        let token = Self { ptr: tk };
+        token
     }
 
     pub fn empty() -> Self {
@@ -111,7 +115,7 @@ impl TokenWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().next = next };
     }
 
-    pub fn set_kind(self, kind: TokenKind) {
+    pub fn set_kind(&self, kind: TokenKind) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().kind = kind };
     }
 
@@ -133,6 +137,10 @@ impl TokenWrap {
 
     pub fn set_nxt(self, next: TokenWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().next = next };
+    }
+
+    pub fn set_loc(self, loc: &'static [char]) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().loc = Some(loc)};
     }
 
     pub fn nxt(&self) -> TokenWrap {
