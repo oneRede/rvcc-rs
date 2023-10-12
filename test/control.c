@@ -76,7 +76,7 @@ int main() {
   ASSERT(2, ({ int i=0; switch(1) { case 0: 0; case 1: 0; case 2: 0; i=2; } i; }));
   ASSERT(0, ({ int i=0; switch(3) { case 0: 0; case 1: 0; case 2: 0; i=2; } i; }));
 
-  // ASSERT(0, ({ int i=0; switch(-1) { case 0xffffffff: i=3; break; } i; }));
+  // ASSERT(0, ({ int i=0; switch(-1) { case 0xffffffff: i=3; break; } i; }));\n
   printf("OK\n");
   return 0;
 }
