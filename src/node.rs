@@ -212,35 +212,13 @@ impl NodeWrap {
     }
 
     pub fn new_var_node(var: ObjWrap, token: TokenWrap) -> NodeWrap {
-        let node = Node {
-            kind: NodeKind::VAR,
-            next: NodeWrap::empty(),
-            lhs: NodeWrap::empty(),
-            rhs: NodeWrap::empty(),
-            body: NodeWrap::empty(),
-            cond: NodeWrap::empty(),
-            then: NodeWrap::empty(),
-            els: NodeWrap::empty(),
-            val: 0,
-            var: var,
-            init: NodeWrap::empty(),
-            inc: NodeWrap::empty(),
-            token: token,
-            ty: TyWrap::empty(),
-            func_name: "",
-            args: NodeWrap::empty(),
-            mem: MemberWrap::empty(),
-            func_type: TyWrap::empty(),
-            label: "",
-            unique_label: "",
-            goto_next: NodeWrap::empty(),
-            brk_label: "",
-            cont_label: "",
-            default_case: NodeWrap::empty(),
-            case_next: NodeWrap::empty(),
-        };
+        let node = Node::new();
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
-        NodeWrap::new_node_wrap(node)
+        let node = NodeWrap::new_node_wrap(node);
+        node.set_kind(NodeKind::VAR);
+        node.set_var(var);
+        node.set_token(token);
+        node
     }
 
     pub fn new_cast(expr: NodeWrap, ty: TyWrap) -> NodeWrap {
