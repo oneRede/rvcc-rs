@@ -26,6 +26,8 @@ pub static mut GOTOS: NodeWrap = NodeWrap::empty();
 pub static mut LABELS: NodeWrap = NodeWrap::empty();
 #[allow(dead_code)]
 pub static mut BRAAK_LABELS: &'static str = "";
+#[allow(dead_code)]
+pub static mut CONT_LABELS: &'static str = "";
 
 #[allow(dead_code)]
 pub fn find_var(token: TokenWrap) -> VarScopeWrap {
@@ -413,8 +415,11 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         sc.enter();
 
         let brk = unsafe { BRAAK_LABELS };
+        let cont = unsafe { CONT_LABELS };
         node.set_brk_label(new_unique_name());
         unsafe { BRAAK_LABELS = node.brk_label() };
+        node.set_cont_label(new_unique_name());
+        unsafe { CONT_LABELS = node.cont_label() };
 
         if is_type_name(token) {
             let (tk, base_ty) = declspec(token, &mut VarAttr::empty());
@@ -445,6 +450,7 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         node.set_then(nd);
         sc.leave();
         unsafe { BRAAK_LABELS = brk };
+        unsafe { CONT_LABELS = cont };
         return (node, token);
     }
 
@@ -462,10 +468,16 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         node.set_brk_label(new_unique_name());
         unsafe { BRAAK_LABELS = node.brk_label() };
 
+        let cont = unsafe { CONT_LABELS };
+        node.set_cont_label(new_unique_name());
+        unsafe { CONT_LABELS = node.cont_label() };
+
         let (nd, token) = stmt(token);
         node.set_then(nd);
 
         unsafe { BRAAK_LABELS = brk };
+        unsafe { CONT_LABELS = cont };
+        
         return (node, token);
     }
 
@@ -479,7 +491,7 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         return (node, token);
     }
 
-    if equal(token, "break"){
+    if equal(token, "break") {
         if unsafe { BRAAK_LABELS } == "" {
             error_token(token, "stray break");
         }
@@ -487,7 +499,18 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         node.set_unique_label(unsafe { BRAAK_LABELS });
         token = skip(token.nxt(), ";");
 
-        return (node, token)
+        return (node, token);
+    }
+
+    if equal(token, "continue") {
+        if unsafe { CONT_LABELS } == "" {
+            error_token(token, "stray continue");
+        }
+        let node = NodeWrap::new(GOTO, token);
+        node.set_unique_label(unsafe { CONT_LABELS });
+        token = skip(token.nxt(), ";");
+
+        return (node, token);
     }
 
     if token.kind() == TokenKind::IDENT && equal(token.nxt(), ":") {

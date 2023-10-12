@@ -346,6 +346,7 @@ fn gen_stmt(node: NodeWrap) {
 
             write_to_file(&format!("\n# Then语句{}", c));
             gen_stmt(node.then());
+            write_to_file(&format!("{}:", node.cont_label()));
 
             if !node.inc().ptr.is_none() {
                 write_to_file(&format!("\n# Inc语句{}", c));

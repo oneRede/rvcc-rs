@@ -109,7 +109,8 @@ pub struct Node {
     pub label: &'static str,
     pub unique_label: &'static str,
     pub goto_next: NodeWrap,
-    pub brk_label: &'static str
+    pub brk_label: &'static str,
+    pub cont_label: &'static str,
 }
 
 #[allow(dead_code)]
@@ -143,7 +144,8 @@ impl NodeWrap {
             label: "",
             unique_label: "",
             goto_next: NodeWrap::empty(),
-            brk_label: ","
+            brk_label: ",",
+            cont_label: "",
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -172,7 +174,8 @@ impl NodeWrap {
             label: "",
             unique_label: "",
             goto_next: NodeWrap::empty(),
-            brk_label: ","
+            brk_label: "",
+            cont_label: "",
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -201,7 +204,8 @@ impl NodeWrap {
             label: "",
             unique_label: "",
             goto_next: NodeWrap::empty(),
-            brk_label: ","
+            brk_label: ",",
+            cont_label: "",
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -230,7 +234,9 @@ impl NodeWrap {
             label: "",
             unique_label: "",
             goto_next: NodeWrap::empty(),
-            brk_label: ","
+            brk_label: "",
+            cont_label: "",
+
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -265,7 +271,8 @@ impl NodeWrap {
             label: "",
             unique_label: "",
             goto_next: NodeWrap::empty(),
-            brk_label: ","
+            brk_label: "",
+            cont_label: "",
         };
         let node: Option<*mut Node> = Some(Box::leak(Box::new(node)));
         NodeWrap::new_node_wrap(node)
@@ -390,6 +397,10 @@ impl NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().brk_label }
     }
 
+    pub fn cont_label(&self) -> &'static str {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().cont_label }
+    }
+
     pub fn set_kind(&self, kind: NodeKind) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().kind = kind }
     }
@@ -476,6 +487,10 @@ impl NodeWrap {
 
     pub fn set_brk_label(&self, brk_label: &'static str) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().brk_label = brk_label }
+    }
+
+    pub fn set_cont_label(&self, cont_label: &'static str) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().cont_label = cont_label }
     }
 }
 
