@@ -715,6 +715,20 @@ pub fn assign(token: TokenWrap) -> (NodeWrap, TokenWrap) {
         return (nd, tk);
     }
 
+    if equal(token, ">>=") {
+        let (nd, tk) = assign(token.nxt());
+        let nd = NodeWrap::new_binary(NodeKind::SHR, node, nd, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
+    }
+
+    if equal(token, "<<=") {
+        let (nd, tk) = assign(token.nxt());
+        let nd = NodeWrap::new_binary(NodeKind::SHL, node, nd, token);
+        let nd = to_assign(nd);
+        return (nd, tk);
+    }
+
     return (node, token);
 }
 
@@ -742,38 +756,63 @@ fn equality(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 fn relational(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (mut node, mut token) = add(token);
+    let (mut node, mut token) = shift(token);
 
     loop {
         if equal(token, "<") {
-            let (nd, tk) = add(token.nxt());
+            let (nd, tk) = shift(token.nxt());
             node = NodeWrap::new_binary(LT, node, nd, tk);
             token = tk;
             continue;
         }
 
         if equal(token, "<=") {
-            let (nd, tk) = add(token.nxt());
+            let (nd, tk) = shift(token.nxt());
             node = NodeWrap::new_binary(LE, node, nd, tk);
             token = tk;
             continue;
         }
 
         if equal(token, ">") {
-            let (nd, tk) = add(token.nxt());
+            let (nd, tk) = shift(token.nxt());
             node = NodeWrap::new_binary(LT, nd, node, tk);
             token = tk;
             continue;
         }
 
         if equal(token, ">=") {
-            let (nd, tk) = add(token.nxt());
+            let (nd, tk) = shift(token.nxt());
             node = NodeWrap::new_binary(LE, nd, node, tk);
             token = tk;
             continue;
         }
 
         return (node, token);
+    }
+}
+
+#[allow(dead_code)]
+pub fn shift(token: TokenWrap) -> (NodeWrap, TokenWrap){
+    let (mut node, mut token) = add(token);
+
+    loop {
+        let start = token;
+
+        if equal(token, "<<") {
+            let (nd, tk) = add(token.nxt());
+            token = tk;
+            node = NodeWrap::new_binary(NodeKind::SHL, node, nd, start);
+            continue;
+        }
+
+        if equal(token, ">>") {
+            let (nd, tk) = add(token.nxt());
+            token = tk;
+            node = NodeWrap::new_binary(NodeKind::SHR, node, nd, start);
+            continue;
+        }
+
+        return (node, token)
     }
 }
 

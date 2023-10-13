@@ -43,6 +43,8 @@ pub enum NodeKind {
     LABEL,
     SWITCH,
     CASE,
+    SHL,
+    SHR,
 }
 
 impl ToString for NodeKind {
@@ -84,6 +86,8 @@ impl ToString for NodeKind {
             NodeKind::LABEL => "LABEL".to_string(),
             NodeKind::SWITCH => "SWITCH".to_string(),
             NodeKind::CASE => "CASE".to_string(),
+            NodeKind::SHL => "SHL".to_string(),
+            NodeKind::SHR => "SHR".to_string(),
         }
     }
 }

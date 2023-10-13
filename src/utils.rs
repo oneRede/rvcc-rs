@@ -26,6 +26,9 @@ pub fn get_num_from_chars(s: &[char]) -> Result<(i64, &[char]), ParseIntError> {
 
 #[allow(dead_code)]
 pub fn read_punct(ptr: &[char]) -> usize {
+    if starts_with(ptr, &['>', '>', '=']) || starts_with(ptr, &['<', '<', '=']) {
+        return 3;
+    }
     if starts_with(ptr, &['=', '='])
         || starts_with(ptr, &['!', '='])
         || starts_with(ptr, &['<', '='])
@@ -43,6 +46,10 @@ pub fn read_punct(ptr: &[char]) -> usize {
         || starts_with(ptr, &['^', '='])
         || starts_with(ptr, &['&', '&'])
         || starts_with(ptr, &['|', '|'])
+        || starts_with(ptr, &['>', '>'])
+        || starts_with(ptr, &['<', '<'])
+        || starts_with(ptr, &['>', '>'])
+        || starts_with(ptr, &['<', '<'])
     {
         return 2;
     }
@@ -154,14 +161,14 @@ pub fn add_line_numbers(mut token: TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn num_base_conversion(mut num: i64, src_base: i64, dst_base: i64) -> i64{
+pub fn num_base_conversion(mut num: i64, src_base: i64, dst_base: i64) -> i64 {
     let mut dst_base_num = 0;
     let mut i = 0;
 
-    while num != 0{
+    while num != 0 {
         dst_base_num += (num % dst_base) * i64::pow(src_base, i);
         num /= dst_base;
-        i +=1;
+        i += 1;
     }
-    return dst_base_num
+    return dst_base_num;
 }

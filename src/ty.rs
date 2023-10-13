@@ -301,7 +301,7 @@ pub fn add_ty(node: NodeWrap) {
             node.set_ty(TyWrap::new_with_kind(TypeKind::INT));
             return;
         }
-        NodeKind::BITNOT => {
+        NodeKind::BITNOT | NodeKind::SHL | NodeKind::SHR=> {
             node.set_ty(node.lhs().ty());
             return;
         }

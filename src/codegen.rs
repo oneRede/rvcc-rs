@@ -294,6 +294,16 @@ pub fn gen_expr(node: NodeWrap) {
             write_to_file(&format!("  xori a0, a0, 1"));
             return;
         }
+        NodeKind::SHL => {
+            write_to_file(&format!("  # a0逻辑左移a1位"));
+            write_to_file(&format!("  sll{} a0, a0, a1", c));
+            return;
+        }
+        NodeKind::SHR => {
+            write_to_file(&format!("  # a0算术右移a1位"));
+            write_to_file(&format!("  sra{} a0, a0, a1", c));
+            return;
+        }
         _ => {}
     }
     error_token(node.token(), "invalid expression");
@@ -378,7 +388,7 @@ fn gen_stmt(node: NodeWrap) {
 
             if !node.default_case().ptr.is_none() {
                 write_to_file(&format!("  # 跳转到default标签"));
-                write_to_file(&format!("  j {}", node.default_case().label())); 
+                write_to_file(&format!("  j {}", node.default_case().label()));
             }
 
             write_to_file(&format!("  # 结束switch，跳转break标签"));
