@@ -67,6 +67,12 @@ impl Token{
 }
 
 #[allow(dead_code)]
+#[derive(PartialEq, Debug, Clone, Copy)]
+pub struct TokenWrap {
+    pub ptr: Option<*mut Token>,
+}
+
+#[allow(dead_code)]
 impl Iterator for TokenWrap {
     type Item = TokenWrap;
 
@@ -79,12 +85,6 @@ impl Iterator for TokenWrap {
             return None;
         }
     }
-}
-
-#[allow(dead_code)]
-#[derive(PartialEq, Debug, Clone, Copy)]
-pub struct TokenWrap {
-    pub ptr: Option<*mut Token>,
 }
 
 #[allow(dead_code)]
@@ -230,7 +230,7 @@ pub fn equal(token: TokenWrap, s: &str) -> bool {
 #[allow(dead_code)]
 pub fn str_to_chars(s: &str) -> &[char] {
     Box::leak(Box::new(
-        s.chars().map(|c| -> char { c }).collect::<Vec<char>>(),
+        s.chars().into_iter().collect::<Vec<char>>(),
     ))
 }
 
