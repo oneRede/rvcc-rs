@@ -233,13 +233,13 @@ pub fn func_params(mut token: TokenWrap, mut ty: TyWrap) -> (TokenWrap, TyWrap) 
 }
 
 #[allow(dead_code)]
-pub fn array_dimensions(mut token: TokenWrap, ty: TyWrap) -> (TokenWrap, TyWrap) {
+pub fn array_dimensions(token: TokenWrap, ty: TyWrap) -> (TokenWrap, TyWrap) {
     if equal(token, "]") {
         let (tk, ty) = ty_suffix(token.nxt(), ty);
         return (tk, TyWrap::new_array_ty(ty, -1));
     }
-    let sz = get_number(token);
-    token = skip(token.nxt(), "]");
+    let (sz, mut token) = const_expr(token);
+    token = skip(token, "]");
     let (token, ty) = ty_suffix(token, ty);
     let ty = TyWrap::new_array_ty(ty, sz as i64);
     return (token, ty);
@@ -431,10 +431,10 @@ fn stmt(mut token: TokenWrap) -> (NodeWrap, TokenWrap) {
         if unsafe { CURRENT_SWITCH.ptr.is_none() } {
             error_token(token, "stray case")
         }
-        let val = get_number(token.nxt());
 
         let node = NodeWrap::new(CASE, token);
-        token = skip(token.nxt().nxt(), ":");
+        let (val, mut token) = const_expr(token.nxt());
+        token = skip(token, ":");
         node.set_label(new_unique_name());
 
         let (nd, token) = stmt(token);
@@ -1472,8 +1472,8 @@ pub fn enum_specifier(mut token: TokenWrap) -> (TyWrap, TokenWrap) {
         token = token.nxt();
 
         if equal(token, "=") {
-            val = get_number(token.nxt());
-            token = token.nxt().nxt();
+            val = const_expr(token.nxt()).0;
+            token = const_expr(token.nxt()).1;
         }
         let vs = ScopeWrap::push(name);
         vs.set_enum_ty(ty);
@@ -1594,6 +1594,10 @@ pub fn log_or(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 pub fn eval(node: NodeWrap) -> i64 {
     add_ty(node);
 
+    if node.ptr.is_none() {
+        return i64::MAX
+    }
+
     match node.kind() {
         NodeKind::Add => return eval(node.lhs()) + eval(node.rhs()),
         NodeKind::Sub => return eval(node.lhs()) - eval(node.rhs()),
@@ -1609,16 +1613,16 @@ pub fn eval(node: NodeWrap) -> i64 {
         NodeKind::EQ => return (eval(node.lhs()) == eval(node.rhs())) as i64,
         NodeKind::NE => return (eval(node.lhs()) != eval(node.rhs())) as i64,
         NodeKind::LT => return (eval(node.lhs()) < eval(node.rhs())) as i64,
-        NodeKind::LE => return (eval(node.lhs()) > eval(node.rhs())) as i64,
+        NodeKind::LE => return (eval(node.lhs()) <= eval(node.rhs())) as i64,
         NodeKind::COND => {
-            if eval(node.lhs()) > 0 {
+            if eval(node.cond()) > 0 {
                 return eval(node.then());
             } else {
                 return eval(node.els());
             }
         }
         NodeKind::COMMA => return eval(node.rhs()),
-        NodeKind::NOT => return !eval(node.lhs()),
+        NodeKind::NOT => return !(eval(node.lhs()).is_positive()) as i64,
         NodeKind::BITNOT => return !eval(node.lhs()),
         NodeKind::LOGAND => {
             return ((eval(node.lhs()).is_positive()) && eval(node.rhs()).is_positive()) as i64
@@ -1641,4 +1645,10 @@ pub fn eval(node: NodeWrap) -> i64 {
 
         _ => return i64::MAX,
     }
+}
+
+#[allow(dead_code)]
+pub fn const_expr(token: TokenWrap) -> (i64, TokenWrap){
+    let (node, token) = conditional(token);
+    return (eval(node), token);
 }
