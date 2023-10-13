@@ -652,7 +652,7 @@ pub fn expr(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn assign(token: TokenWrap) -> (NodeWrap, TokenWrap) {
-    let (mut node, mut token) = log_or(token);
+    let (mut node, mut token) = conditional(token);
     if equal(token, "=") {
         let (n, t) = assign(token.nxt());
         node = NodeWrap::new_binary(ASSIGN, node, n, token);
@@ -733,6 +733,24 @@ pub fn assign(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
+pub fn conditional(token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    let (cond, token) = log_or(token);
+
+    if !equal(token, "?") {
+        return (cond, token);
+    }
+
+    let node = NodeWrap::new(NodeKind::COND, token);
+    node.set_cond(cond);
+    let (nd, mut token) = expr(token.nxt());
+    node.set_then(nd);
+    token = skip(token, ":");
+    let (nd, token) = conditional(token);
+    node.set_els(nd);
+    return (node, token);
+}
+
+#[allow(dead_code)]
 fn equality(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let (mut node, mut token) = relational(token);
 
@@ -792,7 +810,7 @@ fn relational(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 }
 
 #[allow(dead_code)]
-pub fn shift(token: TokenWrap) -> (NodeWrap, TokenWrap){
+pub fn shift(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     let (mut node, mut token) = add(token);
 
     loop {
@@ -812,7 +830,7 @@ pub fn shift(token: TokenWrap) -> (NodeWrap, TokenWrap){
             continue;
         }
 
-        return (node, token)
+        return (node, token);
     }
 }
 

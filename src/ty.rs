@@ -102,7 +102,7 @@ impl TyWrap {
         } else if kind == TypeKind::STRUCT {
             ty.set_size(0);
             ty.set_align(1);
-        }else if kind == TypeKind::INT {
+        } else if kind == TypeKind::INT {
             ty.set_size(4);
             ty.set_align(4);
         } else {
@@ -301,13 +301,22 @@ pub fn add_ty(node: NodeWrap) {
             node.set_ty(TyWrap::new_with_kind(TypeKind::INT));
             return;
         }
-        NodeKind::BITNOT | NodeKind::SHL | NodeKind::SHR=> {
+        NodeKind::BITNOT | NodeKind::SHL | NodeKind::SHR => {
             node.set_ty(node.lhs().ty());
             return;
         }
         NodeKind::VAR => {
             let ty = node.var().ty();
             node.set_ty(ty);
+            return;
+        }
+        NodeKind::COND => {
+            if node.then().ty().kind() == Some(TypeKind::VOID) || node.els().ty().kind() == Some(TypeKind::VOID) {
+                node.set_ty(TyWrap::new_with_kind(TypeKind::VOID))
+            } else {
+                usual_arith_conv(node.then(), node.els());
+                node.set_ty(node.then().ty());
+            }
             return;
         }
         NodeKind::COMMA => {

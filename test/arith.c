@@ -122,6 +122,9 @@ int main() {
   ASSERT(-1, ({ int i=-1; i; }));
   ASSERT(-1, ({ int i=-1; i>>=1; i; }));
 
+  // [95] 支持?:操作符\n
+  ASSERT(2, 0 ? 1 : 2);
+
   printf("OK\n");
   return 0;
 }

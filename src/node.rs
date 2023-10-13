@@ -45,6 +45,7 @@ pub enum NodeKind {
     CASE,
     SHL,
     SHR,
+    COND,
 }
 
 impl ToString for NodeKind {
@@ -88,6 +89,7 @@ impl ToString for NodeKind {
             NodeKind::CASE => "CASE".to_string(),
             NodeKind::SHL => "SHL".to_string(),
             NodeKind::SHR => "SHR".to_string(),
+            NodeKind::COND => "COND".to_string(),
         }
     }
 }

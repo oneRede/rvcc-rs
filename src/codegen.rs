@@ -149,6 +149,22 @@ pub fn gen_expr(node: NodeWrap) {
             cast(node.lhs().ty(), node.ty());
             return;
         }
+
+        NodeKind::COND => {
+            let c = count();
+            write_to_file(&format!("\n# =====条件运算符{}===========", c));
+            gen_expr(node.cond());
+            write_to_file(&format!("  # 条件判断，为0则跳转"));
+            write_to_file(&format!("  beqz a0, .L.else.{}", c));
+            gen_expr(node.then());
+            write_to_file(&format!("  # 跳转到条件运算符结尾部分"));
+            write_to_file(&format!("  j .L.end.{}", c));
+            write_to_file(&format!(".L.else.{}:", c));
+            gen_expr(node.els());
+            write_to_file(&format!(".L.end.{}:", c));
+            return;
+        }
+
         NodeKind::NOT => {
             gen_expr(node.lhs());
             write_to_file(&format!("  # 非运算"));
