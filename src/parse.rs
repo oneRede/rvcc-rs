@@ -1589,3 +1589,56 @@ pub fn log_or(token: TokenWrap) -> (NodeWrap, TokenWrap) {
     }
     return (node, token);
 }
+
+#[allow(dead_code)]
+pub fn eval(node: NodeWrap) -> i64 {
+    add_ty(node);
+
+    match node.kind() {
+        NodeKind::Add => return eval(node.lhs()) + eval(node.rhs()),
+        NodeKind::Sub => return eval(node.lhs()) - eval(node.rhs()),
+        NodeKind::Mul => return eval(node.lhs()) * eval(node.rhs()),
+        NodeKind::Div => return eval(node.lhs()) / eval(node.rhs()),
+        NodeKind::NEG => return -eval(node.lhs()),
+        NodeKind::MOD => return eval(node.lhs()) % eval(node.rhs()),
+        NodeKind::BITAND => return eval(node.lhs()) & eval(node.rhs()),
+        NodeKind::BITOR => return eval(node.lhs()) | eval(node.rhs()),
+        NodeKind::BITXOR => return eval(node.lhs()) ^ eval(node.rhs()),
+        NodeKind::SHL => return eval(node.lhs()) << eval(node.rhs()),
+        NodeKind::SHR => return eval(node.lhs()) >> eval(node.rhs()),
+        NodeKind::EQ => return (eval(node.lhs()) == eval(node.rhs())) as i64,
+        NodeKind::NE => return (eval(node.lhs()) != eval(node.rhs())) as i64,
+        NodeKind::LT => return (eval(node.lhs()) < eval(node.rhs())) as i64,
+        NodeKind::LE => return (eval(node.lhs()) > eval(node.rhs())) as i64,
+        NodeKind::COND => {
+            if eval(node.lhs()) > 0 {
+                return eval(node.then());
+            } else {
+                return eval(node.els());
+            }
+        }
+        NodeKind::COMMA => return eval(node.rhs()),
+        NodeKind::NOT => return !eval(node.lhs()),
+        NodeKind::BITNOT => return !eval(node.lhs()),
+        NodeKind::LOGAND => {
+            return ((eval(node.lhs()).is_positive()) && eval(node.rhs()).is_positive()) as i64
+        }
+        NodeKind::LOGOR => {
+            return ((eval(node.lhs()).is_positive()) || eval(node.rhs()).is_positive()) as i64
+        }
+        NodeKind::CAST => {
+            if is_int(node.ty()) {
+                match node.ty().size() {
+                    1 => return eval(node.lhs()),
+                    2 => return eval(node.lhs()),
+                    4 => return eval(node.lhs()),
+                    _ => {}
+                }
+            }
+            return eval(node.lhs());
+        }
+        NodeKind::Num => return node.val(),
+
+        _ => return i64::MAX,
+    }
+}
