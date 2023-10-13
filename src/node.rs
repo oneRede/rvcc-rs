@@ -248,26 +248,32 @@ impl NodeWrap {
         }
     }
 
+    #[inline]
     pub fn kind(&self) -> NodeKind {
         unsafe { self.ptr.unwrap().as_ref().unwrap().kind }
     }
 
+    #[inline]
     pub fn nxt(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().next }
     }
 
+    #[inline]
     pub fn nxt_goto(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().goto_next }
     }
 
+    #[inline]
     pub fn lhs(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().lhs }
     }
 
+    #[inline]
     pub fn rhs(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().rhs }
     }
 
+    #[inline]
     pub fn body(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().body }
     }
@@ -276,78 +282,97 @@ impl NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().cond }
     }
 
+    #[inline]
     pub fn then(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().then }
     }
 
+    #[inline]
     pub fn els(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().els }
     }
 
+    #[inline]
     pub fn val(&self) -> i64 {
         unsafe { self.ptr.unwrap().as_ref().unwrap().val }
     }
 
+    #[inline]
     pub fn var(&self) -> ObjWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().var }
     }
 
+    #[inline]
     pub fn init(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().init }
     }
 
+    #[inline]
     pub fn inc(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().inc }
     }
 
+    #[inline]
     pub fn token(&self) -> TokenWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().token }
     }
 
+    #[inline]
     pub fn ty(&self) -> TyWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().ty }
     }
 
+    #[inline]
     pub fn func_name(&self) -> &'static str {
         unsafe { self.ptr.unwrap().as_ref().unwrap().func_name }
     }
 
+    #[inline]
     pub fn args(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().args }
     }
 
+    #[inline]
     pub fn mem(&self) -> MemberWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().mem }
     }
 
+    #[inline]
     pub fn func_type(&self) -> TyWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().func_type }
     }
 
+    #[inline]
     pub fn label(&self) -> &'static str {
         unsafe { self.ptr.unwrap().as_ref().unwrap().label }
     }
 
+    #[inline]
     pub fn unique_label(&self) -> &'static str {
         unsafe { self.ptr.unwrap().as_ref().unwrap().unique_label }
     }
 
+    #[inline]
     pub fn goto_next(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().goto_next }
     }
 
+    #[inline]
     pub fn brk_label(&self) -> &'static str {
         unsafe { self.ptr.unwrap().as_ref().unwrap().brk_label }
     }
 
+    #[inline]
     pub fn cont_label(&self) -> &'static str {
         unsafe { self.ptr.unwrap().as_ref().unwrap().cont_label }
     }
 
+    #[inline]
     pub fn default_case(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().default_case }
     }
 
+    #[inline]
     pub fn case_next(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().case_next }
     }
