@@ -5,7 +5,7 @@ use crate::{
         NodeKind::{self, *},
         NodeWrap,
     },
-    obj::ObjWrap,
+    obj::{InitDesigWrap, InitializerWrap, ObjWrap},
     scope::{ScopeWrap, TagScopeWrap, VarAttr, VarScopeWrap, SCOPE},
     token::{consume, equal, skip, TokenKind, TokenWrap},
     ty::{add_ty, is_int, TyWrap, TypeKind},
@@ -335,17 +335,12 @@ pub fn declaration(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWra
         }
         let var = ObjWrap::new_local(get_ident(ty.name()), ty);
 
-        if !equal(token, "=") {
-            continue;
+        if equal(token, "=") {
+            let (expr, tk) = local_var_initializer(token.nxt(), var);
+            token = tk;
+            cur.set_nxt(NodeWrap::new_unary(EXPRSTMT, expr, token));
+            cur = cur.nxt();
         }
-
-        let lhs = NodeWrap::new_var_node(var, ty.name());
-        let rhs = assign(token.nxt());
-        token = rhs.1;
-        let node = NodeWrap::new_binary(ASSIGN, lhs, rhs.0, token);
-
-        cur.set_nxt(NodeWrap::new_unary(EXPRSTMT, node, token));
-        cur = cur.nxt();
     }
 
     let node = NodeWrap::new(BLOCK, token);
@@ -1595,7 +1590,7 @@ pub fn eval(node: NodeWrap) -> i64 {
     add_ty(node);
 
     if node.ptr.is_none() {
-        return i64::MAX
+        return i64::MAX;
     }
 
     match node.kind() {
@@ -1648,7 +1643,80 @@ pub fn eval(node: NodeWrap) -> i64 {
 }
 
 #[allow(dead_code)]
-pub fn const_expr(token: TokenWrap) -> (i64, TokenWrap){
+pub fn const_expr(token: TokenWrap) -> (i64, TokenWrap) {
     let (node, token) = conditional(token);
     return (eval(node), token);
+}
+
+#[allow(dead_code)]
+pub fn initializer2(mut token: TokenWrap, init: &InitializerWrap) -> TokenWrap {
+    if init.ty().kind() == Some(TypeKind::ARRAY) {
+        token = skip(token, "{");
+
+        for i in 0..init.ty().array_len() {
+            if i > 0 {
+                token = skip(token, ",")
+            }
+            initializer2(token, init.child().get(i).unwrap());
+        }
+        return token;
+    }
+    let (node, token) = assign(token);
+    init.set_expr(node);
+    return token;
+}
+
+#[allow(dead_code)]
+pub fn initializer(token: TokenWrap, ty: TyWrap) -> (InitializerWrap, TokenWrap) {
+    let init = InitializerWrap::new(ty);
+    initializer2(token, &init);
+    return (init, token);
+}
+
+#[allow(dead_code)]
+pub fn init_design_expr(design: &InitDesigWrap, token: TokenWrap) -> (NodeWrap, TokenWrap) {
+    if !design.var().ptr.is_none() {
+        return (NodeWrap::new_var_node(design.var(), token), token);
+    }
+
+    let (lhs, token) = init_design_expr(design.next(), token);
+    let rhs = NodeWrap::new_num(design.idx(), token);
+    let (node, token) = new_add(lhs, rhs, token);
+    return (NodeWrap::new_unary(NodeKind::DEREF, node, token), token);
+}
+
+#[allow(dead_code)]
+pub fn create_local_var_init(
+    init: &InitializerWrap,
+    ty: TyWrap,
+    design: InitDesigWrap,
+    token: TokenWrap,
+) -> (NodeWrap, TokenWrap) {
+    if ty.kind() == Some(TypeKind::ARRAY) {
+        let mut node = NodeWrap::new(NodeKind::NullExpr, token);
+        for i in 0..ty.array_len() {
+            let design2 = InitDesigWrap::empty();
+            design2.set_next(design.clone());
+            let (rhs, token) =
+                create_local_var_init(init.child().get(i).unwrap(), ty, design2, token);
+            node = NodeWrap::new_binary(NodeKind::COMMA, node, rhs, token);
+        }
+
+        return (node, token);
+    }
+    let (lhs, token) = init_design_expr(&design, token);
+    let rhs = init.expr();
+    return (
+        NodeWrap::new_binary(NodeKind::ASSIGN, lhs, rhs, token),
+        token,
+    );
+}
+
+#[allow(dead_code)]
+pub fn local_var_initializer(token: TokenWrap, var: ObjWrap) -> (NodeWrap, TokenWrap) {
+    let (init, token) = initializer(token, var.ty());
+    let design = InitDesigWrap::empty();
+    design.set_var(var);
+
+    return create_local_var_init(&init, var.ty(), design, token);
 }

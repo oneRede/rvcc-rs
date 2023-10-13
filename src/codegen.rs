@@ -55,6 +55,9 @@ pub fn align_to(n: usize, align: usize) -> usize {
 pub fn gen_addr(node: NodeWrap) {
     write_to_file(&format!("  .loc 1 {}", node.token().line_no()));
     match node.kind() {
+        NodeKind::NullExpr => {
+            return;
+        }
         NodeKind::VAR => {
             if node.var().is_local() {
                 let offset = node.var().offset();

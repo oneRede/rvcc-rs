@@ -2,6 +2,7 @@ use crate::{
     node::NodeWrap,
     parse::{GLOBALS, LOCALS},
     scope::ScopeWrap,
+    token::TokenWrap,
     ty::TyWrap,
 };
 
@@ -22,28 +23,29 @@ pub struct Obj {
     pub locals: ObjWrap,
     pub stack_size: usize,
     pub params: ObjWrap,
-    pub init_data: Vec<usize>,   
+    pub init_data: Vec<usize>,
 }
 
 #[allow(dead_code)]
 impl Obj {
-    pub fn new() -> Self{
+    pub fn new() -> Self {
         Obj {
-        next: ObjWrap::empty(),
-        name: "",
-        offset: 0,
-        ty: TyWrap::empty(),
-        is_local: true,
-        is_function: false,
-        is_definition: false,
-        is_static: false,
-        body: NodeWrap::empty(),
-        locals: ObjWrap::empty(),
-        stack_size: 0,
-        params: ObjWrap::empty(),
-        init_data: vec![],
+            next: ObjWrap::empty(),
+            name: "",
+            offset: 0,
+            ty: TyWrap::empty(),
+            is_local: true,
+            is_function: false,
+            is_definition: false,
+            is_static: false,
+            body: NodeWrap::empty(),
+            locals: ObjWrap::empty(),
+            stack_size: 0,
+            params: ObjWrap::empty(),
+            init_data: vec![],
+        }
     }
-}}
+}
 
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
@@ -62,7 +64,7 @@ impl ObjWrap {
 
         let scope = ScopeWrap::push(name);
         scope.set_var(var);
-        return var
+        return var;
     }
 
     pub fn new_local(name: &'static str, ty: TyWrap) -> Self {
@@ -205,5 +207,149 @@ impl Iterator for ObjWrap {
         } else {
             return None;
         }
+    }
+}
+
+// typedef struct Initializer Initializer;
+// struct Initializer {
+//   Initializer *Next; // 下一个
+//   Type *Ty;          // 原始类型
+//   Token *Tok;        // 终结符
+
+//   // 如果不是聚合类型，并且有一个初始化器，Expr 有对应的初始化表达式。
+//   Node *Expr;
+
+//   // 如果是聚合类型（如数组或结构体），Children有子节点的初始化器
+//   Initializer **Children;
+// };
+
+// // 指派初始化，用于局部变量的初始化器
+// typedef struct InitDesig InitDesig;
+// struct InitDesig {
+//   InitDesig *Next; // 下一个
+//   int Idx;         // 数组中的索引
+//   Obj *Var;        // 对应的变量
+// };
+
+#[allow(dead_code)]
+#[derive(Clone, Debug)]
+pub struct Initializer {
+    pub next: InitializerWrap,
+    pub ty: TyWrap,
+    pub token: TokenWrap,
+    pub expr: NodeWrap,
+    pub child: Vec<InitializerWrap>,
+}
+
+#[allow(dead_code)]
+impl Initializer {
+    pub fn new() -> Self {
+        Self {
+            next: InitializerWrap::empty(),
+            ty: TyWrap::empty(),
+            token: TokenWrap::empty(),
+            expr: NodeWrap::empty(),
+            child: vec![],
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Debug)]
+pub struct InitializerWrap {
+    ptr: Option<*mut Initializer>,
+}
+
+#[allow(dead_code)]
+impl InitializerWrap {
+    pub const fn empty() -> Self {
+        Self { ptr: None }
+    }
+
+    pub fn new(ty: TyWrap) -> Self {
+        let init = Initializer::new();
+        let init: *mut Initializer = Box::leak(Box::new(init));
+        let init = Self { ptr: Some(init) };
+
+        for _ in 0..ty.array_len() {
+            init.set_child(InitializerWrap::empty())
+        }
+        init
+    }
+
+    pub fn ty(&self) -> TyWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().ty }
+    }
+
+    pub fn child(&self) -> &Vec<InitializerWrap> {
+        unsafe { &self.ptr.unwrap().as_ref().unwrap().child }
+    }
+
+    pub fn expr(&self) -> NodeWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().expr }
+    }
+
+    pub fn set_child(&self, child: InitializerWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().child.push(child) }
+    }
+
+    pub fn set_expr(&self, expr: NodeWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().expr = expr }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Debug)]
+pub struct InitDesig {
+    pub next: InitDesigWrap,
+    pub idx: i64,
+    pub var: ObjWrap,
+}
+
+#[allow(dead_code)]
+impl InitDesig {
+    pub fn new() -> Self {
+        Self {
+            next: InitDesigWrap::empty(),
+            idx: 0,
+            var: ObjWrap::empty(),
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Debug)]
+pub struct InitDesigWrap {
+    pub ptr: Option<*mut InitDesig>,
+}
+
+#[allow(dead_code)]
+impl InitDesigWrap {
+    pub fn empty() -> Self {
+        Self { ptr: None }
+    }
+
+    pub fn var(&self) -> ObjWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().var }
+    }
+
+    pub fn next(&self) -> &InitDesigWrap {
+        unsafe { &self.ptr.unwrap().as_ref().unwrap().next }
+    }
+
+    pub fn idx(&self) -> i64 {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().idx }
+    }
+
+    pub fn set_next(&self, next: InitDesigWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().next = next }
+    }
+
+    pub fn set_idx(&self, idx: i64) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().idx = idx }
+    }
+
+    pub fn set_var(&self, var: ObjWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().var = var }
     }
 }
