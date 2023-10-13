@@ -33,6 +33,10 @@ int main() {
   ASSERT(12, ({ char x[(int*)16-1]; sizeof(x); }));
   ASSERT(3, ({ char x[(int*)16-(int*)4]; sizeof(x); }));
 
+//   ASSERT(15, ({ char x[(char)0xffffff0f]; sizeof(x); }));\n
+//   ASSERT(0x10f, ({ char x[(short)0xffff010f]; sizeof(x); }));\n
+//   ASSERT(4, ({ char x[(int)0xfffffffffff+5]; sizeof(x); }));\n
+
   printf("OK\n");
   return 0;
 }
