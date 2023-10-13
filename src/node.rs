@@ -46,6 +46,7 @@ pub enum NodeKind {
     SHL,
     SHR,
     COND,
+    NullExpr,
 }
 
 impl ToString for NodeKind {
@@ -90,6 +91,7 @@ impl ToString for NodeKind {
             NodeKind::SHL => "SHL".to_string(),
             NodeKind::SHR => "SHR".to_string(),
             NodeKind::COND => "COND".to_string(),
+            NodeKind::NullExpr => "NullExpr".to_string(),
         }
     }
 }
