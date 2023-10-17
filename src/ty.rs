@@ -134,6 +134,9 @@ impl TyWrap {
     }
 
     pub fn kind(&self) -> Option<TypeKind> {
+        if self.ptr == None {
+            return None
+        }
         unsafe { self.ptr.unwrap().as_ref().unwrap().kind }
     }
 

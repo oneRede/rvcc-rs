@@ -1659,7 +1659,7 @@ pub fn initializer2(mut token: TokenWrap, init: &InitializerWrap) -> TokenWrap {
             }
             initializer2(token, init.child().get(i).unwrap());
         }
-        return token;
+        return skip(token, "}");
     }
     let (node, token) = assign(token);
     init.set_expr(node);
@@ -1667,9 +1667,9 @@ pub fn initializer2(mut token: TokenWrap, init: &InitializerWrap) -> TokenWrap {
 }
 
 #[allow(dead_code)]
-pub fn initializer(token: TokenWrap, ty: TyWrap) -> (InitializerWrap, TokenWrap) {
+pub fn initializer(mut token: TokenWrap, ty: TyWrap) -> (InitializerWrap, TokenWrap) {
     let init = InitializerWrap::new(ty);
-    initializer2(token, &init);
+    token = initializer2(token, &init);
     return (init, token);
 }
 
@@ -1715,7 +1715,7 @@ pub fn create_local_var_init(
 #[allow(dead_code)]
 pub fn local_var_initializer(token: TokenWrap, var: ObjWrap) -> (NodeWrap, TokenWrap) {
     let (init, token) = initializer(token, var.ty());
-    let design = InitDesigWrap::empty();
+    let design = InitDesigWrap::new();
     design.set_var(var);
 
     return create_local_var_init(&init, var.ty(), design, token);

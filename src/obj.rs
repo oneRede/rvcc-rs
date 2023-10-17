@@ -325,6 +325,11 @@ pub struct InitDesigWrap {
 
 #[allow(dead_code)]
 impl InitDesigWrap {
+    pub fn new() -> Self {
+        let design: *mut InitDesig = Box::leak(Box::new(InitDesig::new()));
+        Self { ptr: Some(design) }
+    }
+
     pub fn empty() -> Self {
         Self { ptr: None }
     }
