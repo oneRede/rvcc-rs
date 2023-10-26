@@ -3,7 +3,7 @@ use crate::{
     parse::{GLOBALS, LOCALS},
     scope::ScopeWrap,
     token::TokenWrap,
-    ty::TyWrap,
+    ty::{TyWrap, TypeKind},
 };
 
 #[allow(dead_code)]
@@ -270,9 +270,16 @@ impl InitializerWrap {
         let init = Initializer::new();
         let init: *mut Initializer = Box::leak(Box::new(init));
         let init = Self { ptr: Some(init) };
+        init.set_ty(ty);
 
-        for _ in 0..ty.array_len() {
-            init.set_child(InitializerWrap::empty())
+        if ty.kind() == Some(TypeKind::ARRAY) {
+            for _ in 0..ty.array_len() {
+                let child = Initializer::new();
+                let child: *mut Initializer = Box::leak(Box::new(child));
+                let child = Self { ptr: Some(child) };
+                child.set_ty(ty.base());
+                init.set_child(child);
+            }
         }
         init
     }
@@ -295,6 +302,10 @@ impl InitializerWrap {
 
     pub fn set_expr(&self, expr: NodeWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().expr = expr }
+    }
+
+    pub fn set_ty(&self, ty: TyWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().ty = ty }
     }
 }
 
@@ -357,4 +368,23 @@ impl InitDesigWrap {
     pub fn set_var(&self, var: ObjWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().var = var }
     }
+}
+
+#[test]
+fn test_vec() {
+    struct T1 {
+        v: Vec<String>,
+        n: i32,
+    }
+
+    let t1 = T1 {
+        v: vec!["123456".to_string()],
+        n: 0,
+    };
+
+    let pt: *mut T1 = Box::leak(Box::new(t1));
+    unsafe { pt.as_mut().unwrap().v.push("567890".to_string()) };
+
+    println!("{:?}", unsafe { &pt.as_ref().unwrap().v });
+    println!("{:?}", unsafe { &pt.as_ref().unwrap().n });
 }
