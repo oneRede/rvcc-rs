@@ -55,9 +55,6 @@ pub fn align_to(n: usize, align: usize) -> usize {
 pub fn gen_addr(node: NodeWrap) {
     write_to_file(&format!("  .loc 1 {}", node.token().line_no()));
     match node.kind() {
-        NodeKind::NullExpr => {
-            return;
-        }
         NodeKind::VAR => {
             if node.var().is_local() {
                 let offset = node.var().offset();
@@ -99,6 +96,9 @@ pub fn gen_addr(node: NodeWrap) {
 pub fn gen_expr(node: NodeWrap) {
     write_to_file(&format!("  .loc 1 {}", node.token().line_no()));
     match node.kind() {
+        NodeKind::NullExpr => {
+            return;
+        }
         NodeKind::Num => {
             write_to_file(&format!("  # 将{}加载到a0中", node.val()));
             write_to_file(&format!("  li a0, {}", node.val()));
