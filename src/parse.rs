@@ -1654,6 +1654,9 @@ pub fn initializer2(mut token: TokenWrap, init: &InitializerWrap) -> TokenWrap {
         token = skip(token, "{");
 
         for i in 0..init.ty().array_len() {
+            if equal(token, "}") {
+                continue;
+            }
             if i > 0 {
                 token = skip(token, ",")
             }
@@ -1705,10 +1708,13 @@ pub fn create_local_var_init(
 
         return (node, token);
     }
+    if init.expr().ptr.is_none() {
+        return (NodeWrap::new(NodeKind::NullExpr, token), token);
+    }
     let (lhs, token) = init_design_expr(&design, token);
-    let rhs = init.expr();
+
     return (
-        NodeWrap::new_binary(NodeKind::ASSIGN, lhs, rhs, token),
+        NodeWrap::new_binary(NodeKind::ASSIGN, lhs, init.expr(), token),
         token,
     );
 }
@@ -1721,6 +1727,12 @@ pub fn local_var_initializer(token: TokenWrap, var: ObjWrap) -> (NodeWrap, Token
     design.set_idx(0);
     design.set_var(var);
 
-    let (node, _) = create_local_var_init(&init, var.ty(), design, start);
-    return (node, token);
+    let lhs = NodeWrap::new(NodeKind::MEMZERO, token);
+    lhs.set_var(var);
+
+    let (rhs, _) = create_local_var_init(&init, var.ty(), design, start);
+    return (
+        NodeWrap::new_binary(NodeKind::COMMA, lhs, rhs, token),
+        token,
+    );
 }
