@@ -1649,18 +1649,35 @@ pub fn const_expr(token: TokenWrap) -> (i64, TokenWrap) {
 }
 
 #[allow(dead_code)]
+pub fn skip_excess_elemnt(mut token: TokenWrap) -> TokenWrap {
+    if equal(token, "{") {
+        token = skip_excess_elemnt(token.nxt());
+        return skip(token, "}");
+    }
+    let (_, token) = assign(token);
+    return token;
+}
+
+#[allow(dead_code)]
 pub fn initializer2(mut token: TokenWrap, init: &InitializerWrap) -> TokenWrap {
     if init.ty().kind() == Some(TypeKind::ARRAY) {
         token = skip(token, "{");
 
-        for i in 0..init.ty().array_len() {
-            if equal(token, "}") {
-                continue;
+        for i in 0..10000 {
+            let start = token;
+            if consume(&mut token, "}"){
+                token = start;
+                break;
             }
             if i > 0 {
                 token = skip(token, ",")
             }
-            token = initializer2(token, init.child().get(i).unwrap());
+            if i < init.ty().array_len() {
+                token = initializer2(token, init.child().get(i).unwrap());
+            }
+            else {
+                token = skip_excess_elemnt(token);
+            }
         }
         return skip(token, "}");
     }
