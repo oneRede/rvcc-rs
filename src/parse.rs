@@ -1,3 +1,5 @@
+use std::cmp;
+
 use crate::{
     codegen::align_to,
     node::{
@@ -1659,27 +1661,50 @@ pub fn skip_excess_elemnt(mut token: TokenWrap) -> TokenWrap {
 }
 
 #[allow(dead_code)]
-pub fn initializer2(mut token: TokenWrap, init: &InitializerWrap) -> TokenWrap {
-    if init.ty().kind() == Some(TypeKind::ARRAY) {
-        token = skip(token, "{");
+pub fn string_initializer(token: TokenWrap, init: InitializerWrap) -> TokenWrap {
+    let len = cmp::min(init.ty().array_len(), token.ty().array_len());
 
-        for i in 0..10000 {
-            let start = token;
-            if consume(&mut token, "}"){
-                token = start;
-                break;
-            }
-            if i > 0 {
-                token = skip(token, ",")
-            }
-            if i < init.ty().array_len() {
-                token = initializer2(token, init.child().get(i).unwrap());
-            }
-            else {
-                token = skip_excess_elemnt(token);
-            }
+    for i in 0..(len - 1) {
+        let node = NodeWrap::new_num(*token.stri().get(i).unwrap() as i64, token);
+        init.child().get(i).unwrap().set_expr(node);
+    }
+    if len > 0 {
+        let node = NodeWrap::new_num(0, token);
+        init.child().get(len - 1).unwrap().set_expr(node);
+    }
+
+    return token.nxt();
+}
+
+#[allow(dead_code)]
+pub fn array_initializer(mut token: TokenWrap, init: InitializerWrap) -> TokenWrap {
+    token = skip(token, "{");
+    let mut i = 0;
+
+    loop {
+        if consume(&mut token, "}") {
+            break;
         }
-        return skip(token, "}");
+        if i > 0 {
+            token = skip(token, ",")
+        }
+        if i < init.ty().array_len() {
+            token = initializer2(token, init.child().get(i).unwrap());
+        } else {
+            token = skip_excess_elemnt(token);
+        }
+        i += 1;
+    }
+    return token;
+}
+
+#[allow(dead_code)]
+pub fn initializer2(token: TokenWrap, init: &InitializerWrap) -> TokenWrap {
+    if init.ty().kind() == Some(TypeKind::ARRAY) && token.kind() == TokenKind::STR {
+        return string_initializer(token, init.clone());
+    }
+    if init.ty().kind() == Some(TypeKind::ARRAY) {
+        return array_initializer(token, init.clone());
     }
     let (node, token) = assign(token);
     init.set_expr(node);
