@@ -274,10 +274,7 @@ impl InitializerWrap {
 
         if ty.kind() == Some(TypeKind::ARRAY) {
             for _ in 0..ty.array_len() {
-                let child = Initializer::new();
-                let child: *mut Initializer = Box::leak(Box::new(child));
-                let child = Self { ptr: Some(child) };
-                child.set_ty(ty.base());
+                let child = InitializerWrap::new(ty.base());
                 init.set_child(child);
             }
         }
