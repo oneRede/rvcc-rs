@@ -218,6 +218,7 @@ pub struct Initializer {
     pub token: TokenWrap,
     pub expr: NodeWrap,
     pub child: Vec<InitializerWrap>,
+    pub is_flexible: bool,
 }
 
 #[allow(dead_code)]
@@ -229,12 +230,13 @@ impl Initializer {
             token: TokenWrap::empty(),
             expr: NodeWrap::empty(),
             child: vec![],
+            is_flexible: false,
         }
     }
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Debug)]
+#[derive(Clone, Copy, Debug)]
 pub struct InitializerWrap {
     ptr: Option<*mut Initializer>,
 }
@@ -245,15 +247,19 @@ impl InitializerWrap {
         Self { ptr: None }
     }
 
-    pub fn new(ty: TyWrap) -> Self {
+    pub fn new(ty: TyWrap, is_flexible: bool) -> Self {
         let init = Initializer::new();
         let init: *mut Initializer = Box::leak(Box::new(init));
         let init = Self { ptr: Some(init) };
         init.set_ty(ty);
 
         if ty.kind() == Some(TypeKind::ARRAY) {
+            if is_flexible && ty.size() < 0 {
+                init.set_is_flexible(true);
+                return init;
+            }
             for _ in 0..ty.array_len() {
-                let child = InitializerWrap::new(ty.base());
+                let child = InitializerWrap::new(ty.base(), false);
                 init.set_child(child);
             }
         }
@@ -272,6 +278,10 @@ impl InitializerWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().expr }
     }
 
+    pub fn is_flexible(&self) -> bool {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().is_flexible }
+    }
+
     pub fn set_child(&self, child: InitializerWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().child.push(child) }
     }
@@ -282,6 +292,10 @@ impl InitializerWrap {
 
     pub fn set_ty(&self, ty: TyWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().ty = ty }
+    }
+
+    pub fn set_is_flexible(&self, is_flexible: bool) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().is_flexible = is_flexible }
     }
 }
 
@@ -344,23 +358,4 @@ impl InitDesigWrap {
     pub fn set_var(&self, var: ObjWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().var = var }
     }
-}
-
-#[test]
-fn test_vec() {
-    struct T1 {
-        v: Vec<String>,
-        n: i32,
-    }
-
-    let t1 = T1 {
-        v: vec!["123456".to_string()],
-        n: 0,
-    };
-
-    let pt: *mut T1 = Box::leak(Box::new(t1));
-    unsafe { pt.as_mut().unwrap().v.push("567890".to_string()) };
-
-    println!("{:?}", unsafe { &pt.as_ref().unwrap().v });
-    println!("{:?}", unsafe { &pt.as_ref().unwrap().n });
 }

@@ -35,7 +35,7 @@ pub struct Ty {
     pub params: TyWrap,
     pub next: TyWrap,
     pub size: i64,
-    pub array_len: usize,
+    pub array_len: i64,
     pub mems: MemberWrap,
     pub align: usize,
 }
@@ -123,7 +123,7 @@ impl TyWrap {
     pub fn new_array_ty(base: TyWrap, len: i64) -> Self {
         let ty = TyWrap::new_v2(TypeKind::ARRAY, base.size() * len, base.align());
         ty.set_base(base);
-        ty.set_array_len(len as usize);
+        ty.set_array_len(len);
         ty
     }
 
@@ -164,7 +164,7 @@ impl TyWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().size }
     }
 
-    pub fn array_len(&self) -> usize {
+    pub fn array_len(&self) -> i64 {
         unsafe { self.ptr.unwrap().as_ref().unwrap().array_len }
     }
 
@@ -204,7 +204,7 @@ impl TyWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().size = size }
     }
 
-    pub fn set_array_len(&self, array_len: usize) {
+    pub fn set_array_len(&self, array_len: i64) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().array_len = array_len }
     }
 

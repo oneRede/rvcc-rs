@@ -329,9 +329,6 @@ pub fn declaration(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWra
         let ty = declarator(token, base_ty).1;
         token = declarator(token, base_ty).0;
 
-        if ty.size() < 0 {
-            error_token(token, "variable has incomplete type");
-        }
         if ty.kind() == Some(TypeKind::VOID) {
             error_token(token, "variable declared void");
         }
@@ -342,6 +339,13 @@ pub fn declaration(mut token: TokenWrap, base_ty: TyWrap) -> (NodeWrap, TokenWra
             token = tk;
             cur.set_nxt(NodeWrap::new_unary(EXPRSTMT, expr, token));
             cur = cur.nxt();
+        }
+
+        if var.ty().size() < 0 {
+            error_token(ty.name(), "variable has incomplete type")
+        }
+        if var.ty().kind() == Some(TypeKind::VOID) {
+            error_token(ty.name(), "variable declared void")
         }
     }
 
@@ -1661,22 +1665,33 @@ pub fn skip_excess_elemnt(mut token: TokenWrap) -> TokenWrap {
 }
 
 #[allow(dead_code)]
-pub fn string_initializer(token: TokenWrap, init: InitializerWrap) -> TokenWrap {
-    let len = cmp::min(init.ty().array_len(), token.ty().array_len());
+pub fn string_initializer(token: TokenWrap, mut init: InitializerWrap) -> (TokenWrap, InitializerWrap) {
+    if init.is_flexible() {
+        init = InitializerWrap::new(
+            TyWrap::new_array_ty(init.ty().base(), token.ty().array_len() as i64),
+            false,
+        );
+    }
 
-    for i in 0..len {
+    let len = cmp::min(init.ty().array_len(), token.ty().array_len());
+    for i in 0..len as usize {
         let node = NodeWrap::new_num(*token.stri().get(i).unwrap() as i64, token);
         init.child().get(i).unwrap().set_expr(node);
     }
 
-    return token.nxt();
+    return (token.nxt(), init);
 }
 
 #[allow(dead_code)]
-pub fn array_initializer(mut token: TokenWrap, init: InitializerWrap) -> TokenWrap {
+pub fn array_initializer(mut token: TokenWrap, mut init: InitializerWrap) -> (TokenWrap, InitializerWrap){
     token = skip(token, "{");
-    let mut i = 0;
 
+    if init.is_flexible() {
+        let len = country_array_init_elements(token, init.ty());
+        init = InitializerWrap::new(TyWrap::new_array_ty(init.ty().base(), len), false);
+    }
+
+    let mut i = 0;
     loop {
         if consume(&mut token, "}") {
             break;
@@ -1685,32 +1700,33 @@ pub fn array_initializer(mut token: TokenWrap, init: InitializerWrap) -> TokenWr
             token = skip(token, ",")
         }
         if i < init.ty().array_len() {
-            token = initializer2(token, init.child().get(i).unwrap());
+            token = initializer2(token, init.child().get(i as usize).unwrap()).0;
         } else {
             token = skip_excess_elemnt(token);
         }
         i += 1;
     }
-    return token;
+    return (token, init);
 }
 
 #[allow(dead_code)]
-pub fn initializer2(token: TokenWrap, init: &InitializerWrap) -> TokenWrap {
+pub fn initializer2(token: TokenWrap, init: &InitializerWrap) -> (TokenWrap, InitializerWrap) {
     if init.ty().kind() == Some(TypeKind::ARRAY) && token.kind() == TokenKind::STR {
         return string_initializer(token, init.clone());
     }
     if init.ty().kind() == Some(TypeKind::ARRAY) {
-        return array_initializer(token, init.clone());
+        let token = array_initializer(token, init.clone());
+        return token;
     }
     let (node, token) = assign(token);
     init.set_expr(node);
-    return token;
+    return (token, *init);
 }
 
 #[allow(dead_code)]
-pub fn initializer(mut token: TokenWrap, ty: TyWrap) -> (InitializerWrap, TokenWrap) {
-    let init = InitializerWrap::new(ty);
-    token = initializer2(token, &init);
+pub fn initializer(token: TokenWrap, ty: TyWrap) -> (InitializerWrap, TokenWrap) {
+    let init = InitializerWrap::new(ty, true);
+    let(token, init) = initializer2(token, &init);
     return (init, token);
 }
 
@@ -1735,12 +1751,13 @@ pub fn create_local_var_init(
 ) -> (NodeWrap, TokenWrap) {
     if ty.kind() == Some(TypeKind::ARRAY) {
         let mut node = NodeWrap::new(NodeKind::NullExpr, token);
+
         for i in 0..ty.array_len() {
             let design2 = InitDesigWrap::new();
             design2.set_idx(i as i64);
             design2.set_next(design.clone());
             let (rhs, token) =
-                create_local_var_init(init.child().get(i).unwrap(), ty.base(), design2, token);
+                create_local_var_init(init.child().get(i as usize).unwrap(), ty.base(), design2, token);
             node = NodeWrap::new_binary(NodeKind::COMMA, node, rhs, token);
         }
 
@@ -1761,6 +1778,7 @@ pub fn create_local_var_init(
 pub fn local_var_initializer(token: TokenWrap, var: ObjWrap) -> (NodeWrap, TokenWrap) {
     let start = token;
     let (init, token) = initializer(token, var.ty());
+    var.set_ty(init.ty());
     let design = InitDesigWrap::new();
     design.set_idx(0);
     design.set_var(var);
@@ -1773,4 +1791,19 @@ pub fn local_var_initializer(token: TokenWrap, var: ObjWrap) -> (NodeWrap, Token
         NodeWrap::new_binary(NodeKind::COMMA, lhs, rhs, token),
         token,
     );
+}
+
+#[allow(dead_code)]
+pub fn country_array_init_elements(mut token: TokenWrap, ty: TyWrap) -> i64 {
+    let dummy = InitializerWrap::new(ty.base(), false);
+    let mut i = 0;
+
+    while !equal(token, "}") {
+        if i > 0 {
+            token = skip(token, ",");
+        }
+        token = initializer2(token, &dummy).0;
+        i += 1;
+    }
+    return i;
 }

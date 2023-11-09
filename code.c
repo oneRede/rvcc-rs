@@ -2,5 +2,5 @@ void assert(int expected, int actual, char *code);
 
 int main()
 {
-   assert('a', ({ char x[4]="abc"; x[0]; }));
+   assert(4, ({ int x[]={1,2,3,4}; x[3]; }));
 }
