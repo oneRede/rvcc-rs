@@ -153,11 +153,16 @@ pub fn gen_expr(node: NodeWrap) {
             return;
         }
         NodeKind::MEMZERO => {
-            write_to_file(&format!("  # 对{}的内存{}(fp)清零{}位", node.var().name(), node.var().offset(), node.var().ty().size()));
+            write_to_file(&format!(
+                "  # 对{}的内存{}(fp)清零{}位",
+                node.var().name(),
+                node.var().offset(),
+                node.var().ty().size()
+            ));
             for i in 0..node.var().ty().size() {
                 write_to_file(&format!("  sb zero, {}(fp)", node.var().offset() + i));
-                return;
             }
+            return;
         }
 
         NodeKind::COND => {

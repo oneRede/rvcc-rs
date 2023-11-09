@@ -426,6 +426,7 @@ pub fn read_string_literal(chars: &'static [char]) -> TokenWrap {
             start = &start[1..];
         }
     }
+    buf.push(0);
     let n_chars = chars.len() - start.len();
 
     let token = TokenWrap::new(TokenKind::STR, chars, n_chars + 1);

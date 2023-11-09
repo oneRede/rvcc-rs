@@ -1664,13 +1664,9 @@ pub fn skip_excess_elemnt(mut token: TokenWrap) -> TokenWrap {
 pub fn string_initializer(token: TokenWrap, init: InitializerWrap) -> TokenWrap {
     let len = cmp::min(init.ty().array_len(), token.ty().array_len());
 
-    for i in 0..(len - 1) {
+    for i in 0..len {
         let node = NodeWrap::new_num(*token.stri().get(i).unwrap() as i64, token);
         init.child().get(i).unwrap().set_expr(node);
-    }
-    if len > 0 {
-        let node = NodeWrap::new_num('\0' as i64, token);
-        init.child().get(len - 1).unwrap().set_expr(node);
     }
 
     return token.nxt();
