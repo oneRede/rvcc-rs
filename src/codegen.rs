@@ -40,7 +40,7 @@ pub fn push() {
 
 #[allow(dead_code)]
 pub fn pop(reg: &str) {
-    write_to_file(&format!("  # 弹栈，将栈顶的值存入{}", reg));
+    write_to_file(&format!("  # 弹栈,将栈顶的值存入{}", reg));
     write_to_file(&format!("  ld {}, 0(sp)", reg));
     write_to_file(&format!("  addi sp, sp, 8"));
     unsafe { DEPTH -= 1 };
@@ -169,7 +169,7 @@ pub fn gen_expr(node: NodeWrap) {
             let c = count();
             write_to_file(&format!("\n# =====条件运算符{}===========", c));
             gen_expr(node.cond());
-            write_to_file(&format!("  # 条件判断，为0则跳转"));
+            write_to_file(&format!("  # 条件判断,为0则跳转"));
             write_to_file(&format!("  beqz a0, .L.else.{}", c));
             gen_expr(node.then());
             write_to_file(&format!("  # 跳转到条件运算符结尾部分"));
@@ -192,10 +192,10 @@ pub fn gen_expr(node: NodeWrap) {
             write_to_file(&format!("\n# =====逻辑与{}===============", c));
             gen_expr(node.lhs());
             // 判断是否为短路操作
-            write_to_file(&format!("  # 左部短路操作判断，为0则跳转"));
+            write_to_file(&format!("  # 左部短路操作判断,为0则跳转"));
             write_to_file(&format!("  beqz a0, .L.false.{}", c));
             gen_expr(node.rhs());
-            write_to_file(&format!("  # 右部判断，为0则跳转"));
+            write_to_file(&format!("  # 右部判断,为0则跳转"));
             write_to_file(&format!("  beqz a0, .L.false.{}", c));
             write_to_file(&format!("  li a0, 1"));
             write_to_file(&format!("  j .L.end.{}", c));
@@ -209,10 +209,10 @@ pub fn gen_expr(node: NodeWrap) {
             write_to_file(&format!("\n# =====逻辑或{}===============", c));
             gen_expr(node.lhs());
             // 判断是否为短路操作
-            write_to_file(&format!("  # 左部短路操作判断，不为0则跳转"));
+            write_to_file(&format!("  # 左部短路操作判断,不为0则跳转"));
             write_to_file(&format!("  bnez a0, .L.true.{}", c));
             gen_expr(node.rhs());
-            write_to_file(&format!("  # 右部判断，bu为0则跳转"));
+            write_to_file(&format!("  # 右部判断,bu为0则跳转"));
             write_to_file(&format!("  bnez a0, .L.true.{}", c));
             write_to_file(&format!("  li a0, 0"));
             write_to_file(&format!("  j .L.end.{}", c));
@@ -279,22 +279,22 @@ pub fn gen_expr(node: NodeWrap) {
             return;
         }
         NodeKind::MOD => {
-            write_to_file(&format!("  # a0%%a1，结果写入a0"));
+            write_to_file(&format!("  # a0%%a1,结果写入a0"));
             write_to_file(&format!("  rem{} a0, a0, a1", c));
             return;
         }
         NodeKind::BITAND => {
-            write_to_file(&format!("  # a0&a1，结果写入a0"));
+            write_to_file(&format!("  # a0&a1,结果写入a0"));
             write_to_file(&format!("  and a0, a0, a1"));
             return;
         }
         NodeKind::BITOR => {
-            write_to_file(&format!("  # a0|a1，结果写入a0"));
+            write_to_file(&format!("  # a0|a1,结果写入a0"));
             write_to_file(&format!("  or a0, a0, a1"));
             return;
         }
         NodeKind::BITXOR => {
-            write_to_file(&format!("  # a0^a1，结果写入a0"));
+            write_to_file(&format!("  # a0^a1,结果写入a0"));
             write_to_file(&format!("  xor a0, a0, a1"));
             return;
         }
@@ -382,7 +382,7 @@ fn gen_stmt(node: NodeWrap) {
             if !node.cond().ptr.is_none() {
                 gen_expr(node.cond());
                 write_to_file(&format!(
-                    "  # 若a0为0，则跳转到循环{}的{}段",
+                    "  # 若a0为0,则跳转到循环{}的{}段",
                     c,
                     node.brk_label()
                 ));
@@ -422,16 +422,16 @@ fn gen_stmt(node: NodeWrap) {
                 write_to_file(&format!("  j {}", node.default_case().label()));
             }
 
-            write_to_file(&format!("  # 结束switch，跳转break标签"));
+            write_to_file(&format!("  # 结束switch,跳转break标签"));
             write_to_file(&format!("  j {}", node.brk_label()));
             gen_stmt(node.then());
-            write_to_file(&format!("# switch的break标签，结束switch"));
+            write_to_file(&format!("# switch的break标签,结束switch"));
             write_to_file(&format!("{}:", node.brk_label()));
             return;
         }
 
         NodeKind::CASE => {
-            write_to_file(&format!("# case标签，值为{}", node.val()));
+            write_to_file(&format!("# case标签,值为{}", node.val()));
             write_to_file(&format!("{}:", node.label()));
             gen_stmt(node.lhs());
             return;
@@ -732,7 +732,7 @@ pub fn cast(from: TyWrap, to: TyWrap) {
     }
 
     if to.kind() == Some(TypeKind::BOOL) {
-        write_to_file(&format!("  # 转为bool类型：为0置0，非0置1"));
+        write_to_file(&format!("  # 转为bool类型：为0置0,非0置1"));
         write_to_file(&format!("  snez a0, a0"));
         return;
     }

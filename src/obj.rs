@@ -210,27 +210,6 @@ impl Iterator for ObjWrap {
     }
 }
 
-// typedef struct Initializer Initializer;
-// struct Initializer {
-//   Initializer *Next; // 下一个
-//   Type *Ty;          // 原始类型
-//   Token *Tok;        // 终结符
-
-//   // 如果不是聚合类型，并且有一个初始化器，Expr 有对应的初始化表达式。
-//   Node *Expr;
-
-//   // 如果是聚合类型（如数组或结构体），Children有子节点的初始化器
-//   Initializer **Children;
-// };
-
-// // 指派初始化，用于局部变量的初始化器
-// typedef struct InitDesig InitDesig;
-// struct InitDesig {
-//   InitDesig *Next; // 下一个
-//   int Idx;         // 数组中的索引
-//   Obj *Var;        // 对应的变量
-// };
-
 #[allow(dead_code)]
 #[derive(Clone, Debug)]
 pub struct Initializer {
