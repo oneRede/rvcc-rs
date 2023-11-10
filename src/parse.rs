@@ -1815,3 +1815,17 @@ pub fn country_array_init_elements(mut token: TokenWrap, ty: TyWrap) -> i64 {
     }
     return i;
 }
+
+#[test]
+pub fn test_mut(){
+    let mut t1 = TokenWrap::new(TokenKind::KEYWORD, &['a'], 1);
+
+    pub fn change(tk: TokenWrap, reset: &mut TokenWrap) {
+        println!("change: {:?}", tk.to_string());
+        let t2 = TokenWrap::new(TokenKind::KEYWORD, &['b'], 1);
+        reset.ptr = t2.ptr;
+    }
+
+    change( t1.clone(), &mut t1);
+    println!("main: {:?}", t1.to_string());
+}

@@ -111,6 +111,10 @@ impl TokenWrap {
         Self { ptr: None }
     }
 
+    pub fn pointer(&self) -> *mut *mut Token{
+        return Box::leak(Box::new(self.ptr.unwrap()))
+    }
+
     pub fn set_next(self, next: TokenWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().next = next };
     }
