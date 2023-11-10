@@ -1665,7 +1665,10 @@ pub fn skip_excess_elemnt(mut token: TokenWrap) -> TokenWrap {
 }
 
 #[allow(dead_code)]
-pub fn string_initializer(token: TokenWrap, mut init: InitializerWrap) -> (TokenWrap, InitializerWrap) {
+pub fn string_initializer(
+    token: TokenWrap,
+    mut init: InitializerWrap,
+) -> (TokenWrap, InitializerWrap) {
     if init.is_flexible() {
         init = InitializerWrap::new(
             TyWrap::new_array_ty(init.ty().base(), token.ty().array_len() as i64),
@@ -1683,7 +1686,10 @@ pub fn string_initializer(token: TokenWrap, mut init: InitializerWrap) -> (Token
 }
 
 #[allow(dead_code)]
-pub fn array_initializer(mut token: TokenWrap, mut init: InitializerWrap) -> (TokenWrap, InitializerWrap){
+pub fn array_initializer(
+    mut token: TokenWrap,
+    mut init: InitializerWrap,
+) -> (TokenWrap, InitializerWrap) {
     token = skip(token, "{");
 
     if init.is_flexible() {
@@ -1715,8 +1721,7 @@ pub fn initializer2(token: TokenWrap, init: &InitializerWrap) -> (TokenWrap, Ini
         return string_initializer(token, init.clone());
     }
     if init.ty().kind() == Some(TypeKind::ARRAY) {
-        let token = array_initializer(token, init.clone());
-        return token;
+        return array_initializer(token, init.clone());
     }
     let (node, token) = assign(token);
     init.set_expr(node);
@@ -1724,10 +1729,9 @@ pub fn initializer2(token: TokenWrap, init: &InitializerWrap) -> (TokenWrap, Ini
 }
 
 #[allow(dead_code)]
-pub fn initializer(token: TokenWrap, ty: TyWrap) -> (InitializerWrap, TokenWrap) {
+pub fn initializer(token: TokenWrap, ty: TyWrap) -> (TokenWrap, InitializerWrap) {
     let init = InitializerWrap::new(ty, true);
-    let(token, init) = initializer2(token, &init);
-    return (init, token);
+    return initializer2(token, &init);
 }
 
 #[allow(dead_code)]
@@ -1756,8 +1760,12 @@ pub fn create_local_var_init(
             let design2 = InitDesigWrap::new();
             design2.set_idx(i as i64);
             design2.set_next(design.clone());
-            let (rhs, token) =
-                create_local_var_init(init.child().get(i as usize).unwrap(), ty.base(), design2, token);
+            let (rhs, token) = create_local_var_init(
+                init.child().get(i as usize).unwrap(),
+                ty.base(),
+                design2,
+                token,
+            );
             node = NodeWrap::new_binary(NodeKind::COMMA, node, rhs, token);
         }
 
@@ -1777,7 +1785,7 @@ pub fn create_local_var_init(
 #[allow(dead_code)]
 pub fn local_var_initializer(token: TokenWrap, var: ObjWrap) -> (NodeWrap, TokenWrap) {
     let start = token;
-    let (init, token) = initializer(token, var.ty());
+    let (token, init) = initializer(token, var.ty());
     var.set_ty(init.ty());
     let design = InitDesigWrap::new();
     design.set_idx(0);
