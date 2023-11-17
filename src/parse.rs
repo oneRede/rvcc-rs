@@ -1726,6 +1726,14 @@ pub fn initializer2(token: TokenWrap, init: &InitializerWrap) -> (TokenWrap, Ini
         return array_initializer(token, init.clone());
     }
     if init.ty().kind() == Some(TypeKind::STRUCT) {
+        if !equal(token, "{") {
+            let (expr, token) = assign(token);
+            add_ty(expr);
+            if expr.ty().kind() == Some(TypeKind::STRUCT) {
+                init.set_expr(expr);
+                return (token, *init);
+            }
+        }
         return struct_initializer(token, init.clone());
     }
     let (node, token) = assign(token);
@@ -1744,11 +1752,11 @@ pub fn init_design_expr(design: &InitDesigWrap, token: TokenWrap) -> (NodeWrap, 
     if !design.var().ptr.is_none() {
         return (NodeWrap::new_var_node(design.var(), token), token);
     }
-    if !design.mem().ptr.is_none(){
+    if !design.mem().ptr.is_none() {
         let (lhs, token) = init_design_expr(design.next(), token);
         let node = NodeWrap::new_unary(NodeKind::MEMBER, lhs, token);
         node.set_mem(design.mem());
-        return (node, token)
+        return (node, token);
     }
 
     let (lhs, token) = init_design_expr(design.next(), token);
@@ -1782,17 +1790,22 @@ pub fn create_local_var_init(
 
         return (node, token);
     }
-    if ty.kind() == Some(TypeKind::STRUCT){
+    if ty.kind() == Some(TypeKind::STRUCT) && init.expr().ptr.is_none() {
         let mut node = NodeWrap::new(NodeKind::NullExpr, token);
         for mem in ty.mems() {
             let design2 = InitDesigWrap::new();
             design2.set_next(design.clone());
             design2.set_mem(mem);
 
-            let (rhs, token) = create_local_var_init(init.child().get(mem.idx() as usize).unwrap(), mem.ty(), design2, token);
+            let (rhs, token) = create_local_var_init(
+                init.child().get(mem.idx() as usize).unwrap(),
+                mem.ty(),
+                design2,
+                token,
+            );
             node = NodeWrap::new_binary(NodeKind::COMMA, node, rhs, token);
         }
-        return (node, token)
+        return (node, token);
     }
     if init.expr().ptr.is_none() {
         return (NodeWrap::new(NodeKind::NullExpr, token), token);
