@@ -1,5 +1,5 @@
 use crate::{
-    node::NodeWrap,
+    node::{NodeWrap, MemberWrap},
     parse::{GLOBALS, LOCALS},
     scope::ScopeWrap,
     token::TokenWrap,
@@ -260,7 +260,14 @@ impl InitializerWrap {
             }
             for _ in 0..ty.array_len() {
                 let child = InitializerWrap::new(ty.base(), false);
-                init.set_child(child);
+                init.append(child);
+            }
+        }
+
+        if ty.kind() == Some(TypeKind::STRUCT) {
+            for mem in ty.mems() {
+                let child = InitializerWrap::new(mem.ty(), false);
+                init.append(child);
             }
         }
         init
@@ -282,7 +289,11 @@ impl InitializerWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().is_flexible }
     }
 
-    pub fn set_child(&self, child: InitializerWrap) {
+    pub fn set_child(&self, child: Vec<InitializerWrap>) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().child = child }
+    }
+
+    pub fn append(&self, child: InitializerWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().child.push(child) }
     }
 
@@ -305,6 +316,7 @@ pub struct InitDesig {
     pub next: InitDesigWrap,
     pub idx: i64,
     pub var: ObjWrap,
+    pub mem: MemberWrap,
 }
 
 #[allow(dead_code)]
@@ -314,6 +326,7 @@ impl InitDesig {
             next: InitDesigWrap::empty(),
             idx: 0,
             var: ObjWrap::empty(),
+            mem: MemberWrap::empty(),
         }
     }
 }
@@ -347,6 +360,10 @@ impl InitDesigWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().idx }
     }
 
+    pub fn mem(&self) -> MemberWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().mem }
+    }
+
     pub fn set_next(&self, next: InitDesigWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().next = next }
     }
@@ -357,5 +374,9 @@ impl InitDesigWrap {
 
     pub fn set_var(&self, var: ObjWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().var = var }
+    }
+
+    pub fn set_mem(&self, mem: MemberWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().mem = mem }
     }
 }

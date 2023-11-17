@@ -1005,6 +1005,7 @@ fn unary(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 pub fn struct_members(mut token: TokenWrap, ty: TyWrap) -> TokenWrap {
     let head = MemberWrap::new();
     let mut cur = head;
+    let mut idx = 0;
 
     while !equal(token, "}") {
         let (mut tk, base_ty) = declspec(token, &mut VarAttr::empty());
@@ -1021,10 +1022,11 @@ pub fn struct_members(mut token: TokenWrap, ty: TyWrap) -> TokenWrap {
             let (t, ty) = declarator(tk, base_ty);
             mem.set_ty(ty);
             mem.set_name(mem.ty().name());
-
+            mem.set_idx(idx);
             cur.set_next(mem);
             cur = cur.nxt();
             tk = t;
+            idx += 1;
         }
         token = tk;
     }
@@ -1723,6 +1725,9 @@ pub fn initializer2(token: TokenWrap, init: &InitializerWrap) -> (TokenWrap, Ini
     if init.ty().kind() == Some(TypeKind::ARRAY) {
         return array_initializer(token, init.clone());
     }
+    if init.ty().kind() == Some(TypeKind::STRUCT) {
+        return struct_initializer(token, init.clone());
+    }
     let (node, token) = assign(token);
     init.set_expr(node);
     return (token, *init);
@@ -1738,6 +1743,12 @@ pub fn initializer(token: TokenWrap, ty: TyWrap) -> (TokenWrap, InitializerWrap)
 pub fn init_design_expr(design: &InitDesigWrap, token: TokenWrap) -> (NodeWrap, TokenWrap) {
     if !design.var().ptr.is_none() {
         return (NodeWrap::new_var_node(design.var(), token), token);
+    }
+    if !design.mem().ptr.is_none(){
+        let (lhs, token) = init_design_expr(design.next(), token);
+        let node = NodeWrap::new_unary(NodeKind::MEMBER, lhs, token);
+        node.set_mem(design.mem());
+        return (node, token)
     }
 
     let (lhs, token) = init_design_expr(design.next(), token);
@@ -1770,6 +1781,18 @@ pub fn create_local_var_init(
         }
 
         return (node, token);
+    }
+    if ty.kind() == Some(TypeKind::STRUCT){
+        let mut node = NodeWrap::new(NodeKind::NullExpr, token);
+        for mem in ty.mems() {
+            let design2 = InitDesigWrap::new();
+            design2.set_next(design.clone());
+            design2.set_mem(mem);
+
+            let (rhs, token) = create_local_var_init(init.child().get(mem.idx() as usize).unwrap(), mem.ty(), design2, token);
+            node = NodeWrap::new_binary(NodeKind::COMMA, node, rhs, token);
+        }
+        return (node, token)
     }
     if init.expr().ptr.is_none() {
         return (NodeWrap::new(NodeKind::NullExpr, token), token);
@@ -1816,8 +1839,32 @@ pub fn country_array_init_elements(mut token: TokenWrap, ty: TyWrap) -> i64 {
     return i;
 }
 
+#[allow(dead_code)]
+pub fn struct_initializer(
+    mut token: TokenWrap,
+    init: InitializerWrap,
+) -> (TokenWrap, InitializerWrap) {
+    token = skip(token, "{");
+
+    let mut mem = init.ty().mems();
+
+    while !consume(&mut token, "}") {
+        if mem != init.ty().mems() {
+            token = skip(token, ",");
+        }
+
+        if !mem.ptr.is_none() {
+            token = initializer2(token, init.child().get(mem.idx() as usize).unwrap()).0;
+            mem = mem.nxt();
+        } else {
+            token = skip_excess_elemnt(token);
+        }
+    }
+    return (token, init);
+}
+
 #[test]
-pub fn test_mut(){
+pub fn test_mut() {
     let mut t1 = TokenWrap::new(TokenKind::KEYWORD, &['a'], 1);
 
     pub fn change(tk: TokenWrap, reset: &mut TokenWrap) {
@@ -1826,6 +1873,6 @@ pub fn test_mut(){
         reset.ptr = t2.ptr;
     }
 
-    change( t1.clone(), &mut t1);
+    change(t1.clone(), &mut t1);
     println!("main: {:?}", t1.to_string());
 }

@@ -635,6 +635,7 @@ pub struct Member {
     name: TokenWrap,
     offset: i64,
     token: TokenWrap,
+    idx: i64,
 }
 
 #[allow(dead_code)]
@@ -646,6 +647,7 @@ impl Member {
             name: TokenWrap::empty(),
             offset: 0,
             token: TokenWrap::empty(),
+            idx: 0,
         }
     }
 }
@@ -698,6 +700,10 @@ impl MemberWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().offset }
     }
 
+    pub fn idx(&self) -> i64 {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().idx }
+    }
+
     pub fn set_ty(&self, ty: TyWrap) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().ty = ty }
     }
@@ -712,5 +718,9 @@ impl MemberWrap {
 
     pub fn set_offset(&self, offset: i64) {
         unsafe { self.ptr.unwrap().as_mut().unwrap().offset = offset }
+    }
+
+    pub fn set_idx(&self, idx: i64) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().idx = idx }
     }
 }
