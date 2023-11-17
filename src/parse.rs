@@ -1736,6 +1736,9 @@ pub fn initializer2(token: TokenWrap, init: &InitializerWrap) -> (TokenWrap, Ini
         }
         return struct_initializer(token, init.clone());
     }
+    if init.ty().kind() == Some(TypeKind::UNION) {
+        return union_initializer(token, init.clone());
+    }
     let (node, token) = assign(token);
     init.set_expr(node);
     return (token, *init);
@@ -1807,6 +1810,14 @@ pub fn create_local_var_init(
         }
         return (node, token);
     }
+    
+    if ty.kind() == Some(TypeKind::UNION) {
+        let design2 = InitDesigWrap::new();
+        design2.set_next(design.clone());
+        design2.set_mem(ty.mems());
+
+        return create_local_var_init(init.child().get(0).unwrap(), ty.mems().ty(), design2, token);
+    }
     if init.expr().ptr.is_none() {
         return (NodeWrap::new(NodeKind::NullExpr, token), token);
     }
@@ -1876,16 +1887,13 @@ pub fn struct_initializer(
     return (token, init);
 }
 
-#[test]
-pub fn test_mut() {
-    let mut t1 = TokenWrap::new(TokenKind::KEYWORD, &['a'], 1);
-
-    pub fn change(tk: TokenWrap, reset: &mut TokenWrap) {
-        println!("change: {:?}", tk.to_string());
-        let t2 = TokenWrap::new(TokenKind::KEYWORD, &['b'], 1);
-        reset.ptr = t2.ptr;
-    }
-
-    change(t1.clone(), &mut t1);
-    println!("main: {:?}", t1.to_string());
+#[allow(dead_code)]
+pub fn union_initializer(
+    mut token: TokenWrap,
+    init: InitializerWrap,
+) -> (TokenWrap, InitializerWrap) {
+    token = skip(token, "{");
+    initializer2(token, init.child().get(0).unwrap());
+    token = skip(token, "}");
+    return (token, init);
 }
