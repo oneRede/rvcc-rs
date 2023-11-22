@@ -1898,11 +1898,18 @@ pub fn union_initializer(
 ) -> (TokenWrap, InitializerWrap) {
     token = skip(token, "{");
     let (mut token, i) = initializer2(token, init.child().get(0).unwrap());
+
     token = skip(token, "}");
     if i.ptr.is_none() {
         return (token, init);
     } else {
-        return (token, i);
+        let mut child: Vec<InitializerWrap> = vec![];
+        child.push(i);
+        for idx in 1..init.child().len() {
+            child.push(*init.child().get(idx).unwrap());
+        }
+        init.set_child(child);
+        return (token, init);
     }
 }
 

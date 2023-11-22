@@ -68,8 +68,8 @@ int main() {
   // [104] 为局部变量处理联合体初始化\n
   ASSERT(4, ({ union { int a; char b[4]; } x={0x01020304}; x.b[0]; }));
   ASSERT(3, ({ union { int a; char b[4]; } x={0x01020304}; x.b[1]; }));
-  // TODO: diffent from c/c++\n
-  // ASSERT(0x01020304, ({ union { struct { char a,b,c,d; } e; int f; } x={{4,3,2,1}}; x.f; }));\n
+  
+  ASSERT(0x01020304, ({ union { struct { char a,b,c,d; } e; int f; } x={{4,3,2,1}}; x.f; }));
 
   printf("OK\n");
   return 0;
