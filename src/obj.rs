@@ -1,5 +1,5 @@
 use crate::{
-    node::{MemberWrap, NodeWrap},
+    node::{NodeWrap, MemberWrap},
     parse::{GLOBALS, LOCALS},
     scope::ScopeWrap,
     token::TokenWrap,
@@ -238,7 +238,7 @@ impl Initializer {
 #[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub struct InitializerWrap {
-    ptr: Option<*mut Initializer>,
+    pub ptr: Option<*mut Initializer>,
 }
 
 #[allow(dead_code)]
@@ -264,7 +264,7 @@ impl InitializerWrap {
             }
         }
 
-        if ty.kind() == Some(TypeKind::STRUCT) || ty.kind() == Some(TypeKind::UNION) {
+        if ty.kind() == Some(TypeKind::STRUCT) || ty.kind() == Some(TypeKind::UNION){
             for mem in ty.mems() {
                 let child = InitializerWrap::new(mem.ty(), false);
                 init.append(child);

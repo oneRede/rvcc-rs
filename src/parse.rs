@@ -1741,13 +1741,18 @@ pub fn initializer2(token: TokenWrap, init: &InitializerWrap) -> (TokenWrap, Ini
     }
     let (node, token) = assign(token);
     init.set_expr(node);
-    return (token, *init);
+    return (token, InitializerWrap::empty());
 }
 
 #[allow(dead_code)]
 pub fn initializer(token: TokenWrap, ty: TyWrap) -> (TokenWrap, InitializerWrap) {
     let init = InitializerWrap::new(ty, true);
-    return initializer2(token, &init);
+    let (token, i) = initializer2(token, &init);
+    if i.ptr.is_none() {
+        return (token, init);
+    } else {
+        return (token, i);
+    }
 }
 
 #[allow(dead_code)]
@@ -1810,7 +1815,6 @@ pub fn create_local_var_init(
         }
         return (node, token);
     }
-    
     if ty.kind() == Some(TypeKind::UNION) {
         let design2 = InitDesigWrap::new();
         design2.set_next(design.clone());
@@ -1893,7 +1897,25 @@ pub fn union_initializer(
     init: InitializerWrap,
 ) -> (TokenWrap, InitializerWrap) {
     token = skip(token, "{");
-    initializer2(token, init.child().get(0).unwrap());
+    let (mut token, i) = initializer2(token, init.child().get(0).unwrap());
     token = skip(token, "}");
-    return (token, init);
+    if i.ptr.is_none() {
+        return (token, init);
+    } else {
+        return (token, i);
+    }
+}
+
+#[test]
+pub fn test_mut() {
+    let mut t1 = TokenWrap::new(TokenKind::KEYWORD, &['a'], 1);
+
+    pub fn change(tk: TokenWrap, reset: &mut TokenWrap) {
+        println!("change: {:?}", tk.to_string());
+        let t2 = TokenWrap::new(TokenKind::KEYWORD, &['b'], 1);
+        reset.ptr = t2.ptr;
+    }
+
+    change(t1.clone(), &mut t1);
+    println!("main: {:?}", t1.to_string());
 }
