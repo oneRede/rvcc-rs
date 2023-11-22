@@ -1903,12 +1903,7 @@ pub fn union_initializer(
     if i.ptr.is_none() {
         return (token, init);
     } else {
-        let mut child: Vec<InitializerWrap> = vec![];
-        child.push(i);
-        for idx in 1..init.child().len() {
-            child.push(*init.child().get(idx).unwrap());
-        }
-        init.set_child(child);
+        init.mut_child().insert(0, i);
         return (token, init);
     }
 }
@@ -1925,4 +1920,11 @@ pub fn test_mut() {
 
     change(t1.clone(), &mut t1);
     println!("main: {:?}", t1.to_string());
+}
+
+#[test]
+pub fn test_vec() {
+    let mut v = vec![1,2,3,4,5];
+    v.insert(0, 1000);
+    println!("{:?}", v);
 }

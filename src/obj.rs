@@ -281,6 +281,10 @@ impl InitializerWrap {
         unsafe { &self.ptr.unwrap().as_ref().unwrap().child }
     }
 
+    pub fn mut_child(&self) -> &mut Vec<InitializerWrap> {
+        unsafe { &mut self.ptr.unwrap().as_mut().unwrap().child }
+    }
+
     pub fn expr(&self) -> NodeWrap {
         unsafe { self.ptr.unwrap().as_ref().unwrap().expr }
     }
