@@ -6,6 +6,11 @@ char g3 = 3;
 short g4 = 4;
 long g6 = 6;
 
+// [106] 为结构体支持全局变量初始化器\n
+int g9[3] = {0, 1, 2};
+struct {char a; int b;} g11[2] = {{1, 2}, {3, 4}};
+struct {int a[2];} g12[2] = {{{1, 2}}};
+
 int main() {
   // [97] 支持局部变量初始化器\n
   ASSERT(1, ({ int x[3]={1,2,3}; x[0]; }));
@@ -82,6 +87,21 @@ int main() {
   ASSERT(3, g3);
   ASSERT(4, g4);
   ASSERT(6, g6);
+
+  // [106] 为结构体支持全局变量初始化器\n
+  ASSERT(0, g9[0]);
+  ASSERT(1, g9[1]);
+  ASSERT(2, g9[2]);
+
+  ASSERT(1, g11[0].a);
+  ASSERT(2, g11[0].b);
+  ASSERT(3, g11[1].a);
+  ASSERT(4, g11[1].b);
+
+  ASSERT(1, g12[0].a[0]);
+  ASSERT(2, g12[0].a[1]);
+  ASSERT(0, g12[1].a[0]);
+  ASSERT(0, g12[1].a[1]);
 
   printf("OK\n");
   return 0;

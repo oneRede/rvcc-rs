@@ -1,7 +1,7 @@
 void assert(int expected, int actual, char *code);
 
-int g5 = 5;
+struct {int a[2];} g12[2] = {{{1, 2}}};
 int main()
 {
-   assert(5, g5);
+   assert(0, g12[1].a[0]);
 }
