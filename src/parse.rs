@@ -1919,14 +1919,17 @@ pub fn write_buf(buf: &mut Vec<u8>, val: u64, sz: i64) {
     } else if sz == 2 {
         for n in u16::to_be_bytes(val as u16) {
             buf.push(n);
+            buf.reverse();
         }
     } else if sz == 4 {
         for n in u32::to_be_bytes(val as u32) {
             buf.push(n);
+            buf.reverse();
         }
     } else if sz == 8 {
         for n in u64::to_be_bytes(val as u64) {
             buf.push(n);
+            buf.reverse();
         }
     } else {
         unreachable!()
@@ -1934,21 +1937,38 @@ pub fn write_buf(buf: &mut Vec<u8>, val: u64, sz: i64) {
 }
 
 #[allow(dead_code)]
-pub fn write_g_var_data(init: InitializerWrap, ty: TyWrap, mut buf: Vec<u8>, offset: i64) {
+pub fn write_g_var_data(init: InitializerWrap, ty: TyWrap, buf: &mut Vec<u8>, offset: i64) {
     if ty.kind() == Some(TypeKind::ARRAY) {
         let sz = ty.base().size();
         for i in 0..ty.array_len() {
             write_g_var_data(
                 *init.child().get(i as usize).unwrap(),
                 ty.base(),
-                buf.clone(),
+                buf,
                 offset + sz * i,
             )
         }
         return;
     }
+    // if (Ty->Kind == TY_STRUCT) {
+    //     for (Member *Mem = Ty->Mems; Mem; Mem = Mem->Next)
+    //       writeGVarData(Init->Children[Mem->Idx], Mem->Ty, Buf,
+    //                     Offset + Mem->Offset);
+    //     return;
+    //   }
+    // if ty.kind() == Some(TypeKind::STRUCT) {
+    //     for mem in ty.mems() {
+    //         write_g_var_data(
+    //             *init.child().get(mem.idx() as usize).unwrap(),
+    //             mem.ty(),
+    //             buf.clone(),
+    //             offset + mem.offset(),
+    //         )
+    //     }
+    //     return;
+    // }
     if !init.expr().ptr.is_none() {
-        write_buf(&mut buf, eval(init.expr()).try_into().unwrap(), ty.size())
+        write_buf(buf, eval(init.expr()).try_into().unwrap(), ty.size())
     }
 }
 
@@ -1956,8 +1976,8 @@ pub fn write_g_var_data(init: InitializerWrap, ty: TyWrap, mut buf: Vec<u8>, off
 pub fn global_var_initializer(token: TokenWrap, var: ObjWrap) -> TokenWrap {
     let (token, init) = initializer(token, var.ty());
 
-    let buf = vec![];
-    write_g_var_data(init, var.ty(), buf.clone(), 0);
+    let mut buf = vec![];
+    write_g_var_data(init, var.ty(), &mut buf, 0);
     let mut new_buf = vec![];
     for v in buf.clone() {
         new_buf.push(v as usize)

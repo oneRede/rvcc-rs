@@ -18,6 +18,16 @@ pub fn test_mut() {
 #[test]
 pub fn test_vec() {
     let mut v = vec![1,2,3,4,5];
+    let v2 = v.clone();
     v.insert(0, 1000);
     println!("{:?}", v);
+    println!("{:?}", v2);
+}
+
+#[test]
+pub fn test_num() {
+    let n = 1;
+    for b in u32::to_be_bytes(n){
+        println!("{:?}", b);
+    }
 }

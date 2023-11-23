@@ -1,9 +1,9 @@
 #include "test.h"
 
 // [105] 支持全局变量初始化器\n
+int g5 = 5;
 char g3 = 3;
 short g4 = 4;
-int g5 = 5;
 long g6 = 6;
 
 int main() {
@@ -78,9 +78,9 @@ int main() {
   ASSERT(0x01020304, ({ union { struct { char a,b,c,d; } e; int f; } x={{4,3,2,1}}; x.f; }));
 
   // [105] 支持全局变量初始化器\n
+  ASSERT(5, g5);
   ASSERT(3, g3);
   ASSERT(4, g4);
-  ASSERT(5, g5);
   ASSERT(6, g6);
 
   printf("OK\n");
