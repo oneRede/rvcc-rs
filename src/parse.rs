@@ -1399,8 +1399,12 @@ pub fn global_variable(mut token: TokenWrap, base_ty: TyWrap) -> TokenWrap {
             token = skip(token, ",");
         }
         first = false;
-        let (tk, ty) = declarator(token, base_ty);
-        ObjWrap::new_global(get_ident(ty.name()), ty);
+        let (mut tk, ty) = declarator(token, base_ty);
+
+        let var = ObjWrap::new_global(get_ident(ty.name()), ty);
+        if equal(tk, "=") {
+            tk = global_var_initializer(tk.nxt(), var)
+        }
         token = tk;
     }
     return token;
@@ -1908,23 +1912,56 @@ pub fn union_initializer(
     }
 }
 
-#[test]
-pub fn test_mut() {
-    let mut t1 = TokenWrap::new(TokenKind::KEYWORD, &['a'], 1);
-
-    pub fn change(tk: TokenWrap, reset: &mut TokenWrap) {
-        println!("change: {:?}", tk.to_string());
-        let t2 = TokenWrap::new(TokenKind::KEYWORD, &['b'], 1);
-        reset.ptr = t2.ptr;
+#[allow(dead_code)]
+pub fn write_buf(buf: &mut Vec<u8>, val: u64, sz: i64) {
+    if sz == 1 {
+        buf.push(val as u8)
+    } else if sz == 2 {
+        for n in u16::to_be_bytes(val as u16) {
+            buf.push(n);
+        }
+    } else if sz == 4 {
+        for n in u32::to_be_bytes(val as u32) {
+            buf.push(n);
+        }
+    } else if sz == 8 {
+        for n in u64::to_be_bytes(val as u64) {
+            buf.push(n);
+        }
+    } else {
+        unreachable!()
     }
-
-    change(t1.clone(), &mut t1);
-    println!("main: {:?}", t1.to_string());
 }
 
-#[test]
-pub fn test_vec() {
-    let mut v = vec![1,2,3,4,5];
-    v.insert(0, 1000);
-    println!("{:?}", v);
+#[allow(dead_code)]
+pub fn write_g_var_data(init: InitializerWrap, ty: TyWrap, mut buf: Vec<u8>, offset: i64) {
+    if ty.kind() == Some(TypeKind::ARRAY) {
+        let sz = ty.base().size();
+        for i in 0..ty.array_len() {
+            write_g_var_data(
+                *init.child().get(i as usize).unwrap(),
+                ty.base(),
+                buf.clone(),
+                offset + sz * i,
+            )
+        }
+        return;
+    }
+    if !init.expr().ptr.is_none() {
+        write_buf(&mut buf, eval(init.expr()).try_into().unwrap(), ty.size())
+    }
+}
+
+#[allow(dead_code)]
+pub fn global_var_initializer(token: TokenWrap, var: ObjWrap) -> TokenWrap {
+    let (token, init) = initializer(token, var.ty());
+
+    let buf = vec![];
+    write_g_var_data(init, var.ty(), buf.clone(), 0);
+    let mut new_buf = vec![];
+    for v in buf.clone() {
+        new_buf.push(v as usize)
+    }
+    var.set_init_data(new_buf);
+    return token;
 }
