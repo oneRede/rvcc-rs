@@ -384,3 +384,18 @@ impl InitDesigWrap {
         unsafe { self.ptr.unwrap().as_mut().unwrap().mem = mem }
     }
 }
+
+#[allow(dead_code)]
+#[derive(Clone, Debug)]
+pub struct Relocation {
+    next: RelocationWrap,
+    offset: i64,
+    label: &'static str,
+    added: i64,
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy,Debug)]
+pub struct RelocationWrap{
+    ptr: Option<*mut Relocation>
+}

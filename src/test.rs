@@ -31,3 +31,17 @@ pub fn test_num() {
         println!("{:?}", b);
     }
 }
+
+#[test]
+pub fn test_mut_string() {
+    let mut s = "123456".to_string();
+    let sm = &mut s;
+    sm.truncate(0);
+    *sm += "7890";
+    println!("{:?}", s);
+}
+
+#[test]
+pub fn test_str() {
+    let _s = "123456";
+}

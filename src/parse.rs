@@ -1983,9 +1983,55 @@ pub fn global_var_initializer(token: TokenWrap, var: ObjWrap) -> TokenWrap {
     for v in buf.clone() {
         new_buf.push(v as usize)
     }
-    while new_buf.len() != var.ty().size().try_into().unwrap() && new_buf.len() < var.ty().size().try_into().unwrap() {
+    while new_buf.len() != var.ty().size().try_into().unwrap()
+        && new_buf.len() < var.ty().size().try_into().unwrap()
+    {
         new_buf.push(0);
     }
     var.set_init_data(new_buf);
     return token;
+}
+
+// static int64_t evalRVal(Node *Nd, char **Label) {
+//     switch (Nd->Kind) {
+//     case ND_VAR:
+//       // 局部变量不能参与全局变量的初始化
+//       if (Nd->Var->IsLocal)
+//         errorTok(Nd->Tok, "not a compile-time constant");
+//       *Label = Nd->Var->Name;
+//       return 0;
+//     case ND_DEREF:
+//       // 直接进入到解引用的地址
+//       return eval2(Nd->LHS, Label);
+//     case ND_MEMBER:
+//       // 加上成员变量的偏移量
+//       return evalRVal(Nd->LHS, Label) + Nd->Mem->Offset;
+//     default:
+//       break;
+//     }
+
+//     errorTok(Nd->Tok, "invalid initializer");
+//     return -1;
+//   }
+
+#[allow(dead_code)]
+pub fn eval_r_val(node: NodeWrap, label: &mut String) -> i64 {
+    match node.kind() {
+        NodeKind::VAR => {
+            if node.var().is_local() {
+                error_token(node.token(), "not a compile-time constant");
+            }
+            label.truncate(0);
+            *label += node.var().name();
+            return 0;
+        }
+        NodeKind::DEREF => return eval(node.lhs()),
+        NodeKind::MEMBER => {
+            return eval_r_val(node.lhs(), label) + node.mem().offset();
+        }
+        _ => {
+            error_token(node.token(), "invalid initializer");
+            return -1;
+        }
+    }
 }
