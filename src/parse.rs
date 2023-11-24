@@ -1956,12 +1956,6 @@ pub fn write_g_var_data(init: InitializerWrap, ty: TyWrap, buf: &mut Vec<u8>, of
         }
         return;
     }
-    // if (Ty->Kind == TY_STRUCT) {
-    //     for (Member *Mem = Ty->Mems; Mem; Mem = Mem->Next)
-    //       writeGVarData(Init->Children[Mem->Idx], Mem->Ty, Buf,
-    //                     Offset + Mem->Offset);
-    //     return;
-    //   }
     if ty.kind() == Some(TypeKind::STRUCT) {
         for mem in ty.mems() {
             write_g_var_data(
