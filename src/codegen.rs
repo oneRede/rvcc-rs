@@ -622,15 +622,26 @@ pub fn emit_data(prog: ObjWrap) {
 
         if !var.init_data().is_empty() {
             write_to_file(&format!("{}:", var.name()));
-            for c in var.init_data() {
-                let n = c;
-                if c >= 32 {
-                    write_to_file(&format!("  .byte {}\t# 字符：{}", n, n as u8 as char));
-                } else {
-                    write_to_file(&format!("  .byte {}", n));
+            let mut rel = var.relocation();
+            let mut pos = 0;
+            while pos < var.ty().size() {
+                if !rel.ptr.is_none() && rel.offset() == pos {
+                    write_to_file(&format!("  # {}全局变量", var.name()));
+                    write_to_file(&format!("  .quad {}{}", rel.label(), rel.added()));
+                    rel = rel.nxt();
+                    pos += 8;
+                } else{
+                    let c = *var.init_data().get(pos as usize).unwrap();
+                    if c >= 32 {
+                        write_to_file(&format!("  .byte {}\t# 字符：{}", c, c as u8 as char));
+                    } else {
+                        write_to_file(&format!("  .byte {}", c));
+                    }
+                    write_to_file(&format!("  .byte {}", 0));
+                    pos += 1;
                 }
             }
-            write_to_file(&format!("  .byte {}", 0));
+            
         } else {
             write_to_file(&format!("  # 全局段{}", name));
             write_to_file(&format!("  .globl {}", name));

@@ -7,7 +7,7 @@ use crate::{
         NodeKind::{self, *},
         NodeWrap,
     },
-    obj::{InitDesigWrap, InitializerWrap, ObjWrap},
+    obj::{InitDesigWrap, InitializerWrap, ObjWrap, RelocationWrap},
     scope::{ScopeWrap, TagScopeWrap, VarAttr, VarScopeWrap, SCOPE},
     token::{consume, equal, skip, TokenKind, TokenWrap},
     ty::{add_ty, is_int, TyWrap, TypeKind},
@@ -1599,6 +1599,11 @@ pub fn log_or(token: TokenWrap) -> (NodeWrap, TokenWrap) {
 
 #[allow(dead_code)]
 pub fn eval(node: NodeWrap) -> i64 {
+    return eval_v2(node, &mut String::new());
+}
+
+#[allow(dead_code)]
+pub fn eval_v2(node: NodeWrap, label: &mut String) -> i64 {
     add_ty(node);
 
     if node.ptr.is_none() {
@@ -1606,8 +1611,8 @@ pub fn eval(node: NodeWrap) -> i64 {
     }
 
     match node.kind() {
-        NodeKind::Add => return eval(node.lhs()) + eval(node.rhs()),
-        NodeKind::Sub => return eval(node.lhs()) - eval(node.rhs()),
+        NodeKind::Add => return eval_v2(node.lhs(), label) + eval(node.rhs()),
+        NodeKind::Sub => return eval_v2(node.lhs(), label) - eval(node.rhs()),
         NodeKind::Mul => return eval(node.lhs()) * eval(node.rhs()),
         NodeKind::Div => return eval(node.lhs()) / eval(node.rhs()),
         NodeKind::NEG => return -eval(node.lhs()),
@@ -1623,9 +1628,9 @@ pub fn eval(node: NodeWrap) -> i64 {
         NodeKind::LE => return (eval(node.lhs()) <= eval(node.rhs())) as i64,
         NodeKind::COND => {
             if eval(node.cond()) > 0 {
-                return eval(node.then());
+                return eval_v2(node.then(), label);
             } else {
-                return eval(node.els());
+                return eval_v2(node.els(), label);
             }
         }
         NodeKind::COMMA => return eval(node.rhs()),
@@ -1640,13 +1645,38 @@ pub fn eval(node: NodeWrap) -> i64 {
         NodeKind::CAST => {
             if is_int(node.ty()) {
                 match node.ty().size() {
-                    1 => return eval(node.lhs()),
-                    2 => return eval(node.lhs()),
-                    4 => return eval(node.lhs()),
+                    1 => return eval_v2(node.lhs(), label),
+                    2 => return eval_v2(node.lhs(), label),
+                    4 => return eval_v2(node.lhs(), label),
                     _ => {}
                 }
             }
-            return eval(node.lhs());
+            return eval_v2(node.lhs(), label);
+        }
+        NodeKind::ADDR => {
+            return eval_r_val(node.lhs(), label);
+        }
+        NodeKind::MEMBER => {
+            if label.is_empty() {
+                error_token(node.token(), "not a compile-time constant");
+            }
+            if node.ty().kind() != Some(TypeKind::ARRAY) {
+                error_token(node.token(), "invalid initializer")
+            }
+            return eval_r_val(node.lhs(), label);
+        }
+        NodeKind::VAR => {
+            if label.is_empty() {
+                error_token(node.token(), "not a compile-time constant");
+            }
+            if node.var().ty().kind() != Some(TypeKind::ARRAY)
+                && node.var().ty().kind() != Some(TypeKind::FUNC)
+            {
+                error_token(node.token(), "invalid initializer")
+            }
+            label.truncate(0);
+            label.push_str(node.var().name());
+            return 0;
         }
         NodeKind::Num => return node.val(),
 
@@ -1973,6 +2003,67 @@ pub fn write_g_var_data(init: InitializerWrap, ty: TyWrap, buf: &mut Vec<u8>, of
 }
 
 #[allow(dead_code)]
+pub fn write_g_var_data_v2(
+    cur: RelocationWrap,
+    init: InitializerWrap,
+    ty: TyWrap,
+    buf: &mut Vec<u8>,
+    offset: i64,
+) -> RelocationWrap {
+    if ty.kind() == Some(TypeKind::ARRAY) {
+        let sz = ty.base().size();
+        for i in 0..ty.array_len() {
+            write_g_var_data_v2(
+                cur,
+                *init.child().get(i as usize).unwrap(),
+                ty.base(),
+                buf,
+                offset + sz * i,
+            );
+        }
+        return cur;
+    }
+    if ty.kind() == Some(TypeKind::STRUCT) {
+        for mem in ty.mems() {
+            write_g_var_data_v2(
+                cur,
+                *init.child().get(mem.idx() as usize).unwrap(),
+                mem.ty(),
+                buf,
+                offset + mem.offset(),
+            );
+        }
+        return cur;
+    }
+    if ty.kind() == Some(TypeKind::UNION) {
+        return write_g_var_data_v2(
+            cur,
+            *init.child().get(0).unwrap(),
+            ty.mems().ty(),
+            buf,
+            offset,
+        );
+    }
+    if !init.expr().ptr.is_none() {
+        return cur;
+    }
+
+    let mut label = String::new();
+    let val = eval_v2(init.expr(), &mut label);
+    if label.is_empty() {
+        write_buf(buf, val.try_into().unwrap(), ty.size());
+        return cur;
+    }
+    let rel = RelocationWrap::new();
+
+    rel.set_offset(offset);
+    rel.set_label(Box::leak(Box::new(label)));
+    rel.set_added(val);
+    cur.set_next(rel);
+    return cur.nxt();
+}
+
+#[allow(dead_code)]
 pub fn global_var_initializer(token: TokenWrap, var: ObjWrap) -> TokenWrap {
     let (token, init) = initializer(token, var.ty());
     var.set_ty(init.ty());
@@ -1992,28 +2083,6 @@ pub fn global_var_initializer(token: TokenWrap, var: ObjWrap) -> TokenWrap {
     return token;
 }
 
-// static int64_t evalRVal(Node *Nd, char **Label) {
-//     switch (Nd->Kind) {
-//     case ND_VAR:
-//       // 局部变量不能参与全局变量的初始化
-//       if (Nd->Var->IsLocal)
-//         errorTok(Nd->Tok, "not a compile-time constant");
-//       *Label = Nd->Var->Name;
-//       return 0;
-//     case ND_DEREF:
-//       // 直接进入到解引用的地址
-//       return eval2(Nd->LHS, Label);
-//     case ND_MEMBER:
-//       // 加上成员变量的偏移量
-//       return evalRVal(Nd->LHS, Label) + Nd->Mem->Offset;
-//     default:
-//       break;
-//     }
-
-//     errorTok(Nd->Tok, "invalid initializer");
-//     return -1;
-//   }
-
 #[allow(dead_code)]
 pub fn eval_r_val(node: NodeWrap, label: &mut String) -> i64 {
     match node.kind() {
@@ -2025,7 +2094,7 @@ pub fn eval_r_val(node: NodeWrap, label: &mut String) -> i64 {
             *label += node.var().name();
             return 0;
         }
-        NodeKind::DEREF => return eval(node.lhs()),
+        NodeKind::DEREF => return eval_v2(node.lhs(), label),
         NodeKind::MEMBER => {
             return eval_r_val(node.lhs(), label) + node.mem().offset();
         }

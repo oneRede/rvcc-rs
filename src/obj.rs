@@ -1,5 +1,5 @@
 use crate::{
-    node::{NodeWrap, MemberWrap},
+    node::{MemberWrap, NodeWrap},
     parse::{GLOBALS, LOCALS},
     scope::ScopeWrap,
     token::TokenWrap,
@@ -24,6 +24,7 @@ pub struct Obj {
     pub stack_size: usize,
     pub params: ObjWrap,
     pub init_data: Vec<usize>,
+    pub rel: RelocationWrap,
 }
 
 #[allow(dead_code)]
@@ -43,6 +44,7 @@ impl Obj {
             stack_size: 0,
             params: ObjWrap::empty(),
             init_data: vec![],
+            rel: RelocationWrap::empty(),
         }
     }
 }
@@ -124,6 +126,10 @@ impl ObjWrap {
             v.push(*c);
         }
         v
+    }
+
+    pub fn relocation(&self) -> RelocationWrap {
+        unsafe { self.ptr.unwrap().as_ref().unwrap().rel }
     }
 
     pub fn is_local(&self) -> bool {
@@ -264,7 +270,7 @@ impl InitializerWrap {
             }
         }
 
-        if ty.kind() == Some(TypeKind::STRUCT) || ty.kind() == Some(TypeKind::UNION){
+        if ty.kind() == Some(TypeKind::STRUCT) || ty.kind() == Some(TypeKind::UNION) {
             for mem in ty.mems() {
                 let child = InitializerWrap::new(mem.ty(), false);
                 init.append(child);
@@ -395,7 +401,64 @@ pub struct Relocation {
 }
 
 #[allow(dead_code)]
-#[derive(Clone, Copy,Debug)]
-pub struct RelocationWrap{
-    ptr: Option<*mut Relocation>
+impl Relocation {
+    pub fn new() -> Self {
+        Self {
+            next: RelocationWrap::empty(),
+            offset: 0,
+            label: "",
+            added: 0,
+        }
+    }
+}
+
+#[allow(dead_code)]
+#[derive(Clone, Copy, Debug)]
+pub struct RelocationWrap {
+    pub ptr: Option<*mut Relocation>,
+}
+
+#[allow(dead_code)]
+impl RelocationWrap {
+    pub fn empty() -> Self {
+        Self { ptr: None }
+    }
+
+    pub fn new() -> Self {
+        let rel = Relocation::new();
+        let rel: *mut Relocation = Box::leak(Box::new(rel));
+        Self { ptr: Some(rel) }
+    }
+
+    pub fn nxt(&self) -> RelocationWrap {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().next }
+    }
+
+    pub fn offset(&self) -> i64 {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().offset }
+    }
+
+    pub fn label(&self) -> &'static str {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().label }
+    }
+
+    pub fn added(&self) -> i64 {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().added }
+    }
+
+    pub fn set_next(&self, next: RelocationWrap) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().next = next }
+    }
+
+    pub fn set_offset(&self, offset: i64) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().offset = offset }
+    }
+
+    pub fn set_label(&self, label: &'static str) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().label = label }
+    }
+
+    pub fn set_added(&self, added: i64) {
+        unsafe { self.ptr.unwrap().as_mut().unwrap().added = added }
+    }
 }
